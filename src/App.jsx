@@ -410,7 +410,28 @@ const CSS = `
   .pt-table-row:hover { background:rgba(255,255,255,.02); }
   .online-dot { width:7px; height:7px; border-radius:50%; background:#2ecc71; display:inline-block; margin-right:8px; }
 
-  /* ── MOBILE NAV ── */
+  /* ── CLIENTE LAYOUT ── */
+  .cliente-header {
+    position:sticky; top:0; z-index:100;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px;
+  }
+  .cliente-body { max-width:600px; margin:0 auto; padding:28px 16px 60px; }
+  .scheda-info-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:24px; }
+  .scheda-info-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; margin-bottom:4px; }
+  .scheda-info-meta { display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+  .ex-cliente-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .ex-cliente-info { flex:1; min-width:0; }
+  .ex-cliente-name { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ex-cliente-meta { font-size:12px; color:var(--muted); }
+  .ex-peso-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .ex-peso-input { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; width:70px; padding:8px 10px; border-radius:9px; outline:none; text-align:center; transition:border-color .2s; }
+  .ex-peso-input:focus { border-color:var(--accent); }
+  .ex-peso-unit { font-size:12px; color:var(--muted); font-weight:600; }
+  .save-session-btn { width:100%; background:var(--accent); border:none; color:var(--accent-fg); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; padding:16px; border-radius:12px; cursor:pointer; transition:opacity .2s; margin-top:8px; }
+  .save-session-btn:hover { opacity:.88; }
+  .session-saved-banner { background:rgba(71,255,232,.08); border:1px solid rgba(71,255,232,.2); border-radius:10px; padding:12px 16px; font-size:13px; color:var(--accent2); text-align:center; margin-bottom:16px; }
   .mobile-nav {
     display:none; position:fixed; bottom:0; left:0; right:0;
     background:var(--surface); border-top:1px solid var(--border);
@@ -454,12 +475,14 @@ const CSS = `
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  "demo":   { password:"demo",   name:"Personal Trainer Demo", role:"trainer",
-               theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-  "fitpro": { password:"fitpro", name:"FitPro Training",       role:"trainer",
-               theme:{ accent:"#a47ffe", accentFg:"#07070d", logo:["FitPro","Training"] } },
-  "admin":  { password:"admin",  name:"Admin",                  role:"admin",
-               theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "demo":         { password:"demo",         name:"Personal Trainer Demo", role:"trainer",
+                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "fitpro":       { password:"fitpro",       name:"FitPro Training",       role:"trainer",
+                     theme:{ accent:"#a47ffe", accentFg:"#07070d", logo:["FitPro","Training"] } },
+  "admin":        { password:"admin",        name:"Admin",                  role:"admin",
+                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "demo_cliente": { password:"demo_cliente", name:"Cliente Demo",           role:"cliente",
+                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
 };
 
 function applyTheme(theme) {
@@ -503,11 +526,15 @@ const EXERCISES = [
 ];
 
 const DEMO_CLIENTS = [
+  { id:0, nome:"Cliente", cognome:"Demo",    obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"oggi",         schede:1, color:"#47ffe8", isDemoCliente:true, hasAccount:true },
   { id:1, nome:"Luca",    cognome:"Ferrari",   obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"3 giorni fa",  schede:2, color:"#e8ff47" },
   { id:2, nome:"Sofia",   cognome:"Martini",   obiettivo:"Dimagrimento", livello:"Principiante", lastSeen:"ieri",         schede:1, color:"#47ffe8" },
   { id:3, nome:"Marco",   cognome:"Bianchi",   obiettivo:"Forza",        livello:"Avanzato",     lastSeen:"oggi",         schede:3, color:"#ff9f47" },
   { id:4, nome:"Chiara",  cognome:"Esposito",  obiettivo:"Tonificazione",livello:"Intermedio",   lastSeen:"5 giorni fa",  schede:1, color:"#ff47a3" },
 ];
+
+
+
 
 function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -828,6 +855,15 @@ function LoginScreen({onLogin}) {
                 <span className="hint-badge">admin</span>
               </div>
             </div>
+            <div className="login-hint-block" style={{borderColor:"rgba(71,255,232,.25)"}}>
+              <div className="login-hint-label" style={{color:"var(--accent2)"}}>👤 Per accedere come Cliente Demo, inserisci:</div>
+              <div className="login-hint-creds">
+                <span className="login-hint-key">Utente:</span>
+                <span className="hint-badge">demo_cliente</span>
+                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                <span className="hint-badge">demo_cliente</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1104,14 +1140,36 @@ function Library({setView}) {
 const ALL_DAYS = ["A","B","C","D","E","F","G"];
 
 function Builder({setView}) {
-  const [nome,setNome]=useState(""); const [cognome,setCognome]=useState("");
-  const [obiettivo,setObiettivo]=useState(""); const [livello,setLivello]=useState("");
+  const [selectedClient,setSelectedClient]=useState(null);
+  const [searchQ,setSearchQ]=useState("");
+  const [showDrop,setShowDrop]=useState(false);
+  const [obiettivo,setObiettivo]=useState("");
+  const [livello,setLivello]=useState("");
   const [numDays,setNumDays]=useState(3);
   const [activeDay,setActiveDay]=useState("A");
   const [giorni,setGiorni]=useState({A:[],B:[],C:[],D:[],E:[],F:[],G:[]});
   const [selId,setSelId]=useState(EXERCISES[0].id);
   const [sets,setSets]=useState(3); const [reps,setReps]=useState(10); const [rest,setRest]=useState(90);
   const [pdfState,setPdfState]=useState(null);
+  const [toast,setToast]=useState(null);
+
+  const allClients = loadClients();
+  const filtered = searchQ.trim().length>0
+    ? allClients.filter(c=>{
+        const q=searchQ.toLowerCase();
+        return c.nome.toLowerCase().includes(q)||c.cognome.toLowerCase().includes(q);
+      }).slice(0,5)
+    : [];
+
+  const selectClient=(c)=>{
+    setSelectedClient(c);
+    setSearchQ(`${c.nome} ${c.cognome}`);
+    setShowDrop(false);
+    if(c.obiettivo) setObiettivo(c.obiettivo);
+    if(c.livello) setLivello(c.livello);
+  };
+
+  const clearClient=()=>{ setSelectedClient(null); setSearchQ(""); setObiettivo(""); setLivello(""); };
 
   const activeDays=ALL_DAYS.slice(0,numDays);
   const scheda=giorni[activeDay]||[];
@@ -1138,22 +1196,79 @@ function Builder({setView}) {
 
   const handlePDF=async()=>{
     if(!Object.values(activeGiorni).some(d=>d.length>0)) return;
+    const nome=selectedClient?.nome||"";
+    const cognome=selectedClient?.cognome||"";
     setPdfState({progress:0,label:"Preparazione…"});
     try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
     catch(e){console.error(e);}
     finally{setPdfState(null);}
   };
 
+  const handleAssegna=()=>{
+    if(!selectedClient||totalEx===0) return;
+    const key=`pt_scheda_${selectedClient.id}`;
+    const payload={
+      clienteId:selectedClient.id,
+      nome:selectedClient.nome,
+      cognome:selectedClient.cognome,
+      pt:"Personal Trainer Demo",
+      obiettivo,livello,
+      giorni:activeGiorni,
+      assegnataIl:fmtDate(new Date()),
+    };
+    localStorage.setItem(key,JSON.stringify(payload));
+    setToast(`✓ Scheda assegnata a ${selectedClient.nome} ${selectedClient.cognome}`);
+    setTimeout(()=>setToast(null),3000);
+  };
+
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">Builder Scheda</div><div className="page-sub">{totalEx} esercizi totali</div></div>
+      {toast&&(
+        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--accent2)"}}>
+          {toast}
+        </div>
+      )}
       <div className="builder">
         <div className="client-card">
           <div className="card-section-title">Dati Cliente</div>
           <div className="client-grid">
-            <label className="field-label">Nome<input className="field-input" type="text" placeholder="Marco" value={nome} onChange={e=>setNome(e.target.value)}/></label>
-            <label className="field-label">Cognome<input className="field-input" type="text" placeholder="Rossi" value={cognome} onChange={e=>setCognome(e.target.value)}/></label>
+            {/* Client search */}
+            <div style={{gridColumn:"1 / span 2",position:"relative"}}>
+              <label className="field-label">
+                Cliente
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="Cerca cliente…"
+                  value={searchQ}
+                  onChange={e=>{setSearchQ(e.target.value);setShowDrop(true);if(!e.target.value)clearClient();}}
+                  onFocus={()=>setShowDrop(true)}
+                  onBlur={()=>setTimeout(()=>setShowDrop(false),150)}
+                  autoComplete="off"
+                />
+              </label>
+              {showDrop&&filtered.length>0&&(
+                <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,.4)"}}>
+                  {filtered.map(c=>(
+                    <div
+                      key={c.id}
+                      onMouseDown={()=>selectClient(c)}
+                      style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:14,borderBottom:"1px solid var(--border)"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="var(--border)"}
+                      onMouseLeave={e=>e.currentTarget.style.background=""}
+                    >
+                      <div style={{width:28,height:28,borderRadius:7,background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(c.nome,c.cognome)}</div>
+                      <div>
+                        <div style={{fontWeight:600,color:"var(--text)"}}>{c.nome} {c.cognome}</div>
+                        <div style={{fontSize:11,color:"var(--muted)"}}>{c.obiettivo} · {c.livello}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <label className="field-label">Obiettivo<select className="field-select" value={obiettivo} onChange={e=>setObiettivo(e.target.value)}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
             <label className="field-label">Livello<select className="field-select" value={livello} onChange={e=>setLivello(e.target.value)}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
           </div>
@@ -1223,6 +1338,7 @@ function Builder({setView}) {
           <div className="actions-row">
             {scheda.length>0&&<button className="btn-ghost" onClick={clear}>Svuota Giorno {activeDay}</button>}
             <button className="btn-primary" onClick={handlePDF}>⬇ Esporta PDF completo</button>
+            {selectedClient?.hasAccount&&<button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d"}} onClick={handleAssegna}>📲 Assegna al cliente</button>}
           </div>
         )}
       </div>
@@ -1231,8 +1347,21 @@ function Builder({setView}) {
 }
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────────
+const LS_CLIENTS = "pt_clients_demo";
+function loadClients() {
+  try {
+    const raw = localStorage.getItem(LS_CLIENTS);
+    if(raw) return JSON.parse(raw);
+  } catch {}
+  localStorage.setItem(LS_CLIENTS, JSON.stringify(DEMO_CLIENTS));
+  return DEMO_CLIENTS;
+}
+function persistClients(arr) {
+  localStorage.setItem(LS_CLIENTS, JSON.stringify(arr));
+}
+
 function Clients({setView}) {
-  const [clients,setClients]=useState(DEMO_CLIENTS);
+  const [clients,setClients]=useState(()=>loadClients());
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
   const [form,setForm]=useState({nome:"",cognome:"",obiettivo:"",livello:""});
@@ -1240,7 +1369,9 @@ function Clients({setView}) {
   const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
   const addClient=()=>{
     if(!form.nome||!form.cognome) return;
-    setClients(prev=>[...prev,{id:Date.now(),color:COLORS[prev.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}]);
+    const updated=[...clients,{id:Date.now(),color:COLORS[clients.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
+    setClients(updated);
+    persistClients(updated);
     setForm({nome:"",cognome:"",obiettivo:"",livello:""});
     setShowForm(false);
   };
@@ -1285,7 +1416,9 @@ function Clients({setView}) {
             </div>
             <div className="client-modal-body">
               <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Schede assegnate</div>
-              {selected.schede>0?(
+              {selected.isDemoCliente?(
+                <span className="scheda-chip">📋 Scheda Ipertrofia — Giorno A + B</span>
+              ):selected.schede>0?(
                 Array.from({length:selected.schede},(_,i)=>(
                   <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
                 ))
@@ -1294,8 +1427,39 @@ function Clients({setView}) {
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>Statistiche</div>
                 <div style={{display:"flex",gap:24,fontSize:14}}>
                   <div><span style={{color:"var(--muted)"}}>Ultimo accesso: </span><strong>{selected.lastSeen}</strong></div>
-                  <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede}</strong></div>
+                  <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||1}</strong></div>
                 </div>
+              </div>
+              {/* PROGRESSI */}
+              <div style={{marginTop:24}}>
+                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
+                {(()=>{
+                  if(!selected.isDemoCliente) return <div style={{color:"var(--muted)",fontSize:14}}>Nessuna sessione registrata ancora.</div>;
+                  const sessions=[...loadSessions()].sort((a,b)=>b.date.localeCompare(a.date));
+                  if(sessions.length===0) return <div style={{color:"var(--muted)",fontSize:14}}>Nessuna sessione registrata ancora.</div>;
+                  return sessions.map((sess,si)=>{
+                    const schedaLS = (()=>{ try{ const r=localStorage.getItem("pt_scheda_0"); return r?JSON.parse(r):null; }catch{return null;} })();
+                    const esercizi=(schedaLS?.giorni?.[sess.day])||[];
+                    return (
+                      <div key={si} style={{marginBottom:14,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden"}}>
+                        <div style={{padding:"10px 14px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <span style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>Giorno {sess.day}</span>
+                          <span style={{fontSize:12,color:"var(--muted)"}}>{new Date(sess.date+"T12:00").toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"})}</span>
+                        </div>
+                        {esercizi.map(ex=>{
+                          const cc=CAT_COLORS[ex.cat]||"var(--accent)";
+                          const peso=sess.weights[ex.id];
+                          return (
+                            <div key={ex.id} style={{padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(34,34,58,.5)"}}>
+                              <span style={{fontSize:13,color:"var(--text)"}}>{ex.name}</span>
+                              <span style={{fontSize:13,fontWeight:700,color:peso?cc:"var(--muted)"}}>{peso?`${peso} kg`:"—"}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           </div>
@@ -1708,6 +1872,145 @@ function AdminCalendar({setView}) {
   return <CalendarBase events={events} setEvents={setEvents} sessionTypes={ADMIN_SESSION_TYPES} clientLabel="PT / Contatto" setView={setView} pageSubtitle="I tuoi appuntamenti con i PT"/>;
 }
 
+// ── CLIENTE VIEW ──────────────────────────────────────────────────────────────
+const LS_KEY = "pt_sessions_demo_cliente";
+
+function loadSessions() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)||"[]"); } catch { return []; }
+}
+function saveSessions(arr) {
+  localStorage.setItem(LS_KEY, JSON.stringify(arr));
+}
+
+function ClienteView({user, onLogout}) {
+  const todayStr = fmtDate(new Date());
+  const [scheda, setScheda] = useState(null);
+  const [activeDay, setActiveDay] = useState(null);
+  const [pesi, setPesi] = useState({});
+  const [saved, setSaved] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem("pt_scheda_0");
+      if(raw) {
+        const s = JSON.parse(raw);
+        setScheda(s);
+        const giorni = Object.keys(s.giorni);
+        setActiveDay(giorni[0]);
+      }
+    } catch {}
+  },[]);
+
+  useEffect(()=>{
+    if(!activeDay) return;
+    const sessions = loadSessions();
+    const todaySess = sessions.find(s=>s.date===todayStr&&s.day===activeDay);
+    setPesi(todaySess?todaySess.weights:{});
+    setSaved(!!todaySess);
+  },[activeDay]);
+
+  const handleSave = ()=>{
+    const sessions = loadSessions().filter(s=>!(s.date===todayStr&&s.day===activeDay));
+    sessions.push({date:todayStr, day:activeDay, weights:pesi});
+    saveSessions(sessions);
+    setSaved(true);
+    setJustSaved(true);
+    setTimeout(()=>setJustSaved(false), 2500);
+  };
+
+  const logo = ["PT","Studio"];
+
+  if(!scheda) return (
+    <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+      <div className="cliente-header">
+        <div className="sidebar-logo" style={{marginBottom:0}}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
+        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
+      </div>
+      <div className="cliente-body" style={{textAlign:"center",paddingTop:60}}>
+        <div style={{fontSize:48,marginBottom:16}}>📋</div>
+        <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
+        <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT deve creare e assegnare una scheda dal Builder.</div>
+      </div>
+    </div>
+  );
+
+  const giorni = Object.keys(scheda.giorni);
+  const esercizi = scheda.giorni[activeDay]||[];
+
+  return (
+    <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+      <div className="cliente-header">
+        <div className="sidebar-logo" style={{marginBottom:0}}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
+        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
+      </div>
+      <div className="cliente-body">
+        <div className="scheda-info-card">
+          <div className="scheda-info-title">{scheda.nome||`Scheda ${scheda.cognome||""}`}</div>
+          <div className="scheda-info-meta">
+            <span>👤 PT: <strong style={{color:"var(--text)"}}>{scheda.pt||"Personal Trainer Demo"}</strong></span>
+            {scheda.obiettivo&&<span>🎯 {scheda.obiettivo}</span>}
+            {scheda.livello&&<span>📊 {scheda.livello}</span>}
+            <span>📅 Assegnata il {scheda.assegnataIl||"—"}</span>
+          </div>
+        </div>
+
+        <div className="day-tabs" style={{marginBottom:20}}>
+          {giorni.map(d=>(
+            <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
+              Giorno {d}
+            </button>
+          ))}
+        </div>
+
+        {justSaved&&(
+          <div className="session-saved-banner" style={{background:"rgba(71,255,232,.15)",borderColor:"rgba(71,255,232,.4)",fontWeight:700}}>
+            ✓ Sessione salvata con successo!
+          </div>
+        )}
+        {!justSaved&&saved&&(
+          <div className="session-saved-banner">
+            ↩ Sessione di oggi già salvata — puoi aggiornare i pesi e risalvare
+          </div>
+        )}
+
+        {esercizi.map(ex=>{
+          const cc = CAT_COLORS[ex.cat]||"#e8ff47";
+          return (
+            <div className="ex-cliente-card" key={ex.id}>
+              <div style={{width:36,height:36,borderRadius:8,background:`${cc}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:10,fontWeight:700,color:cc}}>{ex.cat.slice(0,3).toUpperCase()}</span>
+              </div>
+              <div className="ex-cliente-info">
+                <div className="ex-cliente-name">{ex.name}</div>
+                <div className="ex-cliente-meta">{ex.sets} serie × {ex.reps} rip · recupero {ex.rest}s</div>
+              </div>
+              <div className="ex-peso-wrap">
+                <input
+                  className="ex-peso-input"
+                  type="number"
+                  min={0}
+                  max={999}
+                  placeholder="0"
+                  value={pesi[ex.id]||""}
+                  onChange={e=>setPesi(p=>({...p,[ex.id]:e.target.value}))}
+                />
+                <span className="ex-peso-unit">kg</span>
+              </div>
+            </div>
+          );
+        })}
+
+        <button className="save-session-btn" onClick={handleSave}>
+          {saved?"Aggiorna sessione":"Salva sessione"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [phase,setPhase]=useState("login");
@@ -1730,7 +2033,10 @@ export default function App() {
       <style>{FONTS+CSS}</style>
       {phase==="login"&&<LoginScreen onLogin={handleLogin}/>}
       {phase==="welcome"&&<WelcomeScreen user={user} onDone={handleWelcomeDone}/>}
-      {phase==="app"&&(
+      {phase==="app"&&user?.role==="cliente"&&(
+        <ClienteView user={user} onLogout={handleLogout}/>
+      )}
+      {phase==="app"&&user?.role!=="cliente"&&(
         <div className="app-wrap">
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content">
