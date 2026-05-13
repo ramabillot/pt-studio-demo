@@ -405,7 +405,7 @@ const CSS = `
     .scheda-head>*:nth-child(3),.scheda-head>*:nth-child(4),.scheda-row>*:nth-child(3),.scheda-row>*:nth-child(4) { display:none; }
     .summary-grid { grid-template-columns:1fr 1fr; }
     .cal-grid { gap:1px; }
-    .cal-cell { min-height:60px; }
+    .cal-cell { min-height:60px; min-width:0; overflow:hidden; width:100%; box-sizing:border-box; }
     .pt-table-head,.pt-table-row { grid-template-columns:2fr 1fr 1fr; }
     .pt-table-head>*:last-child,.pt-table-row>*:last-child { display:none; }
   }
@@ -1297,6 +1297,7 @@ function CalendarView({setView}) {
   const [month,setMonth]=useState(now.getMonth());
   const [events,setEvents]=useState(DEMO_EVENTS);
   const [showForm,setShowForm]=useState(null);
+  const [deleteEv,setDeleteEv]=useState(null);
   const [form,setForm]=useState({clientName:"",time:"10:00",type:"Allenamento"});
 
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
@@ -1319,6 +1320,7 @@ function CalendarView({setView}) {
     setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showForm,time:form.time,type:form.type}]);
     setShowForm(null); setForm({clientName:"",time:"10:00",type:"Allenamento"});
   };
+  const confirmDelete=()=>{ setEvents(prev=>prev.filter(e=>e.id!==deleteEv.id)); setDeleteEv(null); };
 
   return (
     <div>
@@ -1341,7 +1343,7 @@ function CalendarView({setView}) {
             <div key={cell.date} className={`cal-cell${isToday?" today":""}${cell.day?"":" other-month"}`}>
               <div className="cal-num">{cell.day}</div>
               {dayEvents.map(ev=>(
-                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`}>{ev.time} {ev.clientName.split(" ")[0]}</div>
+                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`} onClick={e=>{e.stopPropagation();setDeleteEv(ev);}} style={{cursor:"pointer"}}>{ev.time} {ev.clientName.split(" ")[0]}</div>
               ))}
               <button className="cal-add-btn" onClick={()=>setShowForm(cell.date)}>+</button>
             </div>
@@ -1369,6 +1371,28 @@ function CalendarView({setView}) {
             <div className="form-actions">
               <button className="btn-ghost" onClick={()=>setShowForm(null)}>Annulla</button>
               <button className="btn-primary" onClick={addEvent}>Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteEv&&(
+        <div className="overlay" onClick={()=>setDeleteEv(null)}>
+          <div className="form-modal" onClick={e=>e.stopPropagation()}>
+            <div className="form-modal-header">
+              <div className="modal-title">Elimina Appuntamento</div>
+              <button className="modal-close" onClick={()=>setDeleteEv(null)}>✕</button>
+            </div>
+            <div className="form-modal-body">
+              <div style={{fontSize:14,color:"var(--text)",lineHeight:1.6}}>
+                <strong>{deleteEv.clientName}</strong><br/>
+                <span style={{color:"var(--muted)",fontSize:13}}>📅 {new Date(deleteEv.date+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})} · {deleteEv.time}</span>
+              </div>
+              <div style={{fontSize:13,color:"var(--muted)"}}>Vuoi eliminare questo appuntamento? L'azione non può essere annullata.</div>
+            </div>
+            <div className="form-actions">
+              <button className="btn-ghost" onClick={()=>setDeleteEv(null)}>Annulla</button>
+              <button style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:9,cursor:"pointer"}} onClick={confirmDelete}>Elimina</button>
             </div>
           </div>
         </div>
@@ -1497,6 +1521,7 @@ function AdminCalendar({setView}) {
   const [month,setMonth]=useState(now.getMonth());
   const [events,setEvents]=useState(ADMIN_EVENTS);
   const [showForm,setShowForm]=useState(null);
+  const [deleteEv,setDeleteEv]=useState(null);
   const [form,setForm]=useState({clientName:"",time:"10:00",type:"Call"});
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
   const nextM=()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
@@ -1515,6 +1540,7 @@ function AdminCalendar({setView}) {
     setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showForm,time:form.time,type:form.type}]);
     setShowForm(null); setForm({clientName:"",time:"10:00",type:"Call"});
   };
+  const confirmDelete=()=>{ setEvents(prev=>prev.filter(e=>e.id!==deleteEv.id)); setDeleteEv(null); };
   return (
     <div>
       <BackBtn setView={setView}/>
@@ -1536,7 +1562,7 @@ function AdminCalendar({setView}) {
             <div key={cell.date} className={`cal-cell${isToday?" today":""}`}>
               <div className="cal-num">{cell.day}</div>
               {dayEvents.map(ev=>(
-                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`}>{ev.time} {ev.clientName.split(" ").slice(-1)[0]}</div>
+                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`} onClick={e=>{e.stopPropagation();setDeleteEv(ev);}} style={{cursor:"pointer"}}>{ev.time} {ev.clientName.split(" ").slice(-1)[0]}</div>
               ))}
               <button className="cal-add-btn" onClick={()=>setShowForm(cell.date)}>+</button>
             </div>
@@ -1563,6 +1589,27 @@ function AdminCalendar({setView}) {
             <div className="form-actions">
               <button className="btn-ghost" onClick={()=>setShowForm(null)}>Annulla</button>
               <button className="btn-primary" onClick={addEvent}>Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteEv&&(
+        <div className="overlay" onClick={()=>setDeleteEv(null)}>
+          <div className="form-modal" onClick={e=>e.stopPropagation()}>
+            <div className="form-modal-header">
+              <div className="modal-title">Elimina Appuntamento</div>
+              <button className="modal-close" onClick={()=>setDeleteEv(null)}>✕</button>
+            </div>
+            <div className="form-modal-body">
+              <div style={{fontSize:14,color:"var(--text)",lineHeight:1.6}}>
+                <strong>{deleteEv.clientName}</strong><br/>
+                <span style={{color:"var(--muted)",fontSize:13}}>📅 {new Date(deleteEv.date+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})} · {deleteEv.time}</span>
+              </div>
+              <div style={{fontSize:13,color:"var(--muted)"}}>Vuoi eliminare questo appuntamento? L'azione non può essere annullata.</div>
+            </div>
+            <div className="form-actions">
+              <button className="btn-ghost" onClick={()=>setDeleteEv(null)}>Annulla</button>
+              <button style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:9,cursor:"pointer"}} onClick={confirmDelete}>Elimina</button>
             </div>
           </div>
         </div>
