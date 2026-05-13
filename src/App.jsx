@@ -9,6 +9,7 @@ const CSS = `
   :root {
     --bg:#07070d; --surface:#0f0f18; --card:#13131e; --card2:#1a1a28;
     --border:#22223a; --accent:#e8ff47; --accent2:#47ffe8; --accent3:#ff47a3;
+    --accent-fg:#07070d;
     --text:#eeeef5; --muted:#5a5a78; --danger:#ff4757; --radius:14px;
     --shadow:0 4px 24px rgba(0,0,0,.4);
   }
@@ -48,18 +49,34 @@ const CSS = `
   .login-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,255,71,.08); }
   .login-err { color:var(--danger); font-size:13px; margin-bottom:8px; text-align:center; }
   .login-btn {
-    width:100%; background:var(--accent); border:none; color:#07070d;
+    width:100%; background:var(--accent); border:none; color:var(--accent-fg);
     font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; letter-spacing:.5px;
     padding:14px; border-radius:10px; cursor:pointer; transition:opacity .2s, transform .1s;
     margin-top:8px;
   }
   .login-btn:hover { opacity:.9; }
   .login-btn:active { transform:scale(.98); }
-  .login-hint { margin-top:20px; padding:14px 16px; background:var(--card2); border:1px solid var(--border); border-radius:10px; }
-  .login-hint-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
-  .login-hint-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:12px; color:var(--muted); }
-  .login-hint-row:last-child { margin-bottom:0; }
-  .hint-badge { background:var(--border); color:var(--text); font-size:12px; font-weight:600; padding:3px 10px; border-radius:6px; font-family:monospace; }
+
+  /* login hint redesign */
+  .login-hint { margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+  .login-hint-block {
+    padding:12px 14px; background:var(--card2); border:1px solid var(--border);
+    border-radius:10px;
+  }
+  .login-hint-label {
+    font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px;
+  }
+  .login-hint-creds {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .login-hint-key {
+    font-size:11px; color:var(--muted); font-weight:500; white-space:nowrap;
+  }
+  .hint-badge {
+    background:var(--border); color:var(--text); font-size:12px; font-weight:600;
+    padding:3px 10px; border-radius:6px; font-family:monospace;
+  }
 
   /* ── WELCOME TRANSITION ── */
   .welcome-screen {
@@ -72,7 +89,7 @@ const CSS = `
   @keyframes wFadeOut { from{opacity:1} to{opacity:0} }
   .welcome-text { text-align:center; }
   .welcome-ciao { font-size:15px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
-  .welcome-name { font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:3px; color:var(--text); }
+  .welcome-name { font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:3px; color:var(--text); word-break:break-word; }
   .welcome-name span { color:var(--accent); }
 
   /* Stick figure lifting */
@@ -126,6 +143,16 @@ const CSS = `
 
   /* MAIN CONTENT */
   .content { flex:1; padding:36px 40px; overflow-x:hidden; }
+
+  /* BACK BUTTON */
+  .back-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:none; border:1px solid var(--border); color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500;
+    padding:7px 14px; border-radius:8px; cursor:pointer;
+    transition:all .2s; margin-bottom:20px;
+  }
+  .back-btn:hover { border-color:var(--accent); color:var(--accent); }
 
   /* PAGE HEADER */
   .page-head { margin-bottom:32px; }
@@ -323,11 +350,12 @@ const CSS = `
   .cal-event { font-size:10px; padding:2px 6px; border-radius:4px; margin-bottom:2px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cal-event.allenamento { background:rgba(232,255,71,.15); color:var(--accent); }
   .cal-event.valutazione { background:rgba(71,255,232,.15); color:var(--accent2); }
-  .cal-event.recupero { background:rgba(255,71,163,.15); color:var(--accent3); }
-  .cal-event.riunione  { background:rgba(232,255,71,.15); color:var(--accent); }
-  .cal-event.call      { background:rgba(71,255,232,.15); color:var(--accent2); }
-  .cal-event.visita    { background:rgba(255,159,71,.15); color:#ff9f47; }
-  .cal-event.onboarding{ background:rgba(164,127,254,.15); color:#a47ffe; } background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; opacity:0; transition:opacity .15s; line-height:1; }
+  .cal-event.recupero    { background:rgba(255,71,163,.15); color:var(--accent3); }
+  .cal-event.riunione    { background:rgba(232,255,71,.15); color:var(--accent); }
+  .cal-event.call        { background:rgba(71,255,232,.15); color:var(--accent2); }
+  .cal-event.visita      { background:rgba(255,159,71,.15); color:#ff9f47; }
+  .cal-event.onboarding  { background:rgba(164,127,254,.15); color:#a47ffe; }
+  .cal-add-btn { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; opacity:0; transition:opacity .15s; line-height:1; }
   .cal-cell:hover .cal-add-btn { opacity:1; }
 
   /* ADMIN */
@@ -344,10 +372,31 @@ const CSS = `
   .pt-table-row:hover { background:rgba(255,255,255,.02); }
   .online-dot { width:7px; height:7px; border-radius:50%; background:#2ecc71; display:inline-block; margin-right:8px; }
 
+  /* ── MOBILE NAV ── */
+  .mobile-nav {
+    display:none; position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface); border-top:1px solid var(--border);
+    z-index:200; padding:6px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .mobile-nav-inner { display:flex; align-items:stretch; }
+  .mobile-nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:6px 4px; cursor:pointer;
+    color:var(--muted); font-size:9px; font-weight:600;
+    letter-spacing:.4px; text-transform:uppercase;
+    transition:color .15s; border:none; background:none;
+    font-family:'DM Sans',sans-serif;
+  }
+  .mobile-nav-item.active { color:var(--accent); }
+  .mobile-nav-item-icon { font-size:20px; line-height:1; }
+  .mobile-nav-logout { color:var(--muted); }
+  .mobile-nav-logout:hover { color:var(--danger); }
+
   @media(max-width:1100px) { .stats-grid,.quick-nav { grid-template-columns:1fr 1fr; } .charts-grid { grid-template-columns:1fr; } }
   @media(max-width:800px) {
     .sidebar { display:none; }
-    .content { padding:20px 16px; }
+    .mobile-nav { display:flex; flex-direction:column; }
+    .content { padding:20px 16px 88px; }
     .client-grid,.form-row { grid-template-columns:1fr; }
     .builder-top { grid-template-columns:1fr 1fr; }
     .builder-top>*:first-child { grid-column:1/-1; }
@@ -360,13 +409,29 @@ const CSS = `
     .pt-table-head,.pt-table-row { grid-template-columns:2fr 1fr 1fr; }
     .pt-table-head>*:last-child,.pt-table-row>*:last-child { display:none; }
   }
+  @media(max-width:600px) {
+    .welcome-name { font-size:32px; line-height:1.2; }
+  }
 `;
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  "demo":  { password:"demo",  name:"Personal Trainer Demo", role:"trainer" },
-  "admin": { password:"admin", name:"Admin",                  role:"admin"   },
+  "demo":   { password:"demo",   name:"Personal Trainer Demo", role:"trainer",
+               theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "fitpro": { password:"fitpro", name:"FitPro Training",       role:"trainer",
+               theme:{ accent:"#a47ffe", accentFg:"#07070d", logo:["FitPro","Training"] } },
+  "admin":  { password:"admin",  name:"Admin",                  role:"admin",
+               theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
 };
+
+function applyTheme(theme) {
+  document.documentElement.style.setProperty("--accent", theme.accent);
+  document.documentElement.style.setProperty("--accent-fg", theme.accentFg);
+}
+function resetTheme() {
+  document.documentElement.style.setProperty("--accent", "#e8ff47");
+  document.documentElement.style.setProperty("--accent-fg", "#07070d");
+}
 
 const CAT_COLORS    = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3" };
 const CAT_COLORS_PDF= { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95] };
@@ -421,7 +486,6 @@ const DEMO_EVENTS = [
   { id:4, clientId:4, clientName:"Chiara Esposito",date:fmtDate(addDays(today,-2)), time:"17:00", type:"Recupero"    },
 ];
 
-// Admin data
 const ADMIN_PT = [
   { name:"Andrea Rossi",   lastLogin:"Oggi, 09:14",     clients:4, schede:7  },
   { name:"Giulia Moretti", lastLogin:"Ieri, 18:30",     clients:6, schede:12 },
@@ -469,7 +533,6 @@ async function localImgToBase64(exId) {
   } catch { return null; }
 }
 
-// Returns {w,h} in pixels of a base64 image
 function getImgDims(b64) {
   return new Promise(resolve=>{
     const img=new Image();
@@ -494,7 +557,6 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
   let y=M;
   const np=(need)=>{ if(y+need>PH-M-10){ doc.addPage(); y=M; } };
 
-  // COVER
   doc.setFillColor(7,7,13); doc.rect(0,0,PW,PH,"F");
   doc.setFillColor(130,160,0); doc.rect(0,0,5,PH,"F");
   doc.setFont("helvetica","bold"); doc.setFontSize(60);
@@ -529,6 +591,7 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
     let sx2=M; [`Serie totali: ${sum.totalSets}`,`Tempo stimato: ~${sum.estMin} min`,`Gruppi: ${sum.cats.join(", ")}`].forEach(s=>{ doc.text(s,sx2,37); sx2+=doc.getTextWidth(s)+14; });
     y=48;
 
+    const IMG_W=55,IMG_H=42;
     for(let i=0;i<scheda.length;i++) {
       const row=scheda[i];
       onProgress&&onProgress(exDone/totalEx,`Giorno ${day} — ${row.name}…`);
@@ -548,32 +611,17 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
         doc.setFillColor(243,243,248); doc.roundedRect(cx2-2,y-4.5,cw2,7,1.5,1.5,"F");
         doc.setFontSize(8.5); doc.setFont("helvetica","normal"); doc.setTextColor(110,110,125); doc.text(`${label}: `,cx2,y);
         doc.setFont("helvetica","bold"); doc.setTextColor(25,25,35); doc.text(val,cx2+doc.getTextWidth(`${label}: `),y);
-        doc.setFont("helvetica","normal"); cx2+=cw2+4;
+        cx2+=cw2+6;
       });
-      y+=5;
-      doc.setFontSize(8); doc.setTextColor(140,140,155); doc.text("Muscoli: ",M+2,y);
-      doc.setFont("helvetica","bold"); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(row.muscles,M+2+doc.getTextWidth("Muscoli: "),y); doc.setFont("helvetica","normal");
-      y+=7;
-      np(62);
-      const IMG_W=62,IMG_H=52;
+      y+=10;
       const b64=await localImgToBase64(row.id);
-      // draw white card behind image
-      doc.setFillColor(235,235,240); doc.roundedRect(M+1,y+1,IMG_W,IMG_H,2,2,"F");
-      doc.setFillColor(255,255,255); doc.roundedRect(M,y,IMG_W,IMG_H,2,2,"F");
       if(b64){
         try{
           const dims=await getImgDims(b64);
-          const PT=2.8346; // mm to PDF points
-          let dw=IMG_W,dh=IMG_H,dx=M,dy2=y;
-          if(dims&&dims.w&&dims.h){
-            const imgAR=dims.w/dims.h, boxAR=IMG_W/IMG_H;
-            if(imgAR>boxAR){ dh=IMG_H; dw=dh*imgAR; dx=M+(IMG_W-dw)/2; dy2=y; }
-            else            { dw=IMG_W; dh=dw/imgAR; dx=M; dy2=y+(IMG_H-dh)/2; }
-          }
-          // PDF raw-stream clip rectangle (points, y from bottom of page)
-          const cx=M*PT, cy=(PH-y-IMG_H)*PT, cw=IMG_W*PT, ch=IMG_H*PT;
-          doc.internal.write(`q ${cx.toFixed(2)} ${cy.toFixed(2)} ${cw.toFixed(2)} ${ch.toFixed(2)} re W n`);
-          doc.addImage(b64,"JPEG",dx,dy2,dw,dh,undefined,"FAST");
+          let dw=IMG_W,dh=IMG_H;
+          if(dims){ const ar=dims.w/dims.h; if(ar>IMG_W/IMG_H){dh=IMG_W/ar;}else{dw=IMG_H*ar;} }
+          doc.internal.write(`q ${dw} 0 0 ${dh} ${M} ${y} cm`);
+          doc.addImage(b64,"JPEG",M,y,dw,dh,undefined,"FAST");
           doc.internal.write("Q");
         }catch{ drawPH(doc,M,y,IMG_W,IMG_H); }
       } else { drawPH(doc,M,y,IMG_W,IMG_H); }
@@ -592,7 +640,7 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
   doc.save(`scheda-${fn}.pdf`);
 }
 
-// ── SVG CHARTS (pure SVG, no libs) ───────────────────────────────────────────
+// ── SVG CHARTS ────────────────────────────────────────────────────────────────
 function LineChart({data,color="#e8ff47"}) {
   const W=300,H=100,pad=10;
   const max=Math.max(...data.map(d=>d.v),1);
@@ -713,21 +761,34 @@ function LoginScreen({onLogin}) {
           </div>
           {err && <div className="login-err">{err}</div>}
           <button className="login-btn" onClick={submit}>Accedi</button>
+
           <div className="login-hint">
-            <div className="login-hint-title">Account demo</div>
-            <div className="login-hint-row">
-              <span>💪</span>
-              <span>Trainer:</span>
-              <span className="hint-badge">demo</span>
-              <span style={{color:"var(--border)"}}>·</span>
-              <span className="hint-badge">demo</span>
+            <div className="login-hint-block">
+              <div className="login-hint-label">💪 Per accedere alla Demo 1, inserisci:</div>
+              <div className="login-hint-creds">
+                <span className="login-hint-key">Utente:</span>
+                <span className="hint-badge">demo</span>
+                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                <span className="hint-badge">demo</span>
+              </div>
             </div>
-            <div className="login-hint-row">
-              <span>🛡️</span>
-              <span>Admin:</span>
-              <span className="hint-badge">admin</span>
-              <span style={{color:"var(--border)"}}>·</span>
-              <span className="hint-badge">admin</span>
+            <div className="login-hint-block" style={{borderColor:"rgba(164,127,254,.25)"}}>
+              <div className="login-hint-label" style={{color:"#a47ffe"}}>🟣 Per accedere alla Demo 2 (FitPro), inserisci:</div>
+              <div className="login-hint-creds">
+                <span className="login-hint-key">Utente:</span>
+                <span className="hint-badge">fitpro</span>
+                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                <span className="hint-badge">fitpro</span>
+              </div>
+            </div>
+            <div className="login-hint-block">
+              <div className="login-hint-label">🛡️ Per accedere come Admin, inserisci:</div>
+              <div className="login-hint-creds">
+                <span className="login-hint-key">Utente:</span>
+                <span className="hint-badge">admin</span>
+                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                <span className="hint-badge">admin</span>
+              </div>
             </div>
           </div>
         </div>
@@ -746,22 +807,18 @@ function WelcomeScreen({user,onDone}) {
         <div className="welcome-ciao">Bentornato</div>
         <div className="welcome-name"><span>{user.name.split(" ")[0]}</span> {user.name.split(" ").slice(1).join(" ")}</div>
       </div>
-      {/* Stick figure SVG */}
       <div className="lifter-wrap">
         <svg className="lifter-svg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* body */}
-          <circle cx="60" cy="28" r="10" stroke="#e8ff47" strokeWidth="2.5"/>
-          <line x1="60" y1="38" x2="60" y2="72" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="60" y1="72" x2="48" y2="95" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="60" y1="72" x2="72" y2="95" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/>
-          {/* arms */}
-          <g className="arm-l"><line x1="60" y1="50" x2="36" y2="62" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/></g>
-          <g className="arm-r"><line x1="60" y1="50" x2="84" y2="62" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/></g>
-          {/* barbell */}
+          <circle cx="60" cy="28" r="10" stroke="var(--accent)" strokeWidth="2.5"/>
+          <line x1="60" y1="38" x2="60" y2="72" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/>
+          <line x1="60" y1="72" x2="48" y2="95" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/>
+          <line x1="60" y1="72" x2="72" y2="95" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/>
+          <g className="arm-l"><line x1="60" y1="50" x2="36" y2="62" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/></g>
+          <g className="arm-r"><line x1="60" y1="50" x2="84" y2="62" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/></g>
           <g className="bar-group">
-            <line x1="24" y1="60" x2="96" y2="60" stroke="#e8ff47" strokeWidth="2.5" strokeLinecap="round"/>
-            <rect x="18" y="54" width="8" height="12" rx="2" fill="#e8ff47" opacity="0.7"/>
-            <rect x="94" y="54" width="8" height="12" rx="2" fill="#e8ff47" opacity="0.7"/>
+            <line x1="24" y1="60" x2="96" y2="60" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"/>
+            <rect x="18" y="54" width="8" height="12" rx="2" fill="var(--accent)" opacity="0.7"/>
+            <rect x="94" y="54" width="8" height="12" rx="2" fill="var(--accent)" opacity="0.7"/>
           </g>
         </svg>
       </div>
@@ -791,9 +848,10 @@ const NAV_ADMIN = [
 
 function Sidebar({user,view,setView,onLogout}) {
   const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
+  const logo = user.theme?.logo || ["PT","Studio"];
   return (
     <div className="sidebar">
-      <div className="sidebar-logo">PT<span>Studio</span></div>
+      <div className="sidebar-logo">{logo[0]}<span>{logo[1]}</span></div>
       <div className="sidebar-user">
         <div className="sidebar-username">{user.name}</div>
         <div className="sidebar-role">{user.role==="admin"?"Amministratore":"Personal Trainer"}</div>
@@ -809,6 +867,40 @@ function Sidebar({user,view,setView,onLogout}) {
         <span className="sidebar-icon">↩</span>Esci
       </button>
     </div>
+  );
+}
+
+// ── MOBILE NAV ────────────────────────────────────────────────────────────────
+function MobileNav({user,view,setView,onLogout}) {
+  const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
+  return (
+    <nav className="mobile-nav">
+      <div className="mobile-nav-inner">
+        {items.map(item=>(
+          <button
+            key={item.id}
+            className={`mobile-nav-item${view===item.id?" active":""}`}
+            onClick={()=>setView(item.id)}
+          >
+            <span className="mobile-nav-item-icon">{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+        <button className="mobile-nav-item mobile-nav-logout" onClick={onLogout}>
+          <span className="mobile-nav-item-icon">↩</span>
+          Esci
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ── BACK BUTTON ───────────────────────────────────────────────────────────────
+function BackBtn({setView}) {
+  return (
+    <button className="back-btn" onClick={()=>setView("dashboard")}>
+      ← Dashboard
+    </button>
   );
 }
 
@@ -943,13 +1035,14 @@ function ExCard({ex,onVideo}) {
   );
 }
 
-function Library() {
+function Library({setView}) {
   const [filter,setFilter]=useState("Tutte");
   const [search,setSearch]=useState("");
   const [modal,setModal]=useState(null);
   const list=EXERCISES.filter(e=>(filter==="Tutte"||e.cat===filter)&&(e.name.toLowerCase().includes(search.toLowerCase())||e.muscles.toLowerCase().includes(search.toLowerCase())));
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">Libreria Esercizi</div><div className="page-sub">{list.length} esercizi</div></div>
       <div className="library-controls">
         <div className="search-wrap">
@@ -972,7 +1065,7 @@ function Library() {
 // ── BUILDER ───────────────────────────────────────────────────────────────────
 const ALL_DAYS = ["A","B","C","D","E","F","G"];
 
-function Builder() {
+function Builder({setView}) {
   const [nome,setNome]=useState(""); const [cognome,setCognome]=useState("");
   const [obiettivo,setObiettivo]=useState(""); const [livello,setLivello]=useState("");
   const [numDays,setNumDays]=useState(3);
@@ -1015,6 +1108,7 @@ function Builder() {
 
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">Builder Scheda</div><div className="page-sub">{totalEx} esercizi totali</div></div>
       <div className="builder">
         <div className="client-card">
@@ -1099,7 +1193,7 @@ function Builder() {
 }
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────────
-function Clients() {
+function Clients({setView}) {
   const [clients,setClients]=useState(DEMO_CLIENTS);
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
@@ -1115,6 +1209,7 @@ function Clients() {
 
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
         <div><div className="page-title">Clienti</div><div className="page-sub">{clients.length} clienti attivi</div></div>
         <button className="btn-primary" onClick={()=>setShowForm(true)}>+ Nuovo cliente</button>
@@ -1139,7 +1234,6 @@ function Clients() {
         ))}
       </div>
 
-      {/* Client detail modal */}
       {selected&&(
         <div className="overlay" onClick={()=>setSelected(null)}>
           <div className="client-modal" onClick={e=>e.stopPropagation()}>
@@ -1170,7 +1264,6 @@ function Clients() {
         </div>
       )}
 
-      {/* New client form */}
       {showForm&&(
         <div className="overlay" onClick={()=>setShowForm(false)}>
           <div className="form-modal" onClick={e=>e.stopPropagation()}>
@@ -1198,12 +1291,12 @@ function Clients() {
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
-function CalendarView() {
+function CalendarView({setView}) {
   const now=new Date();
   const [year,setYear]=useState(now.getFullYear());
   const [month,setMonth]=useState(now.getMonth());
   const [events,setEvents]=useState(DEMO_EVENTS);
-  const [showForm,setShowForm]=useState(null); // date string
+  const [showForm,setShowForm]=useState(null);
   const [form,setForm]=useState({clientName:"",time:"10:00",type:"Allenamento"});
 
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
@@ -1229,6 +1322,7 @@ function CalendarView() {
 
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head">
         <div className="cal-header">
           <button className="cal-nav" onClick={prevM}>‹</button>
@@ -1284,7 +1378,7 @@ function CalendarView() {
 }
 
 // ── ADMIN STATS ───────────────────────────────────────────────────────────────
-function AdminStats() {
+function AdminStats({setView}) {
   const lineData=[{l:"Gen",v:1},{l:"Feb",v:2},{l:"Mar",v:2},{l:"Apr",v:3},{l:"Mag",v:4},{l:"Giu",v:5}];
   const barData=[{l:"Lun",v:3},{l:"Mar",v:7},{l:"Mer",v:5},{l:"Gio",v:9},{l:"Ven",v:6},{l:"Sab",v:2},{l:"Dom",v:1}];
   const actData=[{l:"28",v:2},{l:"29",v:4},{l:"30",v:3},{l:"31",v:5},{l:"1",v:4},{l:"2",v:3},{l:"3",v:5}];
@@ -1296,6 +1390,7 @@ function AdminStats() {
   ];
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">Statistiche</div><div className="page-sub">Metriche e andamento della piattaforma</div></div>
       <div className="admin-banner">
         <span className="admin-badge">Admin</span>
@@ -1322,7 +1417,7 @@ function AdminStats() {
 }
 
 // ── ADMIN PT ──────────────────────────────────────────────────────────────────
-function AdminPT() {
+function AdminPT({setView}) {
   const topExercises=[
     {name:"Squat con bilanciere", uses:47, cat:"Gambe"  },
     {name:"Stacco da terra",      uses:38, cat:"Schiena"},
@@ -1341,6 +1436,7 @@ function AdminPT() {
   ];
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">I miei PT</div><div className="page-sub">Personal trainer registrati sulla piattaforma</div></div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:20}}>
         <div className="chart-card">
@@ -1395,7 +1491,7 @@ function AdminPT() {
 }
 
 // ── ADMIN CALENDAR ────────────────────────────────────────────────────────────
-function AdminCalendar() {
+function AdminCalendar({setView}) {
   const now=new Date();
   const [year,setYear]=useState(now.getFullYear());
   const [month,setMonth]=useState(now.getMonth());
@@ -1421,6 +1517,7 @@ function AdminCalendar() {
   };
   return (
     <div>
+      <BackBtn setView={setView}/>
       <div className="page-head">
         <div className="cal-header">
           <button className="cal-nav" onClick={prevM}>‹</button>
@@ -1476,16 +1573,20 @@ function AdminCalendar() {
 
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [phase,setPhase]=useState("login"); // login | welcome | app
+  const [phase,setPhase]=useState("login");
   const [user,setUser]=useState(null);
   const [view,setView]=useState("dashboard");
 
-  // Check /admin route
   useEffect(()=>{ if(window.location.pathname==="/admin"&&user?.role==="admin") setView("admin"); },[user]);
 
-  const handleLogin=(acc)=>{ setUser(acc); setPhase("welcome"); if(acc.role==="admin") setView("dashboard"); };
+  const handleLogin=(acc)=>{
+    if(acc.theme) applyTheme(acc.theme);
+    setUser(acc);
+    setPhase("welcome");
+    if(acc.role==="admin") setView("dashboard");
+  };
   const handleWelcomeDone=()=>{ setPhase("app"); };
-  const handleLogout=()=>{ setUser(null); setPhase("login"); setView("dashboard"); };
+  const handleLogout=()=>{ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); };
 
   return (
     <>
@@ -1497,14 +1598,15 @@ export default function App() {
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content">
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
-            {view==="library"&&user?.role!=="admin"&&<Library/>}
-            {view==="builder"&&user?.role!=="admin"&&<Builder/>}
-            {view==="clients"&&user?.role!=="admin"&&<Clients/>}
-            {view==="calendar"&&user?.role!=="admin"&&<CalendarView/>}
-            {view==="admin-stats"&&user?.role==="admin"&&<AdminStats/>}
-            {view==="admin-pt"&&user?.role==="admin"&&<AdminPT/>}
-            {view==="admin-calendar"&&user?.role==="admin"&&<AdminCalendar/>}
+            {view==="library"&&user?.role!=="admin"&&<Library setView={setView}/>}
+            {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView}/>}
+            {view==="clients"&&user?.role!=="admin"&&<Clients setView={setView}/>}
+            {view==="calendar"&&user?.role!=="admin"&&<CalendarView setView={setView}/>}
+            {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView}/>}
+            {view==="admin-pt"&&user?.role==="admin"&&<AdminPT setView={setView}/>}
+            {view==="admin-calendar"&&user?.role==="admin"&&<AdminCalendar setView={setView}/>}
           </div>
+          <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
         </div>
       )}
     </>
