@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 
 // ── FONTS & BASE CSS ──────────────────────────────────────────────────────────
@@ -335,28 +335,66 @@ const CSS = `
   .form-actions { display:flex; gap:10px; justify-content:flex-end; padding:0 24px 24px; }
 
   /* CALENDAR */
-  .cal-header { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+  .cal-header { display:flex; align-items:center; gap:16px; }
   .cal-nav { background:none; border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
   .cal-nav:hover { border-color:var(--accent); color:var(--accent); }
-  .cal-month { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:2px; }
+  .cal-month { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:2px; }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
   .cal-day-label { text-align:center; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:8px 0; }
-  .cal-cell { background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:90px; padding:8px; cursor:pointer; transition:all .15s; position:relative; }
-  .cal-cell:hover { border-color:rgba(232,255,71,.3); }
-  .cal-cell.today { border-color:var(--accent); }
-  .cal-cell.other-month { opacity:.35; }
+
+  /* view toggle */
+  .cal-view-toggle { display:flex; gap:3px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:3px; width:fit-content; }
+  .cal-view-btn { background:none; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:7px 18px; border-radius:8px; cursor:pointer; transition:all .18s; }
+  .cal-view-btn.active { background:var(--accent); color:#07070d; }
+
+  /* monthly cells */
+  .cal-cell-month { background:var(--card); border:1px solid var(--border); border-radius:10px; height:80px; padding:8px; cursor:pointer; transition:all .15s; position:relative; display:flex; flex-direction:column; overflow:hidden; min-width:0; box-sizing:border-box; width:100%; }
+  .cal-cell-month:hover { border-color:rgba(232,255,71,.3); }
+  .cal-cell-month.today { border-color:var(--accent); }
+  .cal-cell-month.other-month { opacity:.35; }
   .cal-num { font-size:13px; font-weight:600; color:var(--muted); margin-bottom:4px; }
-  .cal-cell.today .cal-num { color:var(--accent); }
-  .cal-event { font-size:10px; padding:2px 6px; border-radius:4px; margin-bottom:2px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cal-event.allenamento { background:rgba(232,255,71,.15); color:var(--accent); }
-  .cal-event.valutazione { background:rgba(71,255,232,.15); color:var(--accent2); }
-  .cal-event.recupero    { background:rgba(255,71,163,.15); color:var(--accent3); }
-  .cal-event.riunione    { background:rgba(232,255,71,.15); color:var(--accent); }
-  .cal-event.call        { background:rgba(71,255,232,.15); color:var(--accent2); }
-  .cal-event.visita      { background:rgba(255,159,71,.15); color:#ff9f47; }
-  .cal-event.onboarding  { background:rgba(164,127,254,.15); color:#a47ffe; }
-  .cal-add-btn { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; opacity:0; transition:opacity .15s; line-height:1; }
-  .cal-cell:hover .cal-add-btn { opacity:1; }
+  .cal-cell-month.today .cal-num { color:var(--accent); }
+  .cal-event-badge { display:flex; align-items:center; gap:4px; margin-top:2px; }
+  .cal-event-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .cal-event-count { font-size:11px; font-weight:700; color:var(--text); }
+  .cal-day-bar { height:2px; border-radius:1px; margin-top:auto; }
+  .cal-add-btn { background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; opacity:0; transition:opacity .15s; line-height:1; position:absolute; top:6px; right:6px; }
+  .cal-cell-month:hover .cal-add-btn { opacity:1; }
+
+  /* event type colors (shared) */
+  .cal-event { font-size:10px; padding:2px 5px; border-radius:4px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal-event.allenamento,.cal-event.riunione { background:rgba(232,255,71,.15); color:var(--accent); }
+  .cal-event.valutazione,.cal-event.call     { background:rgba(71,255,232,.15); color:var(--accent2); }
+  .cal-event.recupero                        { background:rgba(255,71,163,.15); color:var(--accent3); }
+  .cal-event.visita                          { background:rgba(255,159,71,.15); color:#ff9f47; }
+  .cal-event.onboarding                      { background:rgba(164,127,254,.15); color:#a47ffe; }
+
+  /* weekly view */
+  .cal-week-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius); }
+  .cal-week-grid { display:grid; grid-template-columns:44px repeat(7,1fr); min-width:560px; }
+  .cal-week-head-empty { border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+  .cal-week-header { font-size:11px; font-weight:600; text-transform:uppercase; color:var(--muted); padding:10px 4px; text-align:center; border-bottom:1px solid var(--border); border-right:1px solid var(--border); letter-spacing:.5px; line-height:1.5; }
+  .cal-week-header.today-col { color:var(--accent); }
+  .cal-hour-label { font-size:10px; color:var(--muted); padding:4px 6px 0; height:48px; border-right:1px solid var(--border); border-bottom:1px solid rgba(34,34,58,.4); box-sizing:border-box; }
+  .cal-week-cell { height:48px; border-bottom:1px solid rgba(34,34,58,.4); border-right:1px solid rgba(34,34,58,.3); padding:2px 3px; box-sizing:border-box; overflow:hidden; }
+  .cal-week-cell.today-col { background:rgba(232,255,71,.025); }
+  .cal-week-event { font-size:10px; padding:2px 5px; border-radius:4px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; width:100%; display:block; margin-bottom:1px; }
+
+  /* day modal */
+  .day-modal { background:var(--card); border:1px solid var(--border); border-radius:18px; width:100%; max-width:460px; overflow:hidden; animation:slideUp .25s ease; max-height:80vh; display:flex; flex-direction:column; }
+  .day-modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .day-modal-body { padding:16px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; }
+  .day-modal-footer { padding:12px 24px 20px; border-top:1px solid var(--border); flex-shrink:0; }
+  .day-event-row { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--card2); border:1px solid var(--border); border-radius:10px; }
+  .day-event-time { font-size:12px; font-weight:700; color:var(--accent); width:38px; flex-shrink:0; }
+  .day-event-name { flex:1; font-size:13px; font-weight:500; color:var(--text); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .day-event-type-badge { font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; padding:2px 7px; border-radius:4px; flex-shrink:0; }
+  .day-event-actions { display:flex; gap:2px; flex-shrink:0; }
+  .day-event-btn { background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:4px 5px; border-radius:4px; transition:color .15s; }
+  .day-event-btn:hover { color:var(--text); }
+  .day-delete-confirm { background:rgba(255,71,87,.06); border:1px solid rgba(255,71,87,.2); border-radius:8px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .btn-danger { background:var(--danger); border:none; color:#fff; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; padding:6px 14px; border-radius:8px; cursor:pointer; transition:opacity .2s; }
+  .btn-danger:hover { opacity:.85; }
 
   /* ADMIN */
   .admin-banner { background:linear-gradient(135deg,rgba(232,255,71,.08),rgba(71,255,232,.04)); border:1px solid rgba(232,255,71,.15); border-radius:var(--radius); padding:20px 24px; margin-bottom:28px; display:flex; align-items:center; gap:16px; }
@@ -405,7 +443,7 @@ const CSS = `
     .scheda-head>*:nth-child(3),.scheda-head>*:nth-child(4),.scheda-row>*:nth-child(3),.scheda-row>*:nth-child(4) { display:none; }
     .summary-grid { grid-template-columns:1fr 1fr; }
     .cal-grid { gap:1px; }
-    .cal-cell { min-height:60px; min-width:0; overflow:hidden; width:100%; box-sizing:border-box; }
+    .cal-cell-month { height:60px; min-width:0; overflow:hidden; width:100%; box-sizing:border-box; }
     .pt-table-head,.pt-table-row { grid-template-columns:2fr 1fr 1fr; }
     .pt-table-head>*:last-child,.pt-table-row>*:last-child { display:none; }
   }
@@ -1290,19 +1328,63 @@ function Clients({setView}) {
   );
 }
 
-// ── CALENDAR ──────────────────────────────────────────────────────────────────
-function CalendarView({setView}) {
+// ── CALENDAR BASE (shared by trainer + admin) ─────────────────────────────────
+function typeColor(type) {
+  const t=(type||"").toLowerCase();
+  if(t==="allenamento"||t==="riunione") return "var(--accent)";
+  if(t==="valutazione"||t==="call")     return "var(--accent2)";
+  if(t==="recupero")                    return "var(--accent3)";
+  if(t==="visita")                      return "#ff9f47";
+  if(t==="onboarding")                  return "#a47ffe";
+  return "var(--accent)";
+}
+function typeBg(type) {
+  const t=(type||"").toLowerCase();
+  if(t==="allenamento"||t==="riunione") return "rgba(232,255,71,.15)";
+  if(t==="valutazione"||t==="call")     return "rgba(71,255,232,.15)";
+  if(t==="recupero")                    return "rgba(255,71,163,.15)";
+  if(t==="visita")                      return "rgba(255,159,71,.15)";
+  if(t==="onboarding")                  return "rgba(164,127,254,.15)";
+  return "rgba(232,255,71,.15)";
+}
+function getMonday(d) {
+  const date=new Date(d); const day=date.getDay();
+  date.setDate(date.getDate()-day+(day===0?-6:1)); return date;
+}
+const HOURS=Array.from({length:16},(_,i)=>i+6); // 06..21
+
+function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle}) {
   const now=new Date();
+  const todayStr=fmtDate(now);
+  const [calView,setCalView]=useState("month");
+  // month
   const [year,setYear]=useState(now.getFullYear());
   const [month,setMonth]=useState(now.getMonth());
-  const [events,setEvents]=useState(DEMO_EVENTS);
-  const [showForm,setShowForm]=useState(null);
-  const [deleteEv,setDeleteEv]=useState(null);
-  const [form,setForm]=useState({clientName:"",time:"10:00",type:"Allenamento"});
+  // week
+  const [weekStart,setWeekStart]=useState(getMonday(now));
+  // modals
+  const [dayModal,setDayModal]=useState(null);       // date string
+  const [showAddForm,setShowAddForm]=useState(null); // date string
+  const [editEv,setEditEv]=useState(null);           // event obj
+  const [deleteConfirm,setDeleteConfirm]=useState(null); // event id
+  const [form,setForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
+  const [editForm,setEditForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
 
+  const evsByDate=(ds)=>[...events].filter(e=>e.date===ds).sort((a,b)=>a.time.localeCompare(b.time));
+
+  const openAddForm=(date,time="10:00")=>{ setShowAddForm(date); setForm({clientName:"",time,type:sessionTypes[0]}); };
+  const addEvent=()=>{
+    if(!form.clientName) return;
+    setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showAddForm,time:form.time,type:form.type}]);
+    setShowAddForm(null); setForm({clientName:"",time:"10:00",type:sessionTypes[0]});
+  };
+  const deleteEvent=(id)=>{ setEvents(prev=>prev.filter(e=>e.id!==id)); setDeleteConfirm(null); };
+  const startEdit=(ev)=>{ setEditEv(ev); setEditForm({clientName:ev.clientName,time:ev.time,type:ev.type}); };
+  const saveEdit=()=>{ setEvents(prev=>prev.map(e=>e.id===editEv.id?{...e,...editForm}:e)); setEditEv(null); };
+
+  // month nav
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
   const nextM=()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
-
   const firstDay=new Date(year,month,1).getDay();
   const offset=(firstDay===0?6:firstDay-1);
   const daysInMonth=new Date(year,month+1,0).getDate();
@@ -1313,92 +1395,198 @@ function CalendarView({setView}) {
     cells.push({day:d,date});
   }
 
-  const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-
-  const addEvent=()=>{
-    if(!form.clientName) return;
-    setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showForm,time:form.time,type:form.type}]);
-    setShowForm(null); setForm({clientName:"",time:"10:00",type:"Allenamento"});
-  };
-  const confirmDelete=()=>{ setEvents(prev=>prev.filter(e=>e.id!==deleteEv.id)); setDeleteEv(null); };
+  // week nav
+  const prevW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()-7); setWeekStart(d); };
+  const nextW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()+7); setWeekStart(d); };
+  const weekDays=Array.from({length:7},(_,i)=>{ const d=new Date(weekStart); d.setDate(d.getDate()+i); return d; });
+  const weekLabel=`${weekDays[0].getDate()} ${MONTHS_IT[weekDays[0].getMonth()]} — ${weekDays[6].getDate()} ${MONTHS_IT[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`;
 
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head">
-        <div className="cal-header">
-          <button className="cal-nav" onClick={prevM}>‹</button>
-          <div className="cal-month">{MONTHS_IT[month]} {year}</div>
-          <button className="cal-nav" onClick={nextM}>›</button>
-        </div>
-      </div>
-
-      <div className="cal-grid">
-        {DAYS_IT.map(d=><div key={d} className="cal-day-label">{d}</div>)}
-        {cells.map((cell,i)=>{
-          if(!cell.date) return <div key={`e${i}`}/>;
-          const dayEvents=events.filter(e=>e.date===cell.date);
-          const isToday=cell.date===todayStr;
-          return (
-            <div key={cell.date} className={`cal-cell${isToday?" today":""}${cell.day?"":" other-month"}`}>
-              <div className="cal-num">{cell.day}</div>
-              {dayEvents.map(ev=>(
-                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`} onClick={e=>{e.stopPropagation();setDeleteEv(ev);}} style={{cursor:"pointer"}}>{ev.time} {ev.clientName.split(" ")[0]}</div>
-              ))}
-              <button className="cal-add-btn" onClick={()=>setShowForm(cell.date)}>+</button>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:20}}>
+          <div className="cal-view-toggle">
+            <button className={`cal-view-btn${calView==="month"?" active":""}`} onClick={()=>setCalView("month")}>Mese</button>
+            <button className={`cal-view-btn${calView==="week"?" active":""}`} onClick={()=>setCalView("week")}>Settimana</button>
+          </div>
+          <div className="cal-header">
+            <button className="cal-nav" onClick={calView==="month"?prevM:prevW}>‹</button>
+            <div className="cal-month" style={{fontSize:calView==="week"?"16px":"24px",letterSpacing:calView==="week"?"1px":"2px"}}>
+              {calView==="month"?`${MONTHS_IT[month]} ${year}`:weekLabel}
             </div>
-          );
-        })}
+            <button className="cal-nav" onClick={calView==="month"?nextM:nextW}>›</button>
+          </div>
+        </div>
+        {pageSubtitle&&<div className="page-sub">{pageSubtitle}</div>}
       </div>
 
-      {showForm&&(
-        <div className="overlay" onClick={()=>setShowForm(null)}>
+      {/* ── MONTHLY VIEW ── */}
+      {calView==="month"&&(
+        <div className="cal-grid">
+          {DAYS_IT.map(d=><div key={d} className="cal-day-label">{d}</div>)}
+          {cells.map((cell,i)=>{
+            if(!cell.date) return <div key={`e${i}`}/>;
+            const dayEvs=evsByDate(cell.date);
+            const isToday=cell.date===todayStr;
+            const fc=dayEvs.length>0?typeColor(dayEvs[0].type):null;
+            return (
+              <div key={cell.date} className={`cal-cell-month${isToday?" today":""}`} onClick={()=>setDayModal(cell.date)}>
+                <div className="cal-num">{cell.day}</div>
+                {dayEvs.length>0&&(
+                  <div className="cal-event-badge">
+                    <div className="cal-event-dot" style={{background:fc}}/>
+                    <span className="cal-event-count">{dayEvs.length}</span>
+                  </div>
+                )}
+                {fc&&<div className="cal-day-bar" style={{background:fc,opacity:.45}}/>}
+                <button className="cal-add-btn" onClick={e=>{e.stopPropagation();openAddForm(cell.date);}}>+</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── WEEKLY VIEW ── */}
+      {calView==="week"&&(
+        <div className="cal-week-wrap">
+          <div className="cal-week-grid">
+            <div className="cal-week-head-empty"/>
+            {weekDays.map((d,i)=>{
+              const ds=fmtDate(d);
+              const isToday=ds===todayStr;
+              return (
+                <div key={i} className={`cal-week-header${isToday?" today-col":""}`}>
+                  {DAYS_IT[i]}<br/><span style={{fontSize:14,fontWeight:700}}>{d.getDate()}</span>
+                </div>
+              );
+            })}
+            {HOURS.map(h=>(
+              <React.Fragment key={h}>
+                <div className="cal-hour-label">{String(h).padStart(2,"0")}:00</div>
+                {weekDays.map((d,di)=>{
+                  const ds=fmtDate(d);
+                  const isToday=ds===todayStr;
+                  const cellEvs=evsByDate(ds).filter(e=>parseInt(e.time.split(":")[0])===h);
+                  return (
+                    <div key={di} className={`cal-week-cell${isToday?" today-col":""}`} onClick={()=>openAddForm(ds,`${String(h).padStart(2,"0")}:00`)} style={{cursor:"pointer"}}>
+                      {cellEvs.map(ev=>(
+                        <div key={ev.id} className={`cal-week-event cal-event ${ev.type.toLowerCase()}`} onClick={e=>{e.stopPropagation();startEdit(ev);}}>
+                          {ev.time} {ev.clientName.split(" ")[0]}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── DAY MODAL ── */}
+      {dayModal&&(
+        <div className="overlay" onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>
+          <div className="day-modal" onClick={e=>e.stopPropagation()}>
+            <div className="day-modal-header">
+              <div className="modal-title" style={{fontSize:16,textTransform:"capitalize"}}>
+                {new Date(dayModal+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
+              </div>
+              <button className="modal-close" onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>✕</button>
+            </div>
+            <div className="day-modal-body">
+              {evsByDate(dayModal).length===0&&(
+                <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"20px 0"}}>Nessun appuntamento</div>
+              )}
+              {evsByDate(dayModal).map(ev=>(
+                <div key={ev.id}>
+                  <div className="day-event-row">
+                    <div className="day-event-time">{ev.time}</div>
+                    <div className="day-event-name">{ev.clientName}</div>
+                    <div className="day-event-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
+                    <div className="day-event-actions">
+                      <button className="day-event-btn" title="Modifica" onClick={()=>{setDayModal(null);setDeleteConfirm(null);startEdit(ev);}}>✏️</button>
+                      <button className="day-event-btn" title="Elimina" onClick={()=>setDeleteConfirm(deleteConfirm===ev.id?null:ev.id)}>🗑️</button>
+                    </div>
+                  </div>
+                  {deleteConfirm===ev.id&&(
+                    <div className="day-delete-confirm">
+                      <span style={{fontSize:13,color:"var(--text)"}}>Eliminare questo appuntamento?</span>
+                      <div style={{display:"flex",gap:8}}>
+                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>Annulla</button>
+                        <button className="btn-danger" onClick={()=>deleteEvent(ev.id)}>Elimina</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="day-modal-footer">
+              <button className="btn-primary" style={{width:"100%"}} onClick={()=>{const d=dayModal;setDayModal(null);setDeleteConfirm(null);openAddForm(d);}}>+ Aggiungi appuntamento</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD FORM ── */}
+      {showAddForm&&(
+        <div className="overlay" onClick={()=>setShowAddForm(null)}>
           <div className="form-modal" onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
               <div className="modal-title">Nuovo Appuntamento</div>
-              <button className="modal-close" onClick={()=>setShowForm(null)}>✕</button>
+              <button className="modal-close" onClick={()=>setShowAddForm(null)}>✕</button>
             </div>
             <div className="form-modal-body">
               <div style={{fontSize:13,color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
-                📅 {new Date(showForm+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
+                📅 {new Date(showAddForm+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
               </div>
-              <label className="field-label">Cliente<input className="field-input" type="text" placeholder="Nome cliente" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/></label>
+              <label className="field-label">{clientLabel}<input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/></label>
               <div className="form-row">
                 <label className="field-label">Orario<input className="field-input" type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/></label>
-                <label className="field-label">Tipo<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{SESSION_TYPES.map(t=><option key={t}>{t}</option>)}</select></label>
+                <label className="field-label">Tipo<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
               </div>
             </div>
             <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setShowForm(null)}>Annulla</button>
+              <button className="btn-ghost" onClick={()=>setShowAddForm(null)}>Annulla</button>
               <button className="btn-primary" onClick={addEvent}>Salva</button>
             </div>
           </div>
         </div>
       )}
 
-      {deleteEv&&(
-        <div className="overlay" onClick={()=>setDeleteEv(null)}>
+      {/* ── EDIT FORM ── */}
+      {editEv&&(
+        <div className="overlay" onClick={()=>setEditEv(null)}>
           <div className="form-modal" onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
-              <div className="modal-title">Elimina Appuntamento</div>
-              <button className="modal-close" onClick={()=>setDeleteEv(null)}>✕</button>
+              <div className="modal-title">Modifica Appuntamento</div>
+              <button className="modal-close" onClick={()=>setEditEv(null)}>✕</button>
             </div>
             <div className="form-modal-body">
-              <div style={{fontSize:14,color:"var(--text)",lineHeight:1.6}}>
-                <strong>{deleteEv.clientName}</strong><br/>
-                <span style={{color:"var(--muted)",fontSize:13}}>📅 {new Date(deleteEv.date+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})} · {deleteEv.time}</span>
+              <label className="field-label">{clientLabel}<input className="field-input" type="text" value={editForm.clientName} onChange={e=>setEditForm(p=>({...p,clientName:e.target.value}))}/></label>
+              <div className="form-row">
+                <label className="field-label">Orario<input className="field-input" type="time" value={editForm.time} onChange={e=>setEditForm(p=>({...p,time:e.target.value}))}/></label>
+                <label className="field-label">Tipo<select className="field-select" value={editForm.type} onChange={e=>setEditForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
               </div>
-              <div style={{fontSize:13,color:"var(--muted)"}}>Vuoi eliminare questo appuntamento? L'azione non può essere annullata.</div>
             </div>
-            <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setDeleteEv(null)}>Annulla</button>
-              <button style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:9,cursor:"pointer"}} onClick={confirmDelete}>Elimina</button>
+            <div className="form-actions" style={{justifyContent:"space-between"}}>
+              <button className="btn-danger" onClick={()=>{deleteEvent(editEv.id);setEditEv(null);}}>Elimina</button>
+              <div style={{display:"flex",gap:10}}>
+                <button className="btn-ghost" onClick={()=>setEditEv(null)}>Annulla</button>
+                <button className="btn-primary" onClick={saveEdit}>Salva modifiche</button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function CalendarView({setView}) {
+  const [events,setEvents]=useState(DEMO_EVENTS);
+  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Cliente" setView={setView}/>;
 }
 
 // ── ADMIN STATS ───────────────────────────────────────────────────────────────
@@ -1516,106 +1704,8 @@ function AdminPT({setView}) {
 
 // ── ADMIN CALENDAR ────────────────────────────────────────────────────────────
 function AdminCalendar({setView}) {
-  const now=new Date();
-  const [year,setYear]=useState(now.getFullYear());
-  const [month,setMonth]=useState(now.getMonth());
   const [events,setEvents]=useState(ADMIN_EVENTS);
-  const [showForm,setShowForm]=useState(null);
-  const [deleteEv,setDeleteEv]=useState(null);
-  const [form,setForm]=useState({clientName:"",time:"10:00",type:"Call"});
-  const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
-  const nextM=()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
-  const firstDay=new Date(year,month,1).getDay();
-  const offset=(firstDay===0?6:firstDay-1);
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const cells=[];
-  for(let i=0;i<offset;i++) cells.push({day:null,date:null});
-  for(let d=1;d<=daysInMonth;d++){
-    const date=`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    cells.push({day:d,date});
-  }
-  const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-  const addEvent=()=>{
-    if(!form.clientName) return;
-    setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showForm,time:form.time,type:form.type}]);
-    setShowForm(null); setForm({clientName:"",time:"10:00",type:"Call"});
-  };
-  const confirmDelete=()=>{ setEvents(prev=>prev.filter(e=>e.id!==deleteEv.id)); setDeleteEv(null); };
-  return (
-    <div>
-      <BackBtn setView={setView}/>
-      <div className="page-head">
-        <div className="cal-header">
-          <button className="cal-nav" onClick={prevM}>‹</button>
-          <div className="cal-month">{MONTHS_IT[month]} {year}</div>
-          <button className="cal-nav" onClick={nextM}>›</button>
-        </div>
-        <div className="page-sub">I tuoi appuntamenti con i PT</div>
-      </div>
-      <div className="cal-grid">
-        {DAYS_IT.map(d=><div key={d} className="cal-day-label">{d}</div>)}
-        {cells.map((cell,i)=>{
-          if(!cell.date) return <div key={`e${i}`}/>;
-          const dayEvents=events.filter(e=>e.date===cell.date);
-          const isToday=cell.date===todayStr;
-          return (
-            <div key={cell.date} className={`cal-cell${isToday?" today":""}`}>
-              <div className="cal-num">{cell.day}</div>
-              {dayEvents.map(ev=>(
-                <div key={ev.id} className={`cal-event ${ev.type.toLowerCase()}`} onClick={e=>{e.stopPropagation();setDeleteEv(ev);}} style={{cursor:"pointer"}}>{ev.time} {ev.clientName.split(" ").slice(-1)[0]}</div>
-              ))}
-              <button className="cal-add-btn" onClick={()=>setShowForm(cell.date)}>+</button>
-            </div>
-          );
-        })}
-      </div>
-      {showForm&&(
-        <div className="overlay" onClick={()=>setShowForm(null)}>
-          <div className="form-modal" onClick={e=>e.stopPropagation()}>
-            <div className="form-modal-header">
-              <div className="modal-title">Nuovo Appuntamento</div>
-              <button className="modal-close" onClick={()=>setShowForm(null)}>✕</button>
-            </div>
-            <div className="form-modal-body">
-              <div style={{fontSize:13,color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
-                📅 {new Date(showForm+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
-              </div>
-              <label className="field-label">PT / Contatto<input className="field-input" type="text" placeholder="es. Andrea Rossi" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/></label>
-              <div className="form-row">
-                <label className="field-label">Orario<input className="field-input" type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/></label>
-                <label className="field-label">Tipo<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{ADMIN_SESSION_TYPES.map(t=><option key={t}>{t}</option>)}</select></label>
-              </div>
-            </div>
-            <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setShowForm(null)}>Annulla</button>
-              <button className="btn-primary" onClick={addEvent}>Salva</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {deleteEv&&(
-        <div className="overlay" onClick={()=>setDeleteEv(null)}>
-          <div className="form-modal" onClick={e=>e.stopPropagation()}>
-            <div className="form-modal-header">
-              <div className="modal-title">Elimina Appuntamento</div>
-              <button className="modal-close" onClick={()=>setDeleteEv(null)}>✕</button>
-            </div>
-            <div className="form-modal-body">
-              <div style={{fontSize:14,color:"var(--text)",lineHeight:1.6}}>
-                <strong>{deleteEv.clientName}</strong><br/>
-                <span style={{color:"var(--muted)",fontSize:13}}>📅 {new Date(deleteEv.date+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})} · {deleteEv.time}</span>
-              </div>
-              <div style={{fontSize:13,color:"var(--muted)"}}>Vuoi eliminare questo appuntamento? L'azione non può essere annullata.</div>
-            </div>
-            <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setDeleteEv(null)}>Annulla</button>
-              <button style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"10px 22px",borderRadius:9,cursor:"pointer"}} onClick={confirmDelete}>Elimina</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={ADMIN_SESSION_TYPES} clientLabel="PT / Contatto" setView={setView} pageSubtitle="I tuoi appuntamenti con i PT"/>;
 }
 
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
