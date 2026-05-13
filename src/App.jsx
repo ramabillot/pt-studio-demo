@@ -194,7 +194,7 @@ const CSS = `
   }
   .ex-card:hover { border-color:rgba(232,255,71,.25); transform:translateY(-2px); }
   .ex-card:hover::before { opacity:1; }
-  .ex-thumb { width:100%; height:155px; object-fit:cover; display:block; background:var(--surface); }
+  .ex-thumb { width:100%; height:160px; object-fit:cover; object-position:center top; display:block; background:var(--surface); }
   .ex-thumb-ph { width:100%; height:155px; background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:32px; }
   .ex-body { padding:16px; display:flex; flex-direction:column; gap:10px; flex:1; }
   .ex-cat { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; display:inline-block; padding:3px 10px; border-radius:4px; width:fit-content; }
@@ -449,13 +449,34 @@ function calcSummary(rows) {
   return { totalSets, estMin, cats, count:rows.length };
 }
 
+const EX_IMAGES = {
+  1:"curl-con-bilanciere", 2:"curl-con-manubri-alternati", 3:"tricep-pushdown-al-cavo",
+  4:"skull-crushers", 5:"hammer-curl", 6:"lento-avanti-con-bilanciere",
+  7:"alzate-laterali", 8:"facepull-al-cavo", 9:"arnold-press", 10:"alzate-frontali",
+  11:"stacco-da-terra", 12:"trazioni-alla-sbarra", 13:"rematore-con-bilanciere",
+  14:"lat-machine-presa-larga", 15:"seated-cable-row", 16:"squat-con-bilanciere",
+  17:"leg-press-45", 18:"romanian-deadlift", 19:"leg-curl-sdraiato", 20:"calf-raises-in-piedi",
+};
+
 async function localImgToBase64(exId) {
   try {
-    const res=await fetch(`/exercises/${exId}-0.jpg`);
+    const slug = EX_IMAGES[exId];
+    if(!slug) return null;
+    const res=await fetch(`/exercises-custom/${slug}.jpg`);
     if(!res.ok) return null;
     const blob=await res.blob();
     return await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(blob); });
   } catch { return null; }
+}
+
+// Returns {w,h} in pixels of a base64 image
+function getImgDims(b64) {
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>resolve({w:img.naturalWidth,h:img.naturalHeight});
+    img.onerror=()=>resolve(null);
+    img.src=b64;
+  });
 }
 
 function getInitials(nome,cognome) { return `${nome?.[0]||""}${cognome?.[0]||""}`.toUpperCase(); }
@@ -490,7 +511,7 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
   });
   doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(60,60,80); doc.text("Generato con PT Studio",M+10,PH-10);
 
-  const activeDays=DAYS.filter(d=>giorni[d]&&giorni[d].length>0);
+  const activeDays=ALL_DAYS.filter(d=>giorni[d]&&giorni[d].length>0);
   let exDone=0,totalEx=activeDays.reduce((s,d)=>s+giorni[d].length,0);
 
   for(const day of activeDays) {
@@ -533,11 +554,29 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
       doc.setFontSize(8); doc.setTextColor(140,140,155); doc.text("Muscoli: ",M+2,y);
       doc.setFont("helvetica","bold"); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(row.muscles,M+2+doc.getTextWidth("Muscoli: "),y); doc.setFont("helvetica","normal");
       y+=7;
-      np(52);
-      const IMG_W=80,IMG_H=46;
+      np(62);
+      const IMG_W=62,IMG_H=52;
       const b64=await localImgToBase64(row.id);
-      if(b64){ doc.setFillColor(235,235,240); doc.roundedRect(M+1,y+1,IMG_W,IMG_H,2,2,"F"); doc.setFillColor(255,255,255); doc.roundedRect(M,y,IMG_W,IMG_H,2,2,"F"); try{doc.addImage(b64,"JPEG",M,y,IMG_W,IMG_H,undefined,"FAST");}catch{drawPH(doc,M,y,IMG_W,IMG_H);} }
-      else { drawPH(doc,M,y,IMG_W,IMG_H); }
+      // draw white card behind image
+      doc.setFillColor(235,235,240); doc.roundedRect(M+1,y+1,IMG_W,IMG_H,2,2,"F");
+      doc.setFillColor(255,255,255); doc.roundedRect(M,y,IMG_W,IMG_H,2,2,"F");
+      if(b64){
+        try{
+          const dims=await getImgDims(b64);
+          const PT=2.8346; // mm to PDF points
+          let dw=IMG_W,dh=IMG_H,dx=M,dy2=y;
+          if(dims&&dims.w&&dims.h){
+            const imgAR=dims.w/dims.h, boxAR=IMG_W/IMG_H;
+            if(imgAR>boxAR){ dh=IMG_H; dw=dh*imgAR; dx=M+(IMG_W-dw)/2; dy2=y; }
+            else            { dw=IMG_W; dh=dw/imgAR; dx=M; dy2=y+(IMG_H-dh)/2; }
+          }
+          // PDF raw-stream clip rectangle (points, y from bottom of page)
+          const cx=M*PT, cy=(PH-y-IMG_H)*PT, cw=IMG_W*PT, ch=IMG_H*PT;
+          doc.internal.write(`q ${cx.toFixed(2)} ${cy.toFixed(2)} ${cw.toFixed(2)} ${ch.toFixed(2)} re W n`);
+          doc.addImage(b64,"JPEG",dx,dy2,dw,dh,undefined,"FAST");
+          doc.internal.write("Q");
+        }catch{ drawPH(doc,M,y,IMG_W,IMG_H); }
+      } else { drawPH(doc,M,y,IMG_W,IMG_H); }
       const nx=M+IMG_W+8,nw=CW-IMG_W-8; let ny2=y+6;
       doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text("NOTE",nx,ny2); ny2+=6;
       for(let l=0;l<4;l++){ doc.setDrawColor(220,220,228); doc.setLineWidth(0.3); doc.line(nx,ny2,nx+nw,ny2); ny2+=8; }
@@ -883,9 +922,15 @@ function VideoModal({ex,onClose}) {
 function ExCard({ex,onVideo}) {
   const cc=CAT_COLORS[ex.cat]||"#e8ff47";
   const [ok,setOk]=useState(true);
+  const slug=EX_IMAGES[ex.id];
   return (
     <div className="ex-card">
-      {ok?<img className="ex-thumb" src={`/exercises/${ex.id}-0.jpg`} alt={ex.name} onError={()=>setOk(false)}/>:<div className="ex-thumb-ph">💪</div>}
+      {ok&&slug
+        ?<img className="ex-thumb" src={`/exercises-custom/${slug}.jpg`} alt={ex.name}
+            style={{objectFit:"cover",objectPosition:"center top"}}
+            onError={()=>setOk(false)}/>
+        :<div className="ex-thumb-ph">💪</div>
+      }
       <div className="ex-body">
         <span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{ex.cat}</span>
         <div className="ex-name">{ex.name}</div>
@@ -925,26 +970,45 @@ function Library() {
 }
 
 // ── BUILDER ───────────────────────────────────────────────────────────────────
+const ALL_DAYS = ["A","B","C","D","E","F","G"];
+
 function Builder() {
   const [nome,setNome]=useState(""); const [cognome,setCognome]=useState("");
   const [obiettivo,setObiettivo]=useState(""); const [livello,setLivello]=useState("");
+  const [numDays,setNumDays]=useState(3);
   const [activeDay,setActiveDay]=useState("A");
-  const [giorni,setGiorni]=useState({A:[],B:[],C:[]});
+  const [giorni,setGiorni]=useState({A:[],B:[],C:[],D:[],E:[],F:[],G:[]});
   const [selId,setSelId]=useState(EXERCISES[0].id);
   const [sets,setSets]=useState(3); const [reps,setReps]=useState(10); const [rest,setRest]=useState(90);
   const [pdfState,setPdfState]=useState(null);
 
-  const scheda=giorni[activeDay];
-  const add=()=>{ const ex=EXERCISES.find(e=>e.id===Number(selId)); setGiorni(prev=>({...prev,[activeDay]:[...prev[activeDay],{...ex,sets,reps,rest,uid:Date.now()}]})); };
-  const del=(uid)=>setGiorni(prev=>({...prev,[activeDay]:prev[activeDay].filter(r=>r.uid!==uid)}));
+  const activeDays=ALL_DAYS.slice(0,numDays);
+  const scheda=giorni[activeDay]||[];
+
+  const handleNumDays=(n)=>{
+    const newDays=ALL_DAYS.slice(0,n);
+    const removedDays=ALL_DAYS.slice(n,numDays);
+    const hasContent=removedDays.some(d=>(giorni[d]||[]).length>0);
+    if(hasContent){
+      const names=removedDays.filter(d=>(giorni[d]||[]).length>0).map(d=>`Giorno ${d}`).join(", ");
+      if(!window.confirm(`${names} contiene esercizi. Vuoi rimuoverlo?`)) return;
+    }
+    setNumDays(n);
+    if(!newDays.includes(activeDay)) setActiveDay(newDays[newDays.length-1]);
+  };
+
+  const add=()=>{ const ex=EXERCISES.find(e=>e.id===Number(selId)); setGiorni(prev=>({...prev,[activeDay]:[...(prev[activeDay]||[]),{...ex,sets,reps,rest,uid:Date.now()}]})); };
+  const del=(uid)=>setGiorni(prev=>({...prev,[activeDay]:(prev[activeDay]||[]).filter(r=>r.uid!==uid)}));
   const clear=()=>setGiorni(prev=>({...prev,[activeDay]:[]}));
-  const totalEx=Object.values(giorni).reduce((s,d)=>s+d.length,0);
+
+  const activeGiorni=Object.fromEntries(activeDays.map(d=>[d,giorni[d]||[]]));
+  const totalEx=Object.values(activeGiorni).reduce((s,d)=>s+d.length,0);
   const sum=calcSummary(scheda);
 
   const handlePDF=async()=>{
-    if(!Object.values(giorni).some(d=>d.length>0)) return;
+    if(!Object.values(activeGiorni).some(d=>d.length>0)) return;
     setPdfState({progress:0,label:"Preparazione…"});
-    try{ await buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
+    try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
     catch(e){console.error(e);}
     finally{setPdfState(null);}
   };
@@ -964,10 +1028,21 @@ function Builder() {
         </div>
 
         <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+          <label style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:"var(--muted)",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>
+            Giorni
+            <select
+              value={numDays}
+              onChange={e=>handleNumDays(Number(e.target.value))}
+              style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,padding:"6px 12px",borderRadius:8,outline:"none",width:"auto",appearance:"none",cursor:"pointer"}}
+            >
+              {[1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{n} {n===1?"giorno":"giorni"}</option>)}
+            </select>
+          </label>
+
           <div className="day-tabs">
-            {DAYS.map(d=>(
+            {activeDays.map(d=>(
               <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                Giorno {d}{giorni[d].length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{giorni[d].length}</span>}
+                Giorno {d}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
               </button>
             ))}
           </div>
