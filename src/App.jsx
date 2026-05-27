@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import jsPDF from "jspdf";
 
 // ── FONTS & BASE CSS ──────────────────────────────────────────────────────────
@@ -57,7 +58,7 @@ const CSS = `
   .login-btn:hover { opacity:.9; }
   .login-btn:active { transform:scale(.98); }
 
-  /* login hint redesign */
+  /* login hint */
   .login-hint { margin-top:20px; display:flex; flex-direction:column; gap:8px; }
   .login-hint-block {
     padding:12px 14px; background:var(--card2); border:1px solid var(--border);
@@ -77,6 +78,20 @@ const CSS = `
     background:var(--border); color:var(--text); font-size:12px; font-weight:600;
     padding:3px 10px; border-radius:6px; font-family:monospace;
   }
+  /* details/summary per altri accessi */
+  .login-details {
+    border:1px solid var(--border); border-radius:10px;
+    background:var(--card2); overflow:hidden;
+  }
+  .login-details summary {
+    font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    color:var(--muted); padding:11px 14px; cursor:pointer; list-style:none;
+    user-select:none; transition:color .15s;
+  }
+  .login-details summary::-webkit-details-marker { display:none; }
+  .login-details summary:hover { color:var(--text); }
+  .login-details[open] summary { border-bottom:1px solid var(--border); }
+  .login-details-inner { display:flex; flex-direction:column; gap:8px; padding:10px; }
 
   /* ── WELCOME TRANSITION ── */
   .welcome-screen {
@@ -304,7 +319,7 @@ const CSS = `
   .prog-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:100px; transition:width .3s ease; }
   .prog-label { font-size:12px; color:var(--muted); white-space:nowrap; }
 
-  /* CLIENTS */
+  /* ATLETI */
   .clients-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
   .client-item {
     background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
@@ -321,7 +336,7 @@ const CSS = `
   .new-client-btn { display:flex; align-items:center; justify-content:center; gap:8px; background:none; border:2px dashed var(--border); border-radius:var(--radius); padding:28px; cursor:pointer; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; transition:all .2s; }
   .new-client-btn:hover { border-color:var(--accent); color:var(--accent); }
 
-  /* CLIENT DETAIL MODAL */
+  /* ATLETA DETAIL MODAL */
   .client-modal { background:var(--card); border:1px solid var(--border); border-radius:18px; width:100%; max-width:600px; overflow:hidden; animation:slideUp .25s ease; max-height:85vh; display:flex; flex-direction:column; }
   .client-modal-header { padding:24px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; }
   .client-modal-body { padding:24px; overflow-y:auto; flex:1; }
@@ -410,7 +425,7 @@ const CSS = `
   .pt-table-row:hover { background:rgba(255,255,255,.02); }
   .online-dot { width:7px; height:7px; border-radius:50%; background:#2ecc71; display:inline-block; margin-right:8px; }
 
-  /* ── CLIENTE LAYOUT ── */
+  /* ── ATLETA LAYOUT ── */
   .cliente-header {
     position:sticky; top:0; z-index:100;
     background:var(--surface); border-bottom:1px solid var(--border);
@@ -421,9 +436,17 @@ const CSS = `
   .scheda-info-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:24px; }
   .scheda-info-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; margin-bottom:4px; }
   .scheda-info-meta { display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
-  .ex-cliente-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; display:flex; align-items:center; gap:14px; margin-bottom:10px; }
-  .ex-cliente-info { flex:1; min-width:0; }
-  .ex-cliente-name { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* ── ATLETA EXERCISE CARD ── */
+  .ex-atleta-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; margin-bottom:12px; transition:border-color .2s;
+  }
+  .ex-atleta-card:hover { border-color:rgba(232,255,71,.2); }
+  .ex-atleta-thumb { width:100%; height:160px; object-fit:cover; object-position:center top; display:block; }
+  .ex-atleta-thumb-ph { width:100%; height:80px; background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:32px; color:var(--muted); }
+  .ex-atleta-body { padding:14px 16px; }
+  .ex-atleta-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px; }
+  .ex-cliente-name { font-size:15px; font-weight:600; color:var(--text); margin-bottom:3px; }
   .ex-cliente-meta { font-size:12px; color:var(--muted); }
   .ex-peso-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
   .ex-peso-input { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; width:70px; padding:8px 10px; border-radius:9px; outline:none; text-align:center; transition:border-color .2s; }
@@ -432,12 +455,61 @@ const CSS = `
   .save-session-btn { width:100%; background:var(--accent); border:none; color:var(--accent-fg); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; padding:16px; border-radius:12px; cursor:pointer; transition:opacity .2s; margin-top:8px; }
   .save-session-btn:hover { opacity:.88; }
   .session-saved-banner { background:rgba(71,255,232,.08); border:1px solid rgba(71,255,232,.2); border-radius:10px; padding:12px 16px; font-size:13px; color:var(--accent2); text-align:center; margin-bottom:16px; }
+
+  /* ── DATE NAV ── */
+  .date-nav { display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 14px; margin-bottom:16px; gap:8px; }
+  .date-nav-btn { background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; padding:2px 10px; border-radius:6px; transition:all .15s; line-height:1; font-family:'DM Sans',sans-serif; }
+  .date-nav-btn:hover:not(:disabled) { background:rgba(232,255,71,.08); color:var(--accent); }
+  .date-nav-btn:disabled { color:var(--muted); cursor:default; opacity:.4; }
+  .date-nav-label { flex:1; font-size:13px; font-weight:600; color:var(--text); text-align:center; text-transform:capitalize; }
+  .date-nav.past { border-color:rgba(71,255,232,.25); background:rgba(71,255,232,.04); }
+
+  /* ── APPOINTMENTS (atleta) ── */
+  .appt-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; margin-bottom:20px; }
+  .appt-section-title { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .appt-card { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card2); border:1px solid var(--border); border-radius:10px; margin-bottom:7px; animation:cardIn .25s ease; }
+  .appt-card:last-child { margin-bottom:0; }
+  .appt-time { font-size:12px; font-weight:700; color:var(--accent); width:38px; flex-shrink:0; }
+  .appt-date-label { font-size:11px; font-weight:600; color:var(--muted); min-width:90px; flex-shrink:0; text-transform:capitalize; }
+  .appt-name { flex:1; font-size:13px; color:var(--text); font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .appt-type-badge { font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; padding:2px 7px; border-radius:4px; flex-shrink:0; }
+  .appt-expand-btn { background:none; border:none; color:var(--accent); font-size:12px; font-weight:600; cursor:pointer; padding:8px 0 0; font-family:'DM Sans',sans-serif; display:block; }
+  .appt-expand-btn:hover { opacity:.75; }
+
+  /* ── MISURAZIONI ── */
+  .misure-entry { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:10px; margin-bottom:7px; }
+  .misura-badge { font-size:12px; font-weight:600; color:var(--text); background:var(--card); border:1px solid var(--border); padding:3px 9px; border-radius:6px; }
+  .misure-date { font-size:11px; color:var(--muted); font-weight:600; min-width:70px; }
+  .misure-avanzati { display:flex; flex-direction:column; gap:10px; margin-top:8px; padding:12px; background:var(--card2); border:1px solid var(--border); border-radius:10px; }
+
+  /* ── PROFILO GRID ── */
+  .profilo-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .profilo-cell { background:var(--card2); border:1px solid var(--border); border-radius:9px; padding:10px 14px; }
+  .profilo-cell-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .profilo-cell-val { font-size:14px; font-weight:600; color:var(--text); line-height:1.4; }
+
+  /* ── MOBILE NAV ── */
   .mobile-nav {
     display:none; position:fixed; bottom:0; left:0; right:0;
     background:var(--surface); border-top:1px solid var(--border);
-    z-index:200; padding:6px 0 env(safe-area-inset-bottom, 8px);
+    z-index:200; padding-bottom:env(safe-area-inset-bottom, 0px);
+    flex-direction:column;
   }
-  .mobile-nav-inner { display:flex; align-items:stretch; }
+  .mobile-nav-logout-bar {
+    display:flex; align-items:center; justify-content:flex-end;
+    padding:5px 16px; border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .mobile-nav-logout-btn {
+    background:none; border:none; cursor:pointer;
+    color:var(--muted); font-family:'DM Sans',sans-serif;
+    font-size:11px; font-weight:600; letter-spacing:.5px;
+    display:flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:6px;
+    transition:color .15s, background .15s;
+  }
+  .mobile-nav-logout-btn:hover { color:var(--danger); background:rgba(255,71,87,.06); }
+  .mobile-nav-inner { display:flex; align-items:stretch; padding:6px 0; }
   .mobile-nav-item {
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:3px; padding:6px 4px; cursor:pointer;
@@ -448,13 +520,47 @@ const CSS = `
   }
   .mobile-nav-item.active { color:var(--accent); }
   .mobile-nav-item-icon { font-size:20px; line-height:1; }
-  .mobile-nav-logout { color:var(--muted); }
-  .mobile-nav-logout:hover { color:var(--danger); }
 
-  @media(max-width:1100px) { .stats-grid,.quick-nav { grid-template-columns:1fr 1fr; } .charts-grid { grid-template-columns:1fr; } }
+  .atleta-tab-nav { display:flex; justify-content:center; gap:4px; padding:8px 16px; background:var(--surface); border-bottom:1px solid var(--border); }
+  .atleta-tab { background:none; border:1px solid transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:7px 18px; border-radius:9px; cursor:pointer; transition:all .15s; }
+  .atleta-tab:hover { color:var(--text); }
+  .atleta-tab.active { background:rgba(232,255,71,.08); border-color:rgba(232,255,71,.2); color:var(--accent); }
+
+  /* ── STATS BAR ATLETA ── */
+  .atleta-stats-bar { display:flex; gap:16px; flex-wrap:wrap; padding:7px 16px; background:var(--surface); border-bottom:1px solid var(--border); font-size:12px; color:var(--muted); }
+  .atleta-stats-item { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .atleta-stats-item strong { color:var(--text); font-weight:700; }
+
+  /* ── RESET DEMO DIALOG ── */
+  .reset-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:24px; animation:fadeIn .15s ease; }
+  .reset-dialog { background:var(--card); border:1px solid rgba(255,71,87,.3); border-radius:16px; padding:28px; width:100%; max-width:360px; animation:slideUp .2s ease; }
+  .reset-dialog-title { font-size:16px; font-weight:700; color:var(--text); margin-bottom:8px; }
+  .reset-dialog-body { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:22px; }
+  .reset-dialog-actions { display:flex; gap:10px; justify-content:flex-end; }
+
+  /* ── OVERWRITE CONFIRM (Builder) ── */
+  .overwrite-confirm { background:rgba(255,71,87,.06); border:1px solid rgba(255,71,87,.25); border-radius:10px; padding:14px 18px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .overwrite-confirm-text { font-size:13px; color:var(--text); flex:1; min-width:160px; }
+  .overwrite-confirm-actions { display:flex; gap:8px; flex-shrink:0; }
+
+  /* ── PROGRESSI ── */
+  .prog-section { padding:0 0 24px; }
+  .prog-section-head { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .prog-chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+  .prog-chip { background:var(--card2); border:1px solid var(--border); color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:6px 12px; border-radius:100px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:4px; }
+  .prog-chip.unlocked { cursor:pointer; }
+  .prog-chip.unlocked:hover { border-color:var(--accent); color:var(--accent); }
+  .prog-chip.locked { opacity:.5; cursor:default; }
+  .prog-chip.selected { }
+  .prog-lock-msg { font-size:11px; color:var(--muted); background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:6px 10px; margin-top:4px; margin-bottom:4px; max-width:280px; line-height:1.4; }
+  .prog-legend { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+  .prog-legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+  .prog-chart-box { border:1px solid var(--border); border-radius:var(--radius); background:var(--card); padding:12px 8px 6px; overflow:hidden; }
+  .prog-empty { text-align:center; color:var(--muted); padding:36px 0; font-size:14px; }
+  .prog-empty-icon { font-size:36px; margin-bottom:8px; }
   @media(max-width:800px) {
     .sidebar { display:none; }
-    .mobile-nav { display:flex; flex-direction:column; }
+    .mobile-nav { display:flex; }
     .content { padding:20px 16px 88px; }
     .client-grid,.form-row { grid-template-columns:1fr; }
     .builder-top { grid-template-columns:1fr 1fr; }
@@ -475,26 +581,49 @@ const CSS = `
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  "demo":         { password:"demo",         name:"Personal Trainer Demo", role:"trainer",
-                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-  "fitpro":       { password:"fitpro",       name:"FitPro Training",       role:"trainer",
-                     theme:{ accent:"#a47ffe", accentFg:"#07070d", logo:["FitPro","Training"] } },
-  "admin":        { password:"admin",        name:"Admin",                  role:"admin",
-                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-  "demo_cliente": { password:"demo_cliente", name:"Cliente Demo",           role:"cliente",
-                     theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "pt":       { password:"pt",       name:"Personal Trainer Demo",      role:"trainer",
+                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "pt_pro":   { password:"pt_pro",   name:"FitExpress — Personal Trainer", role:"trainer",
+                 theme:{
+                   accent:"#FFD600", accentFg:"#0a0a00", logo:["FitExpress","Pro"],
+                   bg:"#080800", surface:"#0f0f00", card:"#141400", card2:"#1a1a00",
+                   border:"#2a2a00", accent2:"#ff9900", accent3:"#ff4400",
+                 } },
+  "admin":    { password:"admin",    name:"Admin",                         role:"admin",
+                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
+  "atleta":   { password:"atleta",   name:"Atleta Demo",                   role:"atleta",
+                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
 };
 
+const THEME_DEFAULTS = {
+  "--accent":   "#e8ff47",
+  "--accent-fg":"#07070d",
+  "--bg":       "#07070d",
+  "--surface":  "#0f0f18",
+  "--card":     "#13131e",
+  "--card2":    "#1a1a28",
+  "--border":   "#22223a",
+  "--accent2":  "#47ffe8",
+  "--accent3":  "#ff47a3",
+};
+const THEME_MAP = {
+  accent:"--accent", accentFg:"--accent-fg",
+  bg:"--bg", surface:"--surface", card:"--card", card2:"--card2",
+  border:"--border", accent2:"--accent2", accent3:"--accent3",
+};
 function applyTheme(theme) {
-  document.documentElement.style.setProperty("--accent", theme.accent);
-  document.documentElement.style.setProperty("--accent-fg", theme.accentFg);
+  Object.entries(THEME_MAP).forEach(([key, cssVar])=>{
+    if(theme[key]) document.documentElement.style.setProperty(cssVar, theme[key]);
+  });
 }
 function resetTheme() {
-  document.documentElement.style.setProperty("--accent", "#e8ff47");
-  document.documentElement.style.setProperty("--accent-fg", "#07070d");
+  Object.entries(THEME_DEFAULTS).forEach(([cssVar, val])=>{
+    document.documentElement.style.setProperty(cssVar, val);
+  });
 }
 
 const CAT_COLORS    = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3" };
+const LINE_COLORS   = ["#e8ff47","#47ffe8","#ff47a3","#ff9f47","#a47ffe","#47a3ff","#ff4757","#2ecc71"];
 const CAT_COLORS_PDF= { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95] };
 const CATEGORIES    = ["Tutte","Braccia","Spalle","Schiena","Gambe"];
 const DAYS          = ["A","B","C"];
@@ -525,16 +654,13 @@ const EXERCISES = [
   { id:20, cat:"Gambe",   name:"Calf raises in piedi",       muscles:"Gastrocnemio, soleo",                          yt:"gwLzBJYoWlQ"  },
 ];
 
-const DEMO_CLIENTS = [
-  { id:0, nome:"Cliente", cognome:"Demo",    obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"oggi",         schede:1, color:"#47ffe8", isDemoCliente:true, hasAccount:true },
-  { id:1, nome:"Luca",    cognome:"Ferrari",   obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"3 giorni fa",  schede:2, color:"#e8ff47" },
-  { id:2, nome:"Sofia",   cognome:"Martini",   obiettivo:"Dimagrimento", livello:"Principiante", lastSeen:"ieri",         schede:1, color:"#47ffe8" },
-  { id:3, nome:"Marco",   cognome:"Bianchi",   obiettivo:"Forza",        livello:"Avanzato",     lastSeen:"oggi",         schede:3, color:"#ff9f47" },
-  { id:4, nome:"Chiara",  cognome:"Esposito",  obiettivo:"Tonificazione",livello:"Intermedio",   lastSeen:"5 giorni fa",  schede:1, color:"#ff47a3" },
+const DEMO_ATLETI = [
+  { id:0, nome:"Atleta", cognome:"Demo",    obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"oggi",         schede:1, color:"#47ffe8", isDemoAtleta:true, hasAccount:true },
+  { id:1, nome:"Luca",   cognome:"Ferrari",  obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"3 giorni fa",  schede:2, color:"#e8ff47" },
+  { id:2, nome:"Sofia",  cognome:"Martini",  obiettivo:"Dimagrimento", livello:"Principiante", lastSeen:"ieri",         schede:1, color:"#47ffe8" },
+  { id:3, nome:"Marco",  cognome:"Bianchi",  obiettivo:"Forza",        livello:"Avanzato",     lastSeen:"oggi",         schede:3, color:"#ff9f47" },
+  { id:4, nome:"Chiara", cognome:"Esposito", obiettivo:"Tonificazione",livello:"Intermedio",   lastSeen:"5 giorni fa",  schede:1, color:"#ff47a3" },
 ];
-
-
-
 
 function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -551,6 +677,60 @@ const DEMO_EVENTS = [
   { id:4, clientId:4, clientName:"Chiara Esposito",date:fmtDate(addDays(today,-2)), time:"17:00", type:"Recupero"    },
 ];
 
+// ── DATI PRE-CARICATI ATLETI FINTI ───────────────────────────────────────────
+// Hardcodati nel componente, mai scritti in localStorage.
+// Formato identico a pt_sessions_demo_atleta: {date, day, weights:{[exId]:string}}
+// Luca (id:1) e Marco (id:3): 5 sessioni, pesi crescenti
+// Sofia (id:2) e Chiara (id:4): 2 sessioni (sotto soglia grafici)
+
+const FAKE_EX_IDS = {
+  1: [1, 3, 7, 16, 12],   // Luca: curl bilanciere, tricep pushdown, alzate lat, squat, trazioni
+  3: [11, 16, 13, 6],     // Marco: stacco, squat, rematore, lento avanti
+  2: [20, 7, 17],         // Sofia: calf raises, alzate lat, leg press
+  4: [19, 7, 2],          // Chiara: leg curl, alzate lat, curl manubri
+};
+
+const FAKE_SESSIONS = {
+  1: [
+    { date:fmtDate(addDays(today,-28)), day:"A", weights:{"1":"30","3":"20","7":"8", "16":"60","12":"0" } },
+    { date:fmtDate(addDays(today,-21)), day:"A", weights:{"1":"32","3":"22","7":"9", "16":"65","12":"0" } },
+    { date:fmtDate(addDays(today,-14)), day:"A", weights:{"1":"34","3":"24","7":"10","16":"70","12":"0" } },
+    { date:fmtDate(addDays(today,-7)),  day:"A", weights:{"1":"36","3":"25","7":"10","16":"72","12":"5" } },
+    { date:fmtDate(addDays(today,-2)),  day:"A", weights:{"1":"38","3":"27","7":"12","16":"75","12":"8" } },
+  ],
+  3: [
+    { date:fmtDate(addDays(today,-27)), day:"A", weights:{"11":"80", "16":"100","13":"50","6":"40"} },
+    { date:fmtDate(addDays(today,-20)), day:"A", weights:{"11":"90", "16":"110","13":"55","6":"45"} },
+    { date:fmtDate(addDays(today,-13)), day:"A", weights:{"11":"100","16":"120","13":"60","6":"50"} },
+    { date:fmtDate(addDays(today,-6)),  day:"A", weights:{"11":"110","16":"130","13":"65","6":"55"} },
+    { date:fmtDate(addDays(today,-1)),  day:"A", weights:{"11":"120","16":"140","13":"70","6":"60"} },
+  ],
+  2: [
+    { date:fmtDate(addDays(today,-20)), day:"A", weights:{"20":"0","7":"5","17":"40"} },
+    { date:fmtDate(addDays(today,-8)),  day:"A", weights:{"20":"0","7":"6","17":"45"} },
+  ],
+  4: [
+    { date:fmtDate(addDays(today,-18)), day:"A", weights:{"19":"20","7":"6","2":"8"} },
+    { date:fmtDate(addDays(today,-5)),  day:"A", weights:{"19":"22","7":"7","2":"9"} },
+  ],
+};
+
+// Helper: restituisce gli EXERCISES corrispondenti agli ID fake di un atleta
+function getFakeExercises(atletaId) {
+  return (FAKE_EX_IDS[atletaId]||[]).map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean);
+}
+
+// Helper: dato un array di sessioni, restituisce i conteggi di sessioni con peso>0 per ogni exId
+function countSessionsPerEx(sessions) {
+  const counts = {};
+  sessions.forEach(s=>{
+    Object.entries(s.weights||{}).forEach(([id,v])=>{
+      if(+v>0) counts[id]=(counts[id]||0)+1;
+    });
+  });
+  return counts; // {[exId]: count}
+}
+
 const ADMIN_PT = [
   { name:"Andrea Rossi",   lastLogin:"Oggi, 09:14",     clients:4, schede:7  },
   { name:"Giulia Moretti", lastLogin:"Ieri, 18:30",     clients:6, schede:12 },
@@ -562,11 +742,12 @@ const ADMIN_PT = [
 const ADMIN_SESSION_TYPES = ["Riunione","Call","Visita","Onboarding"];
 
 const ADMIN_EVENTS = [
-  { id:1, clientName:"Call con Andrea Rossi",    date:fmtDate(addDays(today, 0)), time:"10:00", type:"Call"       },
+  { id:1, clientName:"Call con Andrea Rossi",     date:fmtDate(addDays(today, 0)), time:"10:00", type:"Call"       },
   { id:2, clientName:"Onboarding Giulia Moretti", date:fmtDate(addDays(today, 3)), time:"14:00", type:"Onboarding" },
-  { id:3, clientName:"Visita Paolo Crespi",       date:fmtDate(addDays(today, 7)), time:"11:00", type:"Visita"     },
-  { id:4, clientName:"Riunione Marta Savi",       date:fmtDate(addDays(today,-1)), time:"16:00", type:"Riunione"   },
+  { id:3, clientName:"Visita Paolo Crespi",        date:fmtDate(addDays(today, 7)), time:"11:00", type:"Visita"     },
+  { id:4, clientName:"Riunione Marta Savi",        date:fmtDate(addDays(today,-1)), time:"16:00", type:"Riunione"   },
 ];
+
 const MONTHS_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const DAYS_IT   = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
@@ -701,7 +882,7 @@ async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
 
   const total=doc.getNumberOfPages();
   for(let p=2;p<=total;p++){ doc.setPage(p); doc.setDrawColor(220,220,225); doc.setLineWidth(0.3); doc.line(M,PH-11,PW-M,PH-11); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(170,170,180); doc.text("PT Studio",M,PH-5); doc.text(`${p-1}/${total-1}`,PW-M,PH-5,{align:"right"}); }
-  const fn=[nome,cognome].filter(Boolean).join("-")||"cliente";
+  const fn=[nome,cognome].filter(Boolean).join("-")||"atleta";
   doc.save(`scheda-${fn}.pdf`);
 }
 
@@ -744,6 +925,67 @@ function BarChart({data,color="#47ffe8"}) {
           <g key={i}>
             <rect x={x} y={y} width={bw} height={bh} rx="3" fill={color} opacity="0.7"/>
             <text x={x+bw/2} y={H-1} textAnchor="middle" fill="#5a5a78" fontSize="8">{d.l}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ── PROGRESSI MULTI-LINE CHART ────────────────────────────────────────────────
+// lines = [{id, name, color, points:[{date:"YYYY-MM-DD", kg:number}]}]
+// SVG puro, nessuna libreria esterna.
+function ProgressiMultiChart({lines}) {
+  const W=560,H=190,padL=38,padR=14,padT=10,padB=26;
+  const cW=W-padL-padR, cH=H-padT-padB;
+
+  const allDates=[...new Set(lines.flatMap(l=>l.points.map(p=>p.date)))].sort();
+  const n=allDates.length;
+  if(n===0) return null;
+
+  const allKg=lines.flatMap(l=>l.points.map(p=>p.kg)).filter(k=>k>0);
+  if(!allKg.length) return null;
+
+  const rawMin=Math.min(...allKg), rawMax=Math.max(...allKg);
+  const pad=Math.max((rawMax-rawMin)*0.15, 5);
+  const minV=Math.max(0,Math.floor(rawMin-pad));
+  const maxV=Math.ceil(rawMax+pad);
+  const range=maxV-minV||1;
+
+  const xOf=(i)=>padL+(n>1?i/(n-1):0.5)*cW;
+  const yOf=(kg)=>padT+cH-((kg-minV)/range)*cH;
+
+  // 4 grid lines
+  const gridVals=Array.from({length:4},(_,i)=>Math.round(minV+(i/3)*range));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"auto",display:"block"}}>
+      {/* grid */}
+      {gridVals.map((v,i)=>(
+        <g key={i}>
+          <line x1={padL} y1={yOf(v)} x2={W-padR} y2={yOf(v)} stroke="#22223a" strokeWidth="1" strokeDasharray="5,4"/>
+          <text x={padL-4} y={yOf(v)+4} textAnchor="end" fill="#5a5a78" fontSize="10">{v}</text>
+        </g>
+      ))}
+      {/* x labels */}
+      {allDates.map((d,i)=>(
+        <text key={i} x={xOf(i)} y={H-5} textAnchor="middle" fill="#5a5a78" fontSize="9">
+          {d.slice(8)}/{d.slice(5,7)}
+        </text>
+      ))}
+      {/* lines + dots */}
+      {lines.map(line=>{
+        const pts=allDates
+          .map((d,i)=>{const p=line.points.find(p=>p.date===d);return p?{i,kg:p.kg}:null;})
+          .filter(Boolean);
+        if(pts.length<1) return null;
+        const ptStr=pts.map(p=>`${xOf(p.i)},${yOf(p.kg)}`).join(" ");
+        return (
+          <g key={line.id}>
+            {pts.length>1&&<polyline points={ptStr} fill="none" stroke={line.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
+            {pts.map((p,j)=>(
+              <circle key={j} cx={xOf(p.i)} cy={yOf(p.kg)} r="4" fill={line.color} stroke="#07070d" strokeWidth="1.5"/>
+            ))}
           </g>
         );
       })}
@@ -810,7 +1052,7 @@ function LoginScreen({onLogin}) {
         <div style={{background:"rgba(15,15,24,.75)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 18px",backdropFilter:"blur(10px)",animation:"boxIn .6s cubic-bezier(.16,1,.3,1)"}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"var(--accent)",marginBottom:5}}>Demo — PT Studio</div>
           <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.6}}>
-            Una piattaforma per personal trainer — gestisci clienti, crea schede di allenamento personalizzate ed esportale in PDF. Accedi con le credenziali demo per esplorare tutte le funzionalità.
+            Una piattaforma per personal trainer — gestisci atleti, crea schede di allenamento personalizzate ed esportale in PDF. Accedi con le credenziali demo per esplorare tutte le funzionalità.
           </div>
         </div>
         <div className="login-box" style={{margin:0}}>
@@ -828,42 +1070,50 @@ function LoginScreen({onLogin}) {
           <button className="login-btn" onClick={submit}>Accedi</button>
 
           <div className="login-hint">
+            {/* Blocco PT Demo — sempre visibile */}
             <div className="login-hint-block">
               <div className="login-hint-label">💪 Per accedere alla Demo 1, inserisci:</div>
               <div className="login-hint-creds">
                 <span className="login-hint-key">Utente:</span>
-                <span className="hint-badge">demo</span>
+                <span className="hint-badge">pt</span>
                 <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
-                <span className="hint-badge">demo</span>
+                <span className="hint-badge">pt</span>
               </div>
             </div>
-            <div className="login-hint-block" style={{borderColor:"rgba(164,127,254,.25)"}}>
-              <div className="login-hint-label" style={{color:"#a47ffe"}}>🟣 Per accedere alla Demo 2 (FitPro), inserisci:</div>
-              <div className="login-hint-creds">
-                <span className="login-hint-key">Utente:</span>
-                <span className="hint-badge">fitpro</span>
-                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
-                <span className="hint-badge">fitpro</span>
+
+            {/* Altri accessi — nascosti in details */}
+            <details className="login-details">
+              <summary>Altri accessi demo ▾</summary>
+              <div className="login-details-inner">
+                <div className="login-hint-block" style={{borderColor:"rgba(164,127,254,.25)"}}>
+                  <div className="login-hint-label" style={{color:"#a47ffe"}}>🟣 Per accedere alla Demo 2 (FitPro), inserisci:</div>
+                  <div className="login-hint-creds">
+                    <span className="login-hint-key">Utente:</span>
+                    <span className="hint-badge">pt_pro</span>
+                    <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                    <span className="hint-badge">pt_pro</span>
+                  </div>
+                </div>
+                <div className="login-hint-block">
+                  <div className="login-hint-label">🛡️ Per accedere come Admin, inserisci:</div>
+                  <div className="login-hint-creds">
+                    <span className="login-hint-key">Utente:</span>
+                    <span className="hint-badge">admin</span>
+                    <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                    <span className="hint-badge">admin</span>
+                  </div>
+                </div>
+                <div className="login-hint-block" style={{borderColor:"rgba(71,255,232,.25)"}}>
+                  <div className="login-hint-label" style={{color:"var(--accent2)"}}>👤 Per accedere come Atleta Demo, inserisci:</div>
+                  <div className="login-hint-creds">
+                    <span className="login-hint-key">Utente:</span>
+                    <span className="hint-badge">atleta</span>
+                    <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
+                    <span className="hint-badge">atleta</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="login-hint-block">
-              <div className="login-hint-label">🛡️ Per accedere come Admin, inserisci:</div>
-              <div className="login-hint-creds">
-                <span className="login-hint-key">Utente:</span>
-                <span className="hint-badge">admin</span>
-                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
-                <span className="hint-badge">admin</span>
-              </div>
-            </div>
-            <div className="login-hint-block" style={{borderColor:"rgba(71,255,232,.25)"}}>
-              <div className="login-hint-label" style={{color:"var(--accent2)"}}>👤 Per accedere come Cliente Demo, inserisci:</div>
-              <div className="login-hint-creds">
-                <span className="login-hint-key">Utente:</span>
-                <span className="hint-badge">demo_cliente</span>
-                <span className="login-hint-key" style={{marginLeft:8}}>Password:</span>
-                <span className="hint-badge">demo_cliente</span>
-              </div>
-            </div>
+            </details>
           </div>
         </div>
       </div>
@@ -905,12 +1155,38 @@ function WelcomeScreen({user,onDone}) {
   );
 }
 
+// ── RESET DEMO DIALOG ────────────────────────────────────────────────────────
+// Renderizzato via createPortal su document.body — sempre sopra tutto il layout
+function ResetDemoDialog({onClose}) {
+  const doReset = () => {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith("pt_"))
+      .forEach(k => localStorage.removeItem(k));
+    window.location.reload();
+  };
+  return ReactDOM.createPortal(
+    <div className="reset-overlay" onClick={onClose}>
+      <div className="reset-dialog" onClick={e=>e.stopPropagation()}>
+        <div className="reset-dialog-title">⚠️ Reset demo</div>
+        <div className="reset-dialog-body">
+          Tutti i dati verranno cancellati (schede, sessioni, atleti, calendario). Continuare?
+        </div>
+        <div className="reset-dialog-actions">
+          <button className="btn-ghost" onClick={onClose}>Annulla</button>
+          <button className="btn-danger" onClick={doReset}>Reset</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── SIDEBAR ───────────────────────────────────────────────────────────────────
 const NAV_TRAINER = [
   { id:"dashboard", icon:"⚡", label:"Dashboard" },
   { id:"library",   icon:"📚", label:"Libreria"  },
   { id:"builder",   icon:"📋", label:"Builder"   },
-  { id:"clients",   icon:"👥", label:"Clienti"   },
+  { id:"atleti",    icon:"👥", label:"Atleti"    },
   { id:"calendar",  icon:"📅", label:"Calendario"},
 ];
 const NAV_ADMIN = [
@@ -921,11 +1197,20 @@ const NAV_ADMIN = [
 ];
 
 function Sidebar({user,view,setView,onLogout}) {
+  const [showReset, setShowReset] = useState(false);
+  const logoLastClick = useRef(0);
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if(now - logoLastClick.current <= 400) setShowReset(true);
+    logoLastClick.current = now;
+  };
+
   const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
   const logo = user.theme?.logo || ["PT","Studio"];
   return (
     <div className="sidebar">
-      <div className="sidebar-logo">{logo[0]}<span>{logo[1]}</span></div>
+      <div className="sidebar-logo" onClick={handleLogoClick} style={{cursor:"default",userSelect:"none"}}>{logo[0]}<span>{logo[1]}</span></div>
       <div className="sidebar-user">
         <div className="sidebar-username">{user.name}</div>
         <div className="sidebar-role">{user.role==="admin"?"Amministratore":"Personal Trainer"}</div>
@@ -940,6 +1225,7 @@ function Sidebar({user,view,setView,onLogout}) {
       <button className="sidebar-logout" onClick={onLogout}>
         <span className="sidebar-icon">↩</span>Esci
       </button>
+      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
     </div>
   );
 }
@@ -949,6 +1235,12 @@ function MobileNav({user,view,setView,onLogout}) {
   const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
   return (
     <nav className="mobile-nav">
+      {/* Barra logout separata, sopra la nav — piccola, difficile da cliccare accidentalmente */}
+      <div className="mobile-nav-logout-bar">
+        <button className="mobile-nav-logout-btn" onClick={onLogout}>
+          ↩ Esci
+        </button>
+      </div>
       <div className="mobile-nav-inner">
         {items.map(item=>(
           <button
@@ -960,10 +1252,6 @@ function MobileNav({user,view,setView,onLogout}) {
             {item.label}
           </button>
         ))}
-        <button className="mobile-nav-item mobile-nav-logout" onClick={onLogout}>
-          <span className="mobile-nav-item-icon">↩</span>
-          Esci
-        </button>
       </div>
     </nav>
   );
@@ -1024,16 +1312,16 @@ function Dashboard({user,setView}) {
   }
 
   const stats=[
-    {icon:"👥",val:"4",label:"Clienti attivi"},
+    {icon:"👥",val:"4",label:"Atleti attivi"},
     {icon:"📋",val:"6",label:"Schede create"},
     {icon:"📅",val:"Oggi 10:00",label:"Prossimo appuntamento"},
     {icon:"💪",val:"20",label:"Esercizi in libreria"},
   ];
   const quickNav=[
-    {id:"library",  icon:"📚",label:"Libreria", desc:"Sfoglia 20 esercizi"},
-    {id:"builder",  icon:"📋",label:"Builder",  desc:"Crea schede A/B/C"},
-    {id:"clients",  icon:"👥",label:"Clienti",  desc:"Gestisci i tuoi clienti"},
-    {id:"calendar", icon:"📅",label:"Calendario",desc:"Organizza gli appuntamenti"},
+    {id:"library", icon:"📚",label:"Libreria",  desc:"Sfoglia 20 esercizi"},
+    {id:"builder", icon:"📋",label:"Builder",   desc:"Crea schede A/B/C"},
+    {id:"atleti",  icon:"👥",label:"Atleti",    desc:"Gestisci i tuoi atleti"},
+    {id:"calendar",icon:"📅",label:"Calendario",desc:"Organizza gli appuntamenti"},
   ];
   return (
     <div>
@@ -1139,8 +1427,8 @@ function Library({setView}) {
 // ── BUILDER ───────────────────────────────────────────────────────────────────
 const ALL_DAYS = ["A","B","C","D","E","F","G"];
 
-function Builder({setView}) {
-  const [selectedClient,setSelectedClient]=useState(null);
+function Builder({setView, preload=null, setPreload=null}) {
+  const [selectedAtleta,setSelectedAtleta]=useState(null);
   const [searchQ,setSearchQ]=useState("");
   const [showDrop,setShowDrop]=useState(false);
   const [obiettivo,setObiettivo]=useState("");
@@ -1148,28 +1436,63 @@ function Builder({setView}) {
   const [numDays,setNumDays]=useState(3);
   const [activeDay,setActiveDay]=useState("A");
   const [giorni,setGiorni]=useState({A:[],B:[],C:[],D:[],E:[],F:[],G:[]});
+  const [dayNames,setDayNames]=useState({A:"",B:"",C:"",D:"",E:"",F:"",G:""});
   const [selId,setSelId]=useState(EXERCISES[0].id);
   const [sets,setSets]=useState(3); const [reps,setReps]=useState(10); const [rest,setRest]=useState(90);
   const [pdfState,setPdfState]=useState(null);
   const [toast,setToast]=useState(null);
+  const [assigned,setAssigned]=useState(false);
+  const [showOverwriteConfirm,setShowOverwriteConfirm]=useState(false);
 
-  const allClients = loadClients();
+  const allAtleti = loadAtleti();
+
+  // ── Preload scheda esistente (da "Modifica nel Builder") ──
+  useEffect(()=>{
+    if(!preload) return;
+    // Trova atleta in lista
+    const atleta = allAtleti.find(a=>a.id===preload.atletaId)||null;
+    if(atleta) {
+      setSelectedAtleta(atleta);
+      setSearchQ(`${atleta.nome} ${atleta.cognome}`);
+    } else if(preload.nome||preload.cognome) {
+      setSearchQ(`${preload.nome} ${preload.cognome}`.trim());
+    }
+    if(preload.obiettivo) setObiettivo(preload.obiettivo);
+    if(preload.livello) setLivello(preload.livello);
+    // Ripristina giorni con uid freschi per ogni esercizio
+    const giorniKeys = Object.keys(preload.giorni||{});
+    const numD = giorniKeys.length||3;
+    setNumDays(numD);
+    if(giorniKeys.length>0) setActiveDay(giorniKeys[0]);
+    const newGiorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
+    giorniKeys.forEach(d=>{
+      newGiorni[d]=(preload.giorni[d]||[]).map((ex,idx)=>({...ex,uid:Date.now()+idx}));
+    });
+    setGiorni(newGiorni);
+    // Ripristina nomi giorni
+    if(preload.dayNames) {
+      setDayNames(prev=>({...prev,...preload.dayNames}));
+    }
+    // Consuma il preload
+    if(setPreload) setPreload(null);
+  },[preload]);
+
   const filtered = searchQ.trim().length>0
-    ? allClients.filter(c=>{
+    ? allAtleti.filter(a=>{
         const q=searchQ.toLowerCase();
-        return c.nome.toLowerCase().includes(q)||c.cognome.toLowerCase().includes(q);
+        return a.nome.toLowerCase().includes(q)||a.cognome.toLowerCase().includes(q);
       }).slice(0,5)
     : [];
 
-  const selectClient=(c)=>{
-    setSelectedClient(c);
-    setSearchQ(`${c.nome} ${c.cognome}`);
+  const selectAtleta=(a)=>{
+    setSelectedAtleta(a);
+    setSearchQ(`${a.nome} ${a.cognome}`);
     setShowDrop(false);
-    if(c.obiettivo) setObiettivo(c.obiettivo);
-    if(c.livello) setLivello(c.livello);
+    if(a.obiettivo) setObiettivo(a.obiettivo);
+    if(a.livello) setLivello(a.livello);
   };
 
-  const clearClient=()=>{ setSelectedClient(null); setSearchQ(""); setObiettivo(""); setLivello(""); };
+  const clearAtleta=()=>{ setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); };
 
   const activeDays=ALL_DAYS.slice(0,numDays);
   const scheda=giorni[activeDay]||[];
@@ -1196,29 +1519,39 @@ function Builder({setView}) {
 
   const handlePDF=async()=>{
     if(!Object.values(activeGiorni).some(d=>d.length>0)) return;
-    const nome=selectedClient?.nome||"";
-    const cognome=selectedClient?.cognome||"";
+    const nome=selectedAtleta?.nome||"";
+    const cognome=selectedAtleta?.cognome||"";
     setPdfState({progress:0,label:"Preparazione…"});
     try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
     catch(e){console.error(e);}
     finally{setPdfState(null);}
   };
 
-  const handleAssegna=()=>{
-    if(!selectedClient||totalEx===0) return;
-    const key=`pt_scheda_${selectedClient.id}`;
+  const doAssegna=()=>{
+    if(!selectedAtleta||totalEx===0) return;
+    const key=`pt_scheda_${selectedAtleta.id}`;
     const payload={
-      clienteId:selectedClient.id,
-      nome:selectedClient.nome,
-      cognome:selectedClient.cognome,
+      atletaId:selectedAtleta.id,
+      nome:selectedAtleta.nome,
+      cognome:selectedAtleta.cognome,
       pt:"Personal Trainer Demo",
       obiettivo,livello,
       giorni:activeGiorni,
+      dayNames:Object.fromEntries(activeDays.map(d=>[d,dayNames[d]||""])),
       assegnataIl:fmtDate(new Date()),
     };
     localStorage.setItem(key,JSON.stringify(payload));
-    setToast(`✓ Scheda assegnata a ${selectedClient.nome} ${selectedClient.cognome}`);
-    setTimeout(()=>setToast(null),3000);
+    setShowOverwriteConfirm(false);
+    setToast(`✓ Scheda assegnata a ${selectedAtleta.nome} ${selectedAtleta.cognome} — l'atleta può accedere ora con atleta / atleta`);
+    setAssigned(true);
+    setTimeout(()=>setAssigned(false), 2000);
+  };
+
+  const handleAssegna=()=>{
+    if(!selectedAtleta||totalEx===0) return;
+    const key=`pt_scheda_${selectedAtleta.id}`;
+    if(localStorage.getItem(key)) { setShowOverwriteConfirm(true); return; }
+    doAssegna();
   };
 
   return (
@@ -1226,24 +1559,25 @@ function Builder({setView}) {
       <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">Builder Scheda</div><div className="page-sub">{totalEx} esercizi totali</div></div>
       {toast&&(
-        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--accent2)"}}>
-          {toast}
+        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--accent2)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
+          <span>{toast}</span>
+          <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:16,lineHeight:1,padding:0,flexShrink:0,opacity:.7,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.7}>✕</button>
         </div>
       )}
       <div className="builder">
         <div className="client-card">
-          <div className="card-section-title">Dati Cliente</div>
+          <div className="card-section-title">Dati Atleta</div>
           <div className="client-grid">
-            {/* Client search */}
+            {/* Ricerca atleta */}
             <div style={{gridColumn:"1 / span 2",position:"relative"}}>
               <label className="field-label">
-                Cliente
+                Atleta
                 <input
                   className="field-input"
                   type="text"
-                  placeholder="Cerca cliente…"
+                  placeholder="Cerca atleta…"
                   value={searchQ}
-                  onChange={e=>{setSearchQ(e.target.value);setShowDrop(true);if(!e.target.value)clearClient();}}
+                  onChange={e=>{setSearchQ(e.target.value);setShowDrop(true);if(!e.target.value)clearAtleta();}}
                   onFocus={()=>setShowDrop(true)}
                   onBlur={()=>setTimeout(()=>setShowDrop(false),150)}
                   autoComplete="off"
@@ -1251,18 +1585,18 @@ function Builder({setView}) {
               </label>
               {showDrop&&filtered.length>0&&(
                 <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,.4)"}}>
-                  {filtered.map(c=>(
+                  {filtered.map(a=>(
                     <div
-                      key={c.id}
-                      onMouseDown={()=>selectClient(c)}
+                      key={a.id}
+                      onMouseDown={()=>selectAtleta(a)}
                       style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:14,borderBottom:"1px solid var(--border)"}}
                       onMouseEnter={e=>e.currentTarget.style.background="var(--border)"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}
                     >
-                      <div style={{width:28,height:28,borderRadius:7,background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(c.nome,c.cognome)}</div>
+                      <div style={{width:28,height:28,borderRadius:7,background:a.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
                       <div>
-                        <div style={{fontWeight:600,color:"var(--text)"}}>{c.nome} {c.cognome}</div>
-                        <div style={{fontSize:11,color:"var(--muted)"}}>{c.obiettivo} · {c.livello}</div>
+                        <div style={{fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
+                        <div style={{fontSize:11,color:"var(--muted)"}}>{a.obiettivo} · {a.livello}</div>
                       </div>
                     </div>
                   ))}
@@ -1289,11 +1623,26 @@ function Builder({setView}) {
           <div className="day-tabs">
             {activeDays.map(d=>(
               <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                Giorno {d}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
+                {dayNames[d]||`Giorno ${d}`}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
               </button>
             ))}
           </div>
           <span style={{fontSize:13,color:"var(--muted)"}}>{scheda.length===0?"Giorno vuoto":`${scheda.length} esercizi`}</span>
+        </div>
+
+        {/* Nome giorno personalizzato */}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+          <input
+            className="field-input"
+            type="text"
+            placeholder={`Nome giorno (es. Push, Braccia, Gambe…)`}
+            value={dayNames[activeDay]||""}
+            onChange={e=>setDayNames(prev=>({...prev,[activeDay]:e.target.value}))}
+            style={{maxWidth:320,fontSize:13,padding:"8px 12px"}}
+          />
+          {dayNames[activeDay]&&(
+            <button onClick={()=>setDayNames(prev=>({...prev,[activeDay]:""}))} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,padding:"4px"}}>✕</button>
+          )}
         </div>
 
         <div className="builder-top">
@@ -1334,11 +1683,21 @@ function Builder({setView}) {
 
         {pdfState&&<div className="pdf-progress"><span style={{fontSize:18}}>⏳</span><div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfState.progress*100)}%`}}/></div><span className="prog-label">{pdfState.label}</span></div>}
 
+        {showOverwriteConfirm&&(
+          <div className="overwrite-confirm">
+            <span className="overwrite-confirm-text">⚠️ Questo atleta ha già una scheda assegnata. Sostituirla?</span>
+            <div className="overwrite-confirm-actions">
+              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:13}} onClick={()=>setShowOverwriteConfirm(false)}>Annulla</button>
+              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:13}} onClick={doAssegna}>Sì, sostituisci</button>
+            </div>
+          </div>
+        )}
+
         {totalEx>0&&!pdfState&&(
           <div className="actions-row">
             {scheda.length>0&&<button className="btn-ghost" onClick={clear}>Svuota Giorno {activeDay}</button>}
             <button className="btn-primary" onClick={handlePDF}>⬇ Esporta PDF completo</button>
-            {selectedClient?.hasAccount&&<button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d"}} onClick={handleAssegna}>📲 Assegna al cliente</button>}
+            {selectedAtleta?.hasAccount&&<button className="btn-primary" style={{background:assigned?"var(--accent2)":"var(--accent2)",color:"#07070d",opacity:assigned?1:1,cursor:assigned?"default":"pointer",transition:"all .2s"}} disabled={assigned} onClick={handleAssegna}>{assigned?"✓ Assegnata!":"📲 Assegna all'atleta"}</button>}
           </div>
         )}
       </div>
@@ -1346,57 +1705,154 @@ function Builder({setView}) {
   );
 }
 
-// ── CLIENTS ───────────────────────────────────────────────────────────────────
-const LS_CLIENTS = "pt_clients_demo";
-function loadClients() {
+// ── ATLETI ────────────────────────────────────────────────────────────────────
+const LS_ATLETI = "pt_atleti_demo";
+
+function loadAtleti() {
   try {
-    const raw = localStorage.getItem(LS_CLIENTS);
+    const raw = localStorage.getItem(LS_ATLETI);
     if(raw) return JSON.parse(raw);
   } catch {}
-  localStorage.setItem(LS_CLIENTS, JSON.stringify(DEMO_CLIENTS));
-  return DEMO_CLIENTS;
-}
-function persistClients(arr) {
-  localStorage.setItem(LS_CLIENTS, JSON.stringify(arr));
+  localStorage.setItem(LS_ATLETI, JSON.stringify(DEMO_ATLETI));
+  return DEMO_ATLETI;
 }
 
-function Clients({setView}) {
-  const [clients,setClients]=useState(()=>loadClients());
+function persistAtleti(arr) {
+  localStorage.setItem(LS_ATLETI, JSON.stringify(arr));
+}
+
+// ── SCHEDA DEMO SECTION (lato PT, modal atleta demo) ─────────────────────────
+function SchedaDemoSection({setView, onClose, setBuilderPreload}) {
+  const [sd, setSd] = useState(undefined); // undefined=loading, null=nessuna, obj=scheda
+
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem("pt_scheda_0");
+      setSd(raw ? JSON.parse(raw) : null);
+    } catch { setSd(null); }
+  },[]);
+
+  if(sd===undefined) return null;
+
+  if(!sd) return (
+    <div style={{color:"var(--muted)",fontSize:14}}>Nessuna scheda assegnata ancora.</div>
+  );
+
+  return (
+    <div>
+      {/* Info scheda */}
+      <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:"10px 20px",fontSize:13}}>
+          {sd.obiettivo&&<span><span style={{color:"var(--muted)"}}>Obiettivo: </span><strong style={{color:"var(--text)"}}>{sd.obiettivo}</strong></span>}
+          {sd.livello&&<span><span style={{color:"var(--muted)"}}>Livello: </span><strong style={{color:"var(--text)"}}>{sd.livello}</strong></span>}
+          {sd.assegnataIl&&<span><span style={{color:"var(--muted)"}}>Assegnata il: </span><strong style={{color:"var(--text)"}}>{sd.assegnataIl}</strong></span>}
+        </div>
+      </div>
+      {/* Esercizi per giorno */}
+      {Object.entries(sd.giorni||{}).map(([day, exList])=>{
+        const customName = sd.dayNames?.[day];
+        return (
+        <div key={day} style={{marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:7}}>
+            Giorno {day}{customName?` — ${customName}`:""} · {(exList||[]).length} esercizi
+          </div>
+          {(exList||[]).map(ex=>{
+            const cc=CAT_COLORS[ex.cat]||"var(--accent)";
+            return (
+              <div key={ex.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 12px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:8,marginBottom:5}}>
+                <span style={{fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:cc,background:`${cc}16`,padding:"2px 7px",borderRadius:4,flexShrink:0}}>{ex.cat}</span>
+                <span style={{fontSize:13,fontWeight:600,color:"var(--text)",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.name}</span>
+                <span style={{fontSize:12,color:"var(--muted)",flexShrink:0}}>{ex.sets}×{ex.reps} · {ex.rest}s</span>
+              </div>
+            );
+          })}
+        </div>
+        );
+      })}
+      {/* Bottone modifica */}
+      <button
+        className="btn-primary"
+        style={{marginTop:8,display:"flex",alignItems:"center",gap:6,fontSize:13}}
+        onClick={()=>{
+          if(setBuilderPreload) {
+            setBuilderPreload({
+              atletaId: sd.atletaId ?? 0,
+              nome: sd.nome||"",
+              cognome: sd.cognome||"",
+              obiettivo: sd.obiettivo||"",
+              livello: sd.livello||"",
+              giorni: sd.giorni||{},
+              dayNames: sd.dayNames||{},
+            });
+          }
+          onClose();
+          setView("builder");
+        }}
+      >
+        ✏️ Modifica nel Builder
+      </button>
+    </div>
+  );
+}
+
+function Atleti({setView, setBuilderPreload}) {
+  const [atleti,setAtleti]=useState(()=>loadAtleti());
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({nome:"",cognome:"",obiettivo:"",livello:""});
+  const [editingProfilo,setEditingProfilo]=useState(false);
+  const [editProfiloForm,setEditProfiloForm]=useState(null);
+  const FORM_EMPTY = {nome:"",cognome:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
+  const [form,setForm]=useState(FORM_EMPTY);
 
   const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
-  const addClient=()=>{
+
+  // Seed misurazioni demo per atleta id=0
+  useEffect(()=>{
+    const existing = localStorage.getItem("pt_misure_0");
+    if(!existing) saveMisure(0, DEMO_MISURE_0);
+  },[]);
+
+  const addAtleta=()=>{
     if(!form.nome||!form.cognome) return;
-    const updated=[...clients,{id:Date.now(),color:COLORS[clients.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
-    setClients(updated);
-    persistClients(updated);
-    setForm({nome:"",cognome:"",obiettivo:"",livello:""});
+    const updated=[...atleti,{id:Date.now(),color:COLORS[atleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
+    setAtleti(updated);
+    persistAtleti(updated);
+    setForm(FORM_EMPTY);
     setShowForm(false);
+  };
+
+  const saveProfilo=()=>{
+    if(!editProfiloForm) return;
+    const updated = atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
+    setAtleti(updated);
+    persistAtleti(updated);
+    // Aggiorna selected con i nuovi dati
+    const updated_sel = updated.find(a=>a.id===selected.id);
+    setSelected(updated_sel);
+    setEditingProfilo(false);
   };
 
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-        <div><div className="page-title">Clienti</div><div className="page-sub">{clients.length} clienti attivi</div></div>
-        <button className="btn-primary" onClick={()=>setShowForm(true)}>+ Nuovo cliente</button>
+        <div><div className="page-title">Atleti</div><div className="page-sub">{atleti.length} atleti attivi</div></div>
+        <button className="btn-primary" onClick={()=>setShowForm(true)}>+ Nuovo atleta</button>
       </div>
 
       <div className="clients-grid">
-        {clients.map(c=>(
-          <div className="client-item" key={c.id} onClick={()=>setSelected(c)}>
-            <div className="avatar" style={{background:c.color}}>{getInitials(c.nome,c.cognome)}</div>
+        {atleti.map(a=>(
+          <div className="client-item" key={a.id} onClick={()=>setSelected(a)}>
+            <div className="avatar" style={{background:a.color}}>{getInitials(a.nome,a.cognome)}</div>
             <div className="client-info">
-              <div className="client-name">{c.nome} {c.cognome}</div>
+              <div className="client-name">{a.nome} {a.cognome}</div>
               <div className="client-tags">
-                {c.obiettivo&&<span className="tag">{c.obiettivo}</span>}
-                {c.livello&&<span className="tag">{c.livello}</span>}
+                {a.obiettivo&&<span className="tag">{a.obiettivo}</span>}
+                {a.livello&&<span className="tag">{a.livello}</span>}
               </div>
               <div className="client-meta">
-                <span>🕐 {c.lastSeen}</span>
-                <span>📋 {c.schede} schede</span>
+                <span>🕐 {a.lastSeen}</span>
+                <span>📋 {a.schede} schede</span>
               </div>
             </div>
           </div>
@@ -1415,51 +1871,82 @@ function Clients({setView}) {
               <button className="modal-close" onClick={()=>setSelected(null)}>✕</button>
             </div>
             <div className="client-modal-body">
-              <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Schede assegnate</div>
-              {selected.isDemoCliente?(
-                <span className="scheda-chip">📋 Scheda Ipertrofia — Giorno A + B</span>
+              {/* ── SCHEDA ── */}
+              <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
+              {selected.isDemoAtleta?(
+                <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
               ):selected.schede>0?(
                 Array.from({length:selected.schede},(_,i)=>(
                   <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
                 ))
               ):<div style={{color:"var(--muted)",fontSize:14}}>Nessuna scheda assegnata ancora.</div>}
-              <div style={{marginTop:24,padding:"16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
+
+              {/* ── PROFILO ── */}
+              <div style={{marginTop:24}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>Profilo</div>
+                  {!editingProfilo&&(
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||""});setEditingProfilo(true);}}>✏️ Modifica</button>
+                  )}
+                </div>
+                {editingProfilo&&editProfiloForm?(
+                  <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:10}}>
+                    <div className="form-row" style={{marginBottom:10}}>
+                      <label className="field-label">Obiettivo<select className="field-select" value={editProfiloForm.obiettivo} onChange={e=>setEditProfiloForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
+                      <label className="field-label">Livello<select className="field-select" value={editProfiloForm.livello} onChange={e=>setEditProfiloForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+                    </div>
+                    <div className="form-row" style={{marginBottom:10}}>
+                      <label className="field-label">Altezza (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={editProfiloForm.altezza} onChange={e=>setEditProfiloForm(p=>({...p,altezza:e.target.value}))}/></label>
+                      <label className="field-label">Data di nascita<input className="field-input" type="date" value={editProfiloForm.dataNascita} onChange={e=>setEditProfiloForm(p=>({...p,dataNascita:e.target.value}))}/></label>
+                    </div>
+                    <label className="field-label" style={{marginBottom:10}}>Sesso<select className="field-select" value={editProfiloForm.sesso} onChange={e=>setEditProfiloForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
+                    <label className="field-label" style={{marginBottom:10}}>Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={editProfiloForm.note} onChange={e=>setEditProfiloForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+                    <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                      <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setEditingProfilo(false)}>Annulla</button>
+                      <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={saveProfilo}>Salva</button>
+                    </div>
+                  </div>
+                ):(
+                  <div className="profilo-grid">
+                    <div className="profilo-cell">
+                      <div className="profilo-cell-label">Altezza</div>
+                      <div className="profilo-cell-val">{selected.altezza?`${selected.altezza} cm`:"—"}</div>
+                    </div>
+                    <div className="profilo-cell">
+                      <div className="profilo-cell-label">Età</div>
+                      <div className="profilo-cell-val">{selected.dataNascita&&calcEta(selected.dataNascita)!==null?`${calcEta(selected.dataNascita)} anni`:"—"}</div>
+                    </div>
+                    <div className="profilo-cell">
+                      <div className="profilo-cell-label">Sesso</div>
+                      <div className="profilo-cell-val">{selected.sesso||"—"}</div>
+                    </div>
+                    <div className="profilo-cell" style={{gridColumn:"1/-1"}}>
+                      <div className="profilo-cell-label">Note PT</div>
+                      <div className="profilo-cell-val" style={{fontSize:13,whiteSpace:"pre-wrap"}}>{selected.note||"—"}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── STATISTICHE ── */}
+              <div style={{marginTop:16,padding:"14px 16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>Statistiche</div>
                 <div style={{display:"flex",gap:24,fontSize:14}}>
                   <div><span style={{color:"var(--muted)"}}>Ultimo accesso: </span><strong>{selected.lastSeen}</strong></div>
                   <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||1}</strong></div>
                 </div>
               </div>
-              {/* PROGRESSI */}
+
+              {/* ── MISURAZIONI ── */}
+              <div style={{marginTop:24}}>
+                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
+                <MisureSection atletaId={selected.id}/>
+              </div>
+
+              {/* ── PROGRESSI ── */}
               <div style={{marginTop:24}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
-                {(()=>{
-                  if(!selected.isDemoCliente) return <div style={{color:"var(--muted)",fontSize:14}}>Nessuna sessione registrata ancora.</div>;
-                  const sessions=[...loadSessions()].sort((a,b)=>b.date.localeCompare(a.date));
-                  if(sessions.length===0) return <div style={{color:"var(--muted)",fontSize:14}}>Nessuna sessione registrata ancora.</div>;
-                  return sessions.map((sess,si)=>{
-                    const schedaLS = (()=>{ try{ const r=localStorage.getItem("pt_scheda_0"); return r?JSON.parse(r):null; }catch{return null;} })();
-                    const esercizi=(schedaLS?.giorni?.[sess.day])||[];
-                    return (
-                      <div key={si} style={{marginBottom:14,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden"}}>
-                        <div style={{padding:"10px 14px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                          <span style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>Giorno {sess.day}</span>
-                          <span style={{fontSize:12,color:"var(--muted)"}}>{new Date(sess.date+"T12:00").toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"})}</span>
-                        </div>
-                        {esercizi.map(ex=>{
-                          const cc=CAT_COLORS[ex.cat]||"var(--accent)";
-                          const peso=sess.weights[ex.id];
-                          return (
-                            <div key={ex.id} style={{padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(34,34,58,.5)"}}>
-                              <span style={{fontSize:13,color:"var(--text)"}}>{ex.name}</span>
-                              <span style={{fontSize:13,fontWeight:700,color:peso?cc:"var(--muted)"}}>{peso?`${peso} kg`:"—"}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  });
-                })()}
+                <ProgressiSectionPT atleta={selected}/>
               </div>
             </div>
           </div>
@@ -1468,9 +1955,9 @@ function Clients({setView}) {
 
       {showForm&&(
         <div className="overlay" onClick={()=>setShowForm(false)}>
-          <div className="form-modal" onClick={e=>e.stopPropagation()}>
+          <div className="form-modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
-              <div className="modal-title">Nuovo Cliente</div>
+              <div className="modal-title">Nuovo Atleta</div>
               <button className="modal-close" onClick={()=>setShowForm(false)}>✕</button>
             </div>
             <div className="form-modal-body">
@@ -1478,14 +1965,80 @@ function Clients({setView}) {
                 <label className="field-label">Nome<input className="field-input" type="text" placeholder="Marco" value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/></label>
                 <label className="field-label">Cognome<input className="field-input" type="text" placeholder="Rossi" value={form.cognome} onChange={e=>setForm(p=>({...p,cognome:e.target.value}))}/></label>
               </div>
-              <label className="field-label">Obiettivo<select className="field-select" value={form.obiettivo} onChange={e=>setForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
-              <label className="field-label">Livello<select className="field-select" value={form.livello} onChange={e=>setForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+              <div className="form-row">
+                <label className="field-label">Obiettivo<select className="field-select" value={form.obiettivo} onChange={e=>setForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
+                <label className="field-label">Livello<select className="field-select" value={form.livello} onChange={e=>setForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+              </div>
+              <div className="form-row">
+                <label className="field-label">Altezza (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={form.altezza} onChange={e=>setForm(p=>({...p,altezza:e.target.value}))}/></label>
+                <label className="field-label">Data di nascita<input className="field-input" type="date" value={form.dataNascita} onChange={e=>setForm(p=>({...p,dataNascita:e.target.value}))}/></label>
+              </div>
+              <label className="field-label">Sesso<select className="field-select" value={form.sesso} onChange={e=>setForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
+              <label className="field-label">Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
             </div>
             <div className="form-actions">
               <button className="btn-ghost" onClick={()=>setShowForm(false)}>Annulla</button>
-              <button className="btn-primary" onClick={addClient}>Aggiungi</button>
+              <button className="btn-primary" onClick={addAtleta}>Aggiungi</button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ATLETA SEARCH FIELD (usato nel calendario PT) ────────────────────────────
+// Dropdown di ricerca atleti, rimane editabile liberamente (si può scrivere qualsiasi nome)
+function AtletaSearchField({value, onChange}) {
+  const [q, setQ] = useState(value||"");
+  const [showDrop, setShowDrop] = useState(false);
+  const allAtleti = loadAtleti();
+
+  // Sincronizza q se value cambia dall'esterno (es. reset form)
+  useEffect(()=>{ setQ(value||""); },[value]);
+
+  const filtered = allAtleti.filter(a=>
+    `${a.nome} ${a.cognome}`.toLowerCase().includes(q.toLowerCase())
+  ).slice(0,5);
+
+  const select = (a) => {
+    const name = `${a.nome} ${a.cognome}`;
+    setQ(name);
+    onChange(name);
+    setShowDrop(false);
+  };
+
+  return (
+    <div style={{position:"relative"}}>
+      <input
+        className="field-input"
+        type="text"
+        placeholder="Cerca atleta o inserisci nome…"
+        value={q}
+        autoComplete="off"
+        onChange={e=>{ setQ(e.target.value); onChange(e.target.value); setShowDrop(true); }}
+        onFocus={()=>setShowDrop(true)}
+        onBlur={()=>setTimeout(()=>setShowDrop(false),150)}
+      />
+      {showDrop&&filtered.length>0&&(
+        <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:60,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,.5)"}}>
+          {filtered.map(a=>(
+            <div
+              key={a.id}
+              onMouseDown={()=>select(a)}
+              style={{padding:"9px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,borderBottom:"1px solid var(--border)"}}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.05)"}
+              onMouseLeave={e=>e.currentTarget.style.background=""}
+            >
+              <div style={{width:28,height:28,borderRadius:7,background:a.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>
+                {getInitials(a.nome,a.cognome)}
+              </div>
+              <div style={{minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
+                {a.obiettivo&&<div style={{fontSize:11,color:"var(--muted)"}}>{a.obiettivo}</div>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -1517,20 +2070,17 @@ function getMonday(d) {
 }
 const HOURS=Array.from({length:16},(_,i)=>i+6); // 06..21
 
-function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle}) {
+function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle,enableAtletaSearch=false}) {
   const now=new Date();
   const todayStr=fmtDate(now);
   const [calView,setCalView]=useState("month");
-  // month
   const [year,setYear]=useState(now.getFullYear());
   const [month,setMonth]=useState(now.getMonth());
-  // week
   const [weekStart,setWeekStart]=useState(getMonday(now));
-  // modals
-  const [dayModal,setDayModal]=useState(null);       // date string
-  const [showAddForm,setShowAddForm]=useState(null); // date string
-  const [editEv,setEditEv]=useState(null);           // event obj
-  const [deleteConfirm,setDeleteConfirm]=useState(null); // event id
+  const [dayModal,setDayModal]=useState(null);
+  const [showAddForm,setShowAddForm]=useState(null);
+  const [editEv,setEditEv]=useState(null);
+  const [deleteConfirm,setDeleteConfirm]=useState(null);
   const [form,setForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
   const [editForm,setEditForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
 
@@ -1546,7 +2096,6 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
   const startEdit=(ev)=>{ setEditEv(ev); setEditForm({clientName:ev.clientName,time:ev.time,type:ev.type}); };
   const saveEdit=()=>{ setEvents(prev=>prev.map(e=>e.id===editEv.id?{...e,...editForm}:e)); setEditEv(null); };
 
-  // month nav
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
   const nextM=()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
   const firstDay=new Date(year,month,1).getDay();
@@ -1559,7 +2108,6 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
     cells.push({day:d,date});
   }
 
-  // week nav
   const prevW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()-7); setWeekStart(d); };
   const nextW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()+7); setWeekStart(d); };
   const weekDays=Array.from({length:7},(_,i)=>{ const d=new Date(weekStart); d.setDate(d.getDate()+i); return d; });
@@ -1704,7 +2252,13 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <div style={{fontSize:13,color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
                 📅 {new Date(showAddForm+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
               </div>
-              <label className="field-label">{clientLabel}<input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/></label>
+              <label className="field-label">
+                {clientLabel}
+                {enableAtletaSearch
+                  ? <AtletaSearchField value={form.clientName} onChange={v=>setForm(p=>({...p,clientName:v}))}/>
+                  : <input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/>
+                }
+              </label>
               <div className="form-row">
                 <label className="field-label">Orario<input className="field-input" type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/></label>
                 <label className="field-label">Tipo<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
@@ -1727,7 +2281,13 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <button className="modal-close" onClick={()=>setEditEv(null)}>✕</button>
             </div>
             <div className="form-modal-body">
-              <label className="field-label">{clientLabel}<input className="field-input" type="text" value={editForm.clientName} onChange={e=>setEditForm(p=>({...p,clientName:e.target.value}))}/></label>
+              <label className="field-label">
+                {clientLabel}
+                {enableAtletaSearch
+                  ? <AtletaSearchField value={editForm.clientName} onChange={v=>setEditForm(p=>({...p,clientName:v}))}/>
+                  : <input className="field-input" type="text" value={editForm.clientName} onChange={e=>setEditForm(p=>({...p,clientName:e.target.value}))}/>
+                }
+              </label>
               <div className="form-row">
                 <label className="field-label">Orario<input className="field-input" type="time" value={editForm.time} onChange={e=>setEditForm(p=>({...p,time:e.target.value}))}/></label>
                 <label className="field-label">Tipo<select className="field-select" value={editForm.type} onChange={e=>setEditForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
@@ -1748,9 +2308,22 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
+const LS_CAL_SHARED = "pt_calendar_shared";
+
+function loadSharedCal() {
+  try { const r=localStorage.getItem(LS_CAL_SHARED); return r?JSON.parse(r):null; } catch { return null; }
+}
+function saveSharedCal(events) {
+  try { localStorage.setItem(LS_CAL_SHARED, JSON.stringify(events)); } catch {}
+}
+
 function CalendarView({setView}) {
-  const [events,setEvents]=useState(DEMO_EVENTS);
-  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Cliente" setView={setView}/>;
+  const [events,setEvents]=useState(()=>loadSharedCal()||DEMO_EVENTS);
+
+  // Ogni volta che gli eventi cambiano, sincronizza su localStorage condiviso
+  useEffect(()=>{ saveSharedCal(events); },[events]);
+
+  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView} enableAtletaSearch={true}/>;
 }
 
 // ── ADMIN STATS ───────────────────────────────────────────────────────────────
@@ -1804,11 +2377,11 @@ function AdminPT({setView}) {
   const maxUses=topExercises[0].uses;
   const feed=[
     {pt:"Andrea Rossi",   action:"ha creato una nuova scheda",  time:"2 min fa",    icon:"📋"},
-    {pt:"Marta Savi",     action:"ha aggiunto un nuovo cliente", time:"18 min fa",   icon:"👤"},
+    {pt:"Marta Savi",     action:"ha aggiunto un nuovo atleta",  time:"18 min fa",   icon:"👤"},
     {pt:"Giulia Moretti", action:"ha esportato un PDF",          time:"1 ora fa",    icon:"📄"},
     {pt:"Andrea Rossi",   action:"ha effettuato l'accesso",      time:"2 ore fa",    icon:"🔑"},
     {pt:"Paolo Crespi",   action:"ha creato una nuova scheda",   time:"ieri, 18:30", icon:"📋"},
-    {pt:"Lorenzo De Luca",action:"ha aggiunto un nuovo cliente", time:"ieri, 15:10", icon:"👤"},
+    {pt:"Lorenzo De Luca",action:"ha aggiunto un nuovo atleta",  time:"ieri, 15:10", icon:"👤"},
   ];
   return (
     <div>
@@ -1872,8 +2445,455 @@ function AdminCalendar({setView}) {
   return <CalendarBase events={events} setEvents={setEvents} sessionTypes={ADMIN_SESSION_TYPES} clientLabel="PT / Contatto" setView={setView} pageSubtitle="I tuoi appuntamenti con i PT"/>;
 }
 
-// ── CLIENTE VIEW ──────────────────────────────────────────────────────────────
-const LS_KEY = "pt_sessions_demo_cliente";
+// ── MISURE SECTION ────────────────────────────────────────────────────────────
+// Riusato sia nel modal PT che nella tab Progressi atleta
+const MISURE_FIELDS = [
+  { key:"peso",      label:"Peso",      emoji:"⚖️", unit:"kg"  },
+  { key:"vita",      label:"Vita",      emoji:"📏", unit:"cm"  },
+  { key:"fianchi",   label:"Fianchi",   emoji:"🍑", unit:"cm"  },
+  { key:"petto",     label:"Petto",     emoji:"💪", unit:"cm"  },
+  { key:"braccio",   label:"Braccio",   emoji:"💪", unit:"cm"  },
+  { key:"grassoPerc",label:"Grasso",    emoji:"🔬", unit:"%"   },
+  { key:"fcRiposo",  label:"FC Riposo", emoji:"❤️", unit:"bpm" },
+];
+
+function MisureSection({atletaId, readOnly=false}) {
+  const todayStr = fmtDate(new Date());
+  const [misure, setMisure] = useState(()=>loadMisure(atletaId));
+  const [form, setForm] = useState({
+    data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""
+  });
+  const [showAvanzati, setShowAvanzati] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // Chip grafico
+  const [selMisure, setSelMisure] = useState([]);
+
+  const handleSave = () => {
+    if(!form.peso && !form.vita) return; // richiede almeno un campo
+    const newEntry = {...form};
+    const updated = [...misure.filter(m=>m.data!==form.data), newEntry]
+      .sort((a,b)=>a.data.localeCompare(b.data));
+    setMisure(updated);
+    saveMisure(atletaId, updated);
+    setForm({data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""});
+    setShowAvanzati(false);
+  };
+
+  const handleDelete = (idx) => {
+    const updated = misure.filter((_,i)=>i!==idx);
+    setMisure(updated);
+    saveMisure(atletaId, updated);
+    setDeleteConfirm(null);
+  };
+
+  const toggleMisura = (key) => {
+    setSelMisure(prev=>prev.includes(key)?prev.filter(k=>k!==key):[...prev,key]);
+  };
+
+  // Chip attivi = quelli con ≥2 valori non vuoti
+  const activeMisureKeys = MISURE_FIELDS
+    .filter(f=>misure.filter(m=>m[f.key]&&+m[f.key]>0).length>=2)
+    .map(f=>f.key);
+
+  // Linee grafico
+  const chartLines = MISURE_FIELDS
+    .filter(f=>selMisure.includes(f.key)&&activeMisureKeys.includes(f.key))
+    .map((f,i)=>({
+      id:f.key, name:`${f.emoji} ${f.label}`,
+      color:LINE_COLORS[i%LINE_COLORS.length],
+      points:misure
+        .filter(m=>m[f.key]&&+m[f.key]>0)
+        .map(m=>({date:m.data,kg:+m[f.key]}))
+    }));
+
+  const visibleMisure = expanded ? misure : [...misure].reverse().slice(0,3);
+
+  return (
+    <div>
+      {/* ── FORM NUOVA MISURAZIONE ── */}
+      {!readOnly&&(
+        <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Nuova misurazione</div>
+          <div className="form-row" style={{marginBottom:10}}>
+            <label className="field-label">Data<input className="field-input" type="date" value={form.data} onChange={e=>setForm(p=>({...p,data:e.target.value}))}/></label>
+          </div>
+          <div className="form-row" style={{marginBottom:10}}>
+            <label className="field-label">Peso (kg)<input className="field-input" type="number" min={0} max={300} step={0.1} placeholder="78.5" value={form.peso} onChange={e=>setForm(p=>({...p,peso:e.target.value}))}/></label>
+            <label className="field-label">Vita (cm)<input className="field-input" type="number" min={0} max={200} placeholder="82" value={form.vita} onChange={e=>setForm(p=>({...p,vita:e.target.value}))}/></label>
+          </div>
+          <button className="btn-ghost" style={{fontSize:11,padding:"5px 12px",marginBottom:showAvanzati?8:0}} onClick={()=>setShowAvanzati(v=>!v)}>
+            {showAvanzati?"▲ Nascondi avanzati":"➕ Dati avanzati"}
+          </button>
+          {showAvanzati&&(
+            <div className="misure-avanzati">
+              <div className="form-row">
+                <label className="field-label">Fianchi (cm)<input className="field-input" type="number" min={0} max={200} placeholder="96" value={form.fianchi} onChange={e=>setForm(p=>({...p,fianchi:e.target.value}))}/></label>
+                <label className="field-label">Petto (cm)<input className="field-input" type="number" min={0} max={200} placeholder="100" value={form.petto} onChange={e=>setForm(p=>({...p,petto:e.target.value}))}/></label>
+              </div>
+              <div className="form-row">
+                <label className="field-label">Braccio (cm)<input className="field-input" type="number" min={0} max={100} placeholder="36" value={form.braccio} onChange={e=>setForm(p=>({...p,braccio:e.target.value}))}/></label>
+                <label className="field-label">FC Riposo (bpm)<input className="field-input" type="number" min={30} max={200} placeholder="65" value={form.fcRiposo} onChange={e=>setForm(p=>({...p,fcRiposo:e.target.value}))}/></label>
+              </div>
+              <label className="field-label">% Massa grassa<input className="field-input" type="number" min={0} max={70} step={0.1} placeholder="18.5" value={form.grassoPerc} onChange={e=>setForm(p=>({...p,grassoPerc:e.target.value}))}/></label>
+            </div>
+          )}
+          <button className="btn-primary" style={{marginTop:10,width:"100%"}} onClick={handleSave}>Salva misurazione</button>
+        </div>
+      )}
+
+      {/* ── LISTA MISURAZIONI ── */}
+      {misure.length===0?(
+        <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>
+          {readOnly?"Il tuo PT non ha ancora registrato misurazioni":"Nessuna misurazione registrata ancora."}
+        </div>
+      ):(
+        <>
+          {[...misure].reverse().slice(0, expanded?999:3).map((m,i)=>{
+            const realIdx = misure.length-1-i;
+            const badges = MISURE_FIELDS.filter(f=>m[f.key]&&+m[f.key]>0);
+            return (
+              <div key={m.data+i}>
+                <div className="misure-entry">
+                  <span className="misure-date">{fmtDateShort(m.data)}</span>
+                  {badges.map(f=>(
+                    <span key={f.key} className="misura-badge">{f.emoji} {m[f.key]} {f.unit}</span>
+                  ))}
+                  <div style={{flex:1}}/>
+                  {!readOnly&&(
+                    <button className="day-event-btn" onClick={()=>setDeleteConfirm(deleteConfirm===realIdx?null:realIdx)}>🗑️</button>
+                  )}
+                </div>
+                {deleteConfirm===realIdx&&(
+                  <div className="day-delete-confirm" style={{marginBottom:7}}>
+                    <span style={{fontSize:13,color:"var(--text)"}}>Eliminare questa misurazione?</span>
+                    <div style={{display:"flex",gap:8}}>
+                      <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>Annulla</button>
+                      <button className="btn-danger" onClick={()=>handleDelete(realIdx)}>Elimina</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {misure.length>3&&(
+            <button className="appt-expand-btn" onClick={()=>setExpanded(v=>!v)}>
+              {expanded?"Mostra meno ▲":`Vedi tutte (${misure.length}) ▼`}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* ── GRAFICO ── */}
+      {misure.length<2?(
+        <div style={{color:"var(--muted)",fontSize:13,marginTop:12,padding:"10px 0",textAlign:"center"}}>
+          {misure.length===0?"":readOnly?"":"Aggiungi almeno 2 misurazioni per vedere il grafico"}
+        </div>
+      ):(
+        <div style={{marginTop:14}}>
+          <div className="prog-chips" style={{marginBottom:8}}>
+            {MISURE_FIELDS.filter(f=>activeMisureKeys.includes(f.key)).map((f,i)=>{
+              const sel=selMisure.includes(f.key);
+              const cc=LINE_COLORS[i%LINE_COLORS.length];
+              return (
+                <button key={f.key}
+                  className={`prog-chip unlocked${sel?" selected":""}`}
+                  style={sel?{background:`${cc}1a`,borderColor:cc,color:cc}:{}}
+                  onClick={()=>toggleMisura(f.key)}
+                >{f.emoji} {f.label}</button>
+              );
+            })}
+          </div>
+          {chartLines.length===0?(
+            <div style={{color:"var(--muted)",fontSize:13,textAlign:"center",padding:"8px 0"}}>
+              Seleziona una metrica per vedere il grafico
+            </div>
+          ):(
+            <>
+              <div className="prog-legend">
+                {chartLines.map(l=>(
+                  <div key={l.id} className="prog-legend-item">
+                    <div style={{width:8,height:8,borderRadius:"50%",background:l.color,flexShrink:0}}/>
+                    <span>{l.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="prog-chart-box"><ProgressiMultiChart lines={chartLines}/></div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ATLETA EXERCISE CARD ──────────────────────────────────────────────────────
+// Componente con proprio state per immagine e video modal, usato in AtletaView
+function AtletaExCard({ex, peso, onPesoChange}) {
+  const [imgOk, setImgOk] = useState(true);
+  const [showVideo, setShowVideo] = useState(false);
+  const cc = CAT_COLORS[ex.cat] || "#e8ff47";
+  const slug = EX_IMAGES[ex.id];
+  const exFull = EXERCISES.find(e => e.id === ex.id);
+
+  return (
+    <>
+      <div className="ex-atleta-card">
+        {imgOk && slug
+          ? <img
+              className="ex-atleta-thumb"
+              src={`/exercises-custom/${slug}.jpg`}
+              alt={ex.name}
+              onError={()=>setImgOk(false)}
+            />
+          : <div className="ex-atleta-thumb-ph">💪</div>
+        }
+        <div className="ex-atleta-body">
+          <div className="ex-atleta-top">
+            <span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{ex.cat}</span>
+            <div className="ex-peso-wrap">
+              <input
+                className="ex-peso-input"
+                type="number"
+                min={0}
+                max={999}
+                placeholder="0"
+                value={peso||""}
+                onChange={e=>onPesoChange(e.target.value)}
+              />
+              <span className="ex-peso-unit">kg</span>
+            </div>
+          </div>
+          <div className="ex-cliente-name">{ex.name}</div>
+          <div className="ex-cliente-meta">{ex.sets} serie × {ex.reps} rip · recupero {ex.rest}s</div>
+          {exFull?.yt&&(
+            <button className="video-btn" style={{marginTop:10}} onClick={()=>setShowVideo(true)}>
+              <span className="play-icon">▶</span>Guarda il video
+            </button>
+          )}
+        </div>
+      </div>
+      {showVideo&&exFull&&<VideoModal ex={exFull} onClose={()=>setShowVideo(false)}/>}
+    </>
+  );
+}
+
+// ── PROGRESSI — SEZIONE PT (usata nel modal Atleti) ──────────────────────────
+function ProgressiSectionPT({atleta}) {
+  const [selIds,setSelIds]=useState(null); // null = non ancora inizializzato
+
+  // Atleti con dati insufficienti (<3 sessioni totali)
+  if(atleta.id===2||atleta.id===4) {
+    return (
+      <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0",lineHeight:1.6}}>
+        Dati insufficienti — servono almeno 3 sessioni per visualizzare i progressi.
+      </div>
+    );
+  }
+
+  // Sorgente sessioni
+  const sessions = atleta.isDemoAtleta ? loadSessions() : (FAKE_SESSIONS[atleta.id]||[]);
+  const exercises = atleta.isDemoAtleta
+    ? [...new Set(sessions.flatMap(s=>Object.keys(s.weights||{}).map(Number)))]
+        .map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean)
+    : getFakeExercises(atleta.id);
+
+  if(!sessions.length||!exercises.length) {
+    return <div style={{color:"var(--muted)",fontSize:13}}>Nessuna sessione registrata ancora.</div>;
+  }
+
+  const counts=countSessionsPerEx(sessions);
+  const unlockedIds=exercises.filter(ex=>(counts[ex.id]||0)>=3).map(ex=>ex.id);
+
+  if(!unlockedIds.length) {
+    return <div style={{color:"var(--muted)",fontSize:13}}>Dati insufficienti — servono almeno 3 sessioni per esercizio.</div>;
+  }
+
+  // Colore per indice (indipendente dalla categoria)
+  const colorMap = Object.fromEntries(exercises.map((ex,i)=>[ex.id, LINE_COLORS[i%LINE_COLORS.length]]));
+
+  // Inizializzazione: seleziona tutti gli esercizi sbloccati
+  const activeSel = selIds!==null ? selIds : unlockedIds;
+
+  const toggle=(id)=>{
+    const cur=selIds!==null?selIds:unlockedIds;
+    const next=cur.includes(id)?cur.filter(x=>x!==id):[...cur,id];
+    setSelIds(next);
+  };
+
+  const lines=exercises
+    .filter(ex=>activeSel.includes(ex.id)&&(counts[ex.id]||0)>=3)
+    .map(ex=>({
+      id:ex.id, name:ex.name, color:colorMap[ex.id],
+      points:sessions
+        .filter(s=>+s.weights?.[ex.id]>0)
+        .map(s=>({date:s.date,kg:+s.weights[ex.id]}))
+        .sort((a,b)=>a.date.localeCompare(b.date))
+    }));
+
+  return (
+    <div style={{marginTop:4}}>
+      <div className="prog-chips">
+        {exercises.map(ex=>{
+          const unlocked=(counts[ex.id]||0)>=3;
+          const sel=activeSel.includes(ex.id);
+          const cc=colorMap[ex.id];
+          return (
+            <button key={ex.id}
+              className={`prog-chip${unlocked?" unlocked":" locked"}${sel?" selected":""}`}
+              style={sel&&unlocked?{background:`${cc}1a`,borderColor:cc,color:cc}:{}}
+              onClick={()=>unlocked&&toggle(ex.id)}
+            >
+              {ex.name.length>20?ex.name.slice(0,20)+"…":ex.name}
+              {!unlocked&&<span style={{marginLeft:4,fontSize:9,opacity:.7}}>🔒</span>}
+            </button>
+          );
+        })}
+      </div>
+      {lines.length>0?(
+        <>
+          <div className="prog-legend">
+            {lines.map(l=>(
+              <div key={l.id} className="prog-legend-item">
+                <div style={{width:8,height:8,borderRadius:"50%",background:l.color,flexShrink:0}}/>
+                <span>{l.name}</span>
+              </div>
+            ))}
+          </div>
+          <div className="prog-chart-box"><ProgressiMultiChart lines={lines}/></div>
+        </>
+      ):(
+        <div style={{textAlign:"center",color:"var(--muted)",fontSize:13,padding:"16px 0"}}>
+          Seleziona almeno un esercizio per vedere il grafico
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── PROGRESSI — SCHERMATA ATLETA ──────────────────────────────────────────────
+function AtletaProgressi({scheda}) {
+  const [selIds,setSelIds]=useState([]); // esercizi selezionati (default: nessuno)
+  const [lockedExId,setLockedExId]=useState(null); // chip bloccato cliccato
+
+  if(!scheda) {
+    return (
+      <div className="cliente-body">
+        <div style={{textAlign:"center",paddingTop:48}}>
+          <div style={{fontSize:40,marginBottom:12}}>📋</div>
+          <div style={{fontSize:15,fontWeight:600,color:"var(--text)",marginBottom:6}}>Nessuna scheda assegnata</div>
+          <div style={{fontSize:13,color:"var(--muted)"}}>Chiedi al tuo PT.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tutti gli esercizi unici della scheda (da tutti i giorni)
+  const seen=new Set();
+  const allExercises=[];
+  Object.values(scheda.giorni).forEach(exList=>{
+    (exList||[]).forEach(ex=>{
+      if(!seen.has(ex.id)){
+        seen.add(ex.id);
+        const full=EXERCISES.find(e=>e.id===ex.id)||ex;
+        allExercises.push(full);
+      }
+    });
+  });
+
+  const sessions=loadSessions();
+  const counts=countSessionsPerEx(sessions);
+
+  // Colore per indice (indipendente dalla categoria)
+  const colorMap = Object.fromEntries(allExercises.map((ex,i)=>[ex.id, LINE_COLORS[i%LINE_COLORS.length]]));
+
+  const toggle=(id)=>{
+    setLockedExId(null);
+    setSelIds(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
+  };
+
+  const lines=allExercises
+    .filter(ex=>selIds.includes(ex.id)&&(counts[ex.id]||0)>=3)
+    .map(ex=>({
+      id:ex.id, name:ex.name, color:colorMap[ex.id],
+      points:sessions
+        .filter(s=>+s.weights?.[ex.id]>0)
+        .map(s=>({date:s.date,kg:+s.weights[ex.id]}))
+        .sort((a,b)=>a.date.localeCompare(b.date))
+    }));
+
+  return (
+    <div className="cliente-body">
+      <div className="prog-section">
+        <div className="prog-section-head">Esercizi</div>
+        <div className="prog-chips">
+          {allExercises.map(ex=>{
+            const unlocked=(counts[ex.id]||0)>=3;
+            const sel=selIds.includes(ex.id);
+            const cc=colorMap[ex.id];
+            const isLocked=lockedExId===ex.id;
+            return (
+              <div key={ex.id} style={{display:"flex",flexDirection:"column",gap:4}}>
+                <button
+                  className={`prog-chip${unlocked?" unlocked":" locked"}${sel?" selected":""}`}
+                  style={sel&&unlocked?{background:`${cc}1a`,borderColor:cc,color:cc}:{}}
+                  onClick={()=>{
+                    if(!unlocked){setLockedExId(isLocked?null:ex.id);}
+                    else toggle(ex.id);
+                  }}
+                >
+                  {ex.name.length>22?ex.name.slice(0,22)+"…":ex.name}
+                  {unlocked
+                    ?<span style={{marginLeft:5,fontSize:10,opacity:.6}}>{counts[ex.id]||0}×</span>
+                    :<span style={{marginLeft:5,fontSize:10,opacity:.6}}>🔒</span>
+                  }
+                </button>
+                {isLocked&&(
+                  <div className="prog-lock-msg">
+                    Completa almeno 3 allenamenti con questo esercizio per sbloccare il grafico
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {selIds.length===0?(
+          <div className="prog-empty">
+            <div className="prog-empty-icon">📈</div>
+            Seleziona un esercizio per vedere i tuoi progressi
+          </div>
+        ):lines.length>0?(
+          <>
+            <div className="prog-legend">
+              {lines.map(l=>(
+                <div key={l.id} className="prog-legend-item">
+                  <div style={{width:8,height:8,borderRadius:"50%",background:l.color,flexShrink:0}}/>
+                  <span>{l.name}</span>
+                </div>
+              ))}
+            </div>
+            <div className="prog-chart-box"><ProgressiMultiChart lines={lines}/></div>
+          </>
+        ):(
+          <div className="prog-empty">
+            <div className="prog-empty-icon">⏳</div>
+            Completa almeno 3 allenamenti con gli esercizi selezionati per visualizzare il grafico
+          </div>
+        )}
+      </div>
+
+      {/* ── LE MIE MISURAZIONI ── */}
+      <div className="prog-section" style={{marginTop:8}}>
+        <div className="prog-section-head">📏 Le mie misurazioni</div>
+        <MisureSection atletaId={0} readOnly={true}/>
+      </div>
+    </div>
+  );
+}
+
+// ── ATLETA VIEW ───────────────────────────────────────────────────────────────
+const LS_KEY = "pt_sessions_demo_atleta";
 
 function loadSessions() {
   try { return JSON.parse(localStorage.getItem(LS_KEY)||"[]"); } catch { return []; }
@@ -1882,14 +2902,77 @@ function saveSessions(arr) {
   localStorage.setItem(LS_KEY, JSON.stringify(arr));
 }
 
-function ClienteView({user, onLogout}) {
+// ── MISURAZIONI HELPERS ───────────────────────────────────────────────────────
+function loadMisure(atletaId) {
+  try { return JSON.parse(localStorage.getItem(`pt_misure_${atletaId}`)||"[]"); } catch { return []; }
+}
+function saveMisure(atletaId, arr) {
+  try { localStorage.setItem(`pt_misure_${atletaId}`, JSON.stringify(arr)); } catch {}
+}
+function calcEta(dataNascita) {
+  if(!dataNascita) return null;
+  const d = new Date(dataNascita+"T12:00");
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+}
+
+// Misurazioni demo per atleta id=0 (precaricare se non esistono)
+const DEMO_MISURE_0 = [
+  { data:fmtDate(addDays(today,-56)), peso:"82", vita:"92", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"72" },
+  { data:fmtDate(addDays(today,-42)), peso:"80", vita:"90", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"70" },
+  { data:fmtDate(addDays(today,-28)), peso:"78.5", vita:"88", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"68" },
+  { data:fmtDate(addDays(today,-14)), peso:"77", vita:"86", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"67" },
+  { data:fmtDate(addDays(today,-3)),  peso:"75.5", vita:"84", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"65" },
+];
+
+// Helper: data YYYY-MM-DD → stringa italiana breve (es. "lun 18 mag")
+function fmtDateShort(dateStr) {
+  return new Date(dateStr+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
+}
+// Helper: data YYYY-MM-DD → stringa italiana lunga (es. "lunedì 18 maggio 2026")
+function fmtDateLong(dateStr) {
+  return new Date(dateStr+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+
+function AtletaView({user, onLogout}) {
   const todayStr = fmtDate(new Date());
+
+  // Tab: "scheda" | "progressi"
+  const [atlView, setAtlView] = useState("scheda");
+
+  // Scheda
   const [scheda, setScheda] = useState(null);
   const [activeDay, setActiveDay] = useState(null);
+
+  // Navigazione giorni
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const isToday = selectedDate === todayStr;
+
+  // Pesi e stato salvataggio
   const [pesi, setPesi] = useState({});
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
 
+  // Stats sessioni (si aggiorna a ogni save)
+  const [statsVer, setStatsVer] = useState(0);
+
+  // PDF lato atleta
+  const [pdfStateAtleta, setPdfStateAtleta] = useState(null);
+
+  // Reset demo dialog
+  const [showReset, setShowReset] = useState(false);
+  const logoClickRef = useRef(0);
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if(now - logoClickRef.current <= 400) setShowReset(true);
+    logoClickRef.current = now;
+  };
+
+  // Appuntamenti dal calendario PT
+  const [calEvents, setCalEvents] = useState([]);
+  const [apptExpanded, setApptExpanded] = useState(false);
+
+  // Carica scheda
   useEffect(()=>{
     try {
       const raw = localStorage.getItem("pt_scheda_0");
@@ -1902,51 +2985,205 @@ function ClienteView({user, onLogout}) {
     } catch {}
   },[]);
 
+  // Carica appuntamenti condivisi al mount
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem("pt_calendar_shared");
+      if(raw) setCalEvents(JSON.parse(raw));
+    } catch {}
+  },[]);
+
+  // Carica pesi per il giorno scheda + data selezionata
   useEffect(()=>{
     if(!activeDay) return;
     const sessions = loadSessions();
-    const todaySess = sessions.find(s=>s.date===todayStr&&s.day===activeDay);
-    setPesi(todaySess?todaySess.weights:{});
-    setSaved(!!todaySess);
-  },[activeDay]);
+    const sess = sessions.find(s=>s.date===selectedDate&&s.day===activeDay);
+    setPesi(sess?sess.weights:{});
+    setSaved(!!sess);
+    setJustSaved(false);
+  },[activeDay, selectedDate]);
 
+  // Navigazione date
+  const prevDate = ()=>{
+    const d = new Date(selectedDate+"T12:00");
+    d.setDate(d.getDate()-1);
+    setSelectedDate(fmtDate(d));
+  };
+  const nextDate = ()=>{
+    if(isToday) return;
+    const d = new Date(selectedDate+"T12:00");
+    d.setDate(d.getDate()+1);
+    setSelectedDate(fmtDate(d));
+  };
+
+  // Salvataggio sessione
   const handleSave = ()=>{
-    const sessions = loadSessions().filter(s=>!(s.date===todayStr&&s.day===activeDay));
-    sessions.push({date:todayStr, day:activeDay, weights:pesi});
+    const sessions = loadSessions().filter(s=>!(s.date===selectedDate&&s.day===activeDay));
+    sessions.push({date:selectedDate, day:activeDay, weights:pesi});
     saveSessions(sessions);
     setSaved(true);
     setJustSaved(true);
+    setStatsVer(v=>v+1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(()=>setJustSaved(false), 2500);
   };
 
+  // PDF scheda lato atleta
+  const handlePDFAtleta = async () => {
+    if(!scheda) return;
+    setPdfStateAtleta({progress:0,label:"Preparazione…"});
+    try {
+      await buildPDF({
+        nome: scheda.nome||"",
+        cognome: scheda.cognome||"",
+        obiettivo: scheda.obiettivo||"",
+        livello: scheda.livello||"",
+        giorni: scheda.giorni,
+        onProgress:(p,l)=>setPdfStateAtleta({progress:p,label:l})
+      });
+    } catch(e){console.error(e);}
+    finally{setPdfStateAtleta(null);}
+  };
+
+  // Statistiche sessioni (si ricalcola dopo ogni save grazie a statsVer)
+  const _allSessions = loadSessions();
+  const sessionTotal = _allSessions.length;
+  const latestSessionDate = _allSessions.length > 0
+    ? [..._allSessions].sort((a,b)=>b.date.localeCompare(a.date))[0].date
+    : null;
+  const _sessionDates = new Set(_allSessions.map(s=>s.date));
+  let sessionStreak = 0;
+  if(_sessionDates.has(todayStr)) {
+    const _sd = new Date(todayStr+"T12:00");
+    while(_sessionDates.has(fmtDate(_sd))){ sessionStreak++; _sd.setDate(_sd.getDate()-1); }
+  }
+
+  // Appuntamenti futuri filtrati per nome atleta (partial match, case-insensitive)
+  const userNameLower = (user.name||"").toLowerCase();
+  const futureAppts = calEvents
+    .filter(e=>e.date>=todayStr && (e.clientName||"").toLowerCase().includes(userNameLower))
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  const visibleAppts = apptExpanded ? futureAppts : futureAppts.slice(0,3);
+
   const logo = ["PT","Studio"];
 
+  // ── Scheda non assegnata ──
   if(!scheda) return (
     <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
       <div className="cliente-header">
-        <div className="sidebar-logo" style={{marginBottom:0}}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
+        <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}} onClick={handleLogoClick}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
         <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
         <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
       </div>
-      <div className="cliente-body" style={{textAlign:"center",paddingTop:60}}>
-        <div style={{fontSize:48,marginBottom:16}}>📋</div>
-        <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
-        <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT deve creare e assegnare una scheda dal Builder.</div>
+      <div className="atleta-stats-bar">
+        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> sessioni completate</span>
+        <span className="atleta-stats-item">📅 Ultima: <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
+        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> giorni consecutivi</span>
+      </div>
+      <div className="atleta-tab-nav">
+        <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 Scheda</button>
+        <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
+      </div>
+      <div className="cliente-body" style={{paddingTop:20}}>
+        {/* Appuntamenti anche senza scheda */}
+        <div className="appt-section" style={{marginBottom:20}}>
+          <div className="appt-section-title">📅 Prossimi appuntamenti</div>
+          {futureAppts.length===0 ? (
+            <div style={{fontSize:13,color:"var(--muted)",padding:"4px 0"}}>Nessun appuntamento programmato</div>
+          ) : (
+            <>
+              {visibleAppts.map((ev,i)=>(
+                <div className="appt-card" key={ev.id||i}>
+                  <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
+                  <div className="appt-time">{ev.time}</div>
+                  <div className="appt-name">{ev.clientName}</div>
+                  <div className="appt-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
+                </div>
+              ))}
+              {futureAppts.length>3&&(
+                <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
+                  {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+        {/* Nessuna scheda */}
+        <div style={{textAlign:"center",paddingTop:28}}>
+          <div style={{fontSize:48,marginBottom:16}}>📋</div>
+          <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
+          <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT deve creare e assegnare una scheda dal Builder.</div>
+        </div>
       </div>
     </div>
   );
 
   const giorni = Object.keys(scheda.giorni);
   const esercizi = scheda.giorni[activeDay]||[];
+  const dayNamesScheda = scheda.dayNames||{};
+  const activeDayLabel = dayNamesScheda[activeDay] || `Giorno ${activeDay}`;
+
+  const saveBtnLabel = isToday
+    ? (saved ? `Aggiorna sessione — ${activeDayLabel}` : `Salva sessione — ${activeDayLabel}`)
+    : `Aggiorna sessione del ${fmtDateShort(selectedDate)} — ${activeDayLabel}`;
 
   return (
     <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
       <div className="cliente-header">
-        <div className="sidebar-logo" style={{marginBottom:0}}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
+        <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}} onClick={handleLogoClick}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
         <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
         <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
       </div>
-      <div className="cliente-body">
+
+      {/* ── STATS BAR ── */}
+      <div className="atleta-stats-bar">
+        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> sessioni completate</span>
+        <span className="atleta-stats-item">📅 Ultima: <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
+        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> giorni consecutivi</span>
+      </div>
+
+      {/* ── TAB NAV ── */}
+      <div className="atleta-tab-nav">
+        <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 Scheda</button>
+        <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
+      </div>
+
+      {/* ── PROGRESSI VIEW ── */}
+      {atlView==="progressi"&&<AtletaProgressi scheda={scheda}/>}
+
+      {/* ── SCHEDA VIEW ── */}
+      {atlView==="scheda"&&<div className="cliente-body">
+
+        {/* ── PROSSIMI APPUNTAMENTI ── */}
+        <div className="appt-section">
+          <div className="appt-section-title">📅 Prossimi appuntamenti</div>
+          {futureAppts.length===0 ? (
+            <div style={{fontSize:13,color:"var(--muted)",padding:"4px 0"}}>Nessun appuntamento programmato</div>
+          ) : (
+            <>
+              {visibleAppts.map((ev,i)=>(
+                <div className="appt-card" key={ev.id||i}>
+                  <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
+                  <div className="appt-time">{ev.time}</div>
+                  <div className="appt-name">{ev.clientName}</div>
+                  <div
+                    className="appt-type-badge"
+                    style={{background:typeBg(ev.type),color:typeColor(ev.type)}}
+                  >{ev.type}</div>
+                </div>
+              ))}
+              {futureAppts.length>3&&(
+                <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
+                  {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── SCHEDA INFO ── */}
         <div className="scheda-info-card">
           <div className="scheda-info-title">{scheda.nome||`Scheda ${scheda.cognome||""}`}</div>
           <div className="scheda-info-meta">
@@ -1957,14 +3194,39 @@ function ClienteView({user, onLogout}) {
           </div>
         </div>
 
-        <div className="day-tabs" style={{marginBottom:20}}>
-          {giorni.map(d=>(
-            <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-              Giorno {d}
+        {/* ── TAB GIORNI SCHEDA + SCARICA PDF ── */}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
+          <div className="day-tabs">
+            {giorni.map(d=>(
+              <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
+                {dayNamesScheda[d]||`Giorno ${d}`}
+              </button>
+            ))}
+          </div>
+          {!pdfStateAtleta&&(
+            <button className="btn-ghost" style={{fontSize:12,padding:"7px 14px"}} onClick={handlePDFAtleta}>
+              ⬇ Scarica PDF
             </button>
-          ))}
+          )}
+        </div>
+        {pdfStateAtleta&&(
+          <div className="pdf-progress" style={{marginBottom:16}}>
+            <span style={{fontSize:16}}>⏳</span>
+            <div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfStateAtleta.progress*100)}%`}}/></div>
+            <span className="prog-label">{pdfStateAtleta.label}</span>
+          </div>
+        )}
+
+        {/* ── NAVIGAZIONE DATE ── */}
+        <div className={`date-nav${!isToday?" past":""}`}>
+          <button className="date-nav-btn" onClick={prevDate} title="Giorno precedente">‹</button>
+          <div className="date-nav-label">
+            {isToday?"Oggi — "+fmtDateLong(selectedDate):fmtDateLong(selectedDate)}
+          </div>
+          <button className="date-nav-btn" onClick={nextDate} disabled={isToday} title="Giorno successivo">›</button>
         </div>
 
+        {/* ── BANNER STATO SESSIONE ── */}
         {justSaved&&(
           <div className="session-saved-banner" style={{background:"rgba(71,255,232,.15)",borderColor:"rgba(71,255,232,.4)",fontWeight:700}}>
             ✓ Sessione salvata con successo!
@@ -1972,41 +3234,27 @@ function ClienteView({user, onLogout}) {
         )}
         {!justSaved&&saved&&(
           <div className="session-saved-banner">
-            ↩ Sessione di oggi già salvata — puoi aggiornare i pesi e risalvare
+            {isToday
+              ? "↩ Sessione di oggi già salvata — puoi aggiornare i pesi e risalvare"
+              : `↩ Sessione del ${fmtDateShort(selectedDate)} già salvata — puoi aggiornare i pesi e risalvare`
+            }
           </div>
         )}
 
-        {esercizi.map(ex=>{
-          const cc = CAT_COLORS[ex.cat]||"#e8ff47";
-          return (
-            <div className="ex-cliente-card" key={ex.id}>
-              <div style={{width:36,height:36,borderRadius:8,background:`${cc}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <span style={{fontSize:10,fontWeight:700,color:cc}}>{ex.cat.slice(0,3).toUpperCase()}</span>
-              </div>
-              <div className="ex-cliente-info">
-                <div className="ex-cliente-name">{ex.name}</div>
-                <div className="ex-cliente-meta">{ex.sets} serie × {ex.reps} rip · recupero {ex.rest}s</div>
-              </div>
-              <div className="ex-peso-wrap">
-                <input
-                  className="ex-peso-input"
-                  type="number"
-                  min={0}
-                  max={999}
-                  placeholder="0"
-                  value={pesi[ex.id]||""}
-                  onChange={e=>setPesi(p=>({...p,[ex.id]:e.target.value}))}
-                />
-                <span className="ex-peso-unit">kg</span>
-              </div>
-            </div>
-          );
-        })}
+        {/* ── ESERCIZI ── */}
+        {esercizi.map(ex=>(
+          <AtletaExCard
+            key={ex.id}
+            ex={ex}
+            peso={pesi[ex.id]}
+            onPesoChange={val=>setPesi(p=>({...p,[ex.id]:val}))}
+          />
+        ))}
 
         <button className="save-session-btn" onClick={handleSave}>
-          {saved?"Aggiorna sessione":"Salva sessione"}
+          {saveBtnLabel}
         </button>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -2016,6 +3264,7 @@ export default function App() {
   const [phase,setPhase]=useState("login");
   const [user,setUser]=useState(null);
   const [view,setView]=useState("dashboard");
+  const [builderPreload,setBuilderPreload]=useState(null);
 
   useEffect(()=>{ if(window.location.pathname==="/admin"&&user?.role==="admin") setView("admin"); },[user]);
 
@@ -2026,24 +3275,24 @@ export default function App() {
     if(acc.role==="admin") setView("dashboard");
   };
   const handleWelcomeDone=()=>{ setPhase("app"); };
-  const handleLogout=()=>{ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); };
+  const handleLogout=()=>{ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null); };
 
   return (
     <>
       <style>{FONTS+CSS}</style>
       {phase==="login"&&<LoginScreen onLogin={handleLogin}/>}
       {phase==="welcome"&&<WelcomeScreen user={user} onDone={handleWelcomeDone}/>}
-      {phase==="app"&&user?.role==="cliente"&&(
-        <ClienteView user={user} onLogout={handleLogout}/>
+      {phase==="app"&&user?.role==="atleta"&&(
+        <AtletaView user={user} onLogout={handleLogout}/>
       )}
-      {phase==="app"&&user?.role!=="cliente"&&(
+      {phase==="app"&&user?.role!=="atleta"&&(
         <div className="app-wrap">
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content">
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
             {view==="library"&&user?.role!=="admin"&&<Library setView={setView}/>}
-            {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView}/>}
-            {view==="clients"&&user?.role!=="admin"&&<Clients setView={setView}/>}
+            {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
+            {view==="atleti"&&user?.role!=="admin"&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload}/>}
             {view==="calendar"&&user?.role!=="admin"&&<CalendarView setView={setView}/>}
             {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView}/>}
             {view==="admin-pt"&&user?.role==="admin"&&<AdminPT setView={setView}/>}
