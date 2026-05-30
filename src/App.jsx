@@ -662,7 +662,7 @@ export default function App() {
             {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
             {view==="atleti"&&user?.role!=="admin"&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
             {view==="calendar"&&user?.role!=="admin"&&<CalendarView setView={setView}/>}
-            {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView}/>}
+            {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&user?.role==="admin"&&(user.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
             {view==="admin-calendar"&&user?.role==="admin"&&<AdminCalendar setView={setView}/>}
           </div>

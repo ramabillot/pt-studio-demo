@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
-import { MONTHS_IT } from "../data.js";
+import { MONTHS_IT, ADMIN_PT } from "../data.js";
 import { BackBtn } from "./Sidebar.jsx";
 
 function LineChart({data, color="#e8ff47"}) {
@@ -64,12 +64,51 @@ function BarChart({data, color="#47ffe8"}) {
   );
 }
 
-export default function AdminStats({setView}) {
+export default function AdminStats({setView, user}) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!user?.isSupabase);
   const [err, setErr] = useState(null);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { if(user?.isSupabase) fetchStats(); }, [user]);
+
+  // Demo admin: hardcoded data, nessuna query Supabase
+  if (!user?.isSupabase) {
+    const lineData=[{l:"Gen",v:1},{l:"Feb",v:2},{l:"Mar",v:2},{l:"Apr",v:3},{l:"Mag",v:4},{l:"Giu",v:5}];
+    const barData =[{l:"Lun",v:3},{l:"Mar",v:7},{l:"Mer",v:5},{l:"Gio",v:9},{l:"Ven",v:6},{l:"Sab",v:2},{l:"Dom",v:1}];
+    const actData =[{l:"28",v:2},{l:"29",v:4},{l:"30",v:3},{l:"31",v:5},{l:"1",v:4},{l:"2",v:3},{l:"3",v:5}];
+    const demoCards=[
+      {label:"PT attivi",    val:String(ADMIN_PT.length), icon:"👥", sub:"questo mese"},
+      {label:"Schede create",val:"39",                    icon:"📋", sub:"totale piattaforma"},
+      {label:"Uptime",       val:"99.8%",                 icon:"🟢", sub:"ultimi 30 giorni"},
+      {label:"Versione",     val:"v1.2.0",                icon:"📦", sub:"ultimo deploy 2gg fa"},
+    ];
+    return (
+      <div>
+        <BackBtn setView={setView}/>
+        <div className="page-head"><div className="page-title">Statistiche</div><div className="page-sub">Metriche e andamento della piattaforma</div></div>
+        <div className="admin-banner">
+          <span className="admin-badge">Admin</span>
+          <div><div style={{fontSize:15,fontWeight:600}}>Stato sistema</div><div style={{fontSize:13,color:"var(--muted)",marginTop:2}}>Dati simulati — aggiornati in tempo reale</div></div>
+        </div>
+        <div className="stats-grid" style={{marginBottom:28}}>
+          {demoCards.map((c,i)=>(
+            <div className="stat-card" key={i} style={{animationDelay:`${i*.06}s`}}>
+              <div className="stat-glow"/>
+              <div className="stat-icon">{c.icon}</div>
+              <div className="stat-val" style={{fontSize:24}}>{c.val}</div>
+              <div className="stat-label">{c.label}</div>
+              <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{c.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div className="charts-grid">
+          <div className="chart-card"><div className="chart-title">PT Registrati — ultimi 6 mesi</div><div className="chart-area"><LineChart data={lineData} color="#e8ff47"/></div></div>
+          <div className="chart-card"><div className="chart-title">Schede create — questa settimana</div><div className="chart-area"><BarChart data={barData} color="#47ffe8"/></div></div>
+          <div className="chart-card"><div className="chart-title">Login giornalieri — ultimi 7 giorni</div><div className="chart-area"><BarChart data={actData} color="#ff47a3"/></div></div>
+        </div>
+      </div>
+    );
+  }
 
   const fetchStats = async () => {
     setLoading(true); setErr(null);

@@ -43,7 +43,7 @@ export function Sidebar({user,view,setView,onLogout}) {
         ))}
       </nav>
       <button className="sidebar-logout" onClick={onLogout}>
-        <span className="sidebar-icon">↩</span>Esci
+        <span className="sidebar-icon">↩</span>{user.isSupabase ? "Logout" : "Esci"}
       </button>
       {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
     </div>
@@ -56,7 +56,7 @@ export function MobileNav({user,view,setView,onLogout}) {
     <nav className="mobile-nav">
       <div className="mobile-nav-logout-bar">
         <button className="mobile-nav-logout-btn" onClick={onLogout}>
-          ↩ Esci
+          ↩ {user.isSupabase ? "Logout" : "Esci"}
         </button>
       </div>
       <div className="mobile-nav-inner">
