@@ -602,21 +602,28 @@ export default function App() {
   const [view,setView]=useState("dashboard");
   const [builderPreload,setBuilderPreload]=useState(null);
 
-  // Restore Supabase session on page load
+  // Session restore + auth listener.
+  // INITIAL_SESSION fires after the auth token is fully set — queries here are authenticated.
+  // getSession() inside .then() is NOT reliable for this because the JWT may not yet be
+  // propagated to the query client at the time the callback runs, causing RLS to deny the
+  // profiles query and silently returning null (is_approved defaults to false → "pending").
   useEffect(()=>{
-    supabase.auth.getSession().then(async({ data:{ session } })=>{
-      if(session?.user){
-        const { data:profile } = await supabase.from("profiles").select("*").eq("id",session.user.id).single();
-        const acc = buildUserObjApp(session.user, profile);
-        if(acc.theme) applyTheme(acc.theme);
-        setUser(acc);
-        setPhase(acc.is_approved ? "app" : "pending");
-      } else {
-        setPhase("login");
+    const { data:{ subscription } } = supabase.auth.onAuthStateChange(async (event, session)=>{
+      if(event==="INITIAL_SESSION"){
+        if(session?.user){
+          const { data:profile, error:profileErr } = await supabase
+            .from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+          if(profileErr || !profile){ setPhase("login"); return; }
+          const acc = buildUserObjApp(session.user, profile);
+          if(acc.theme) applyTheme(acc.theme);
+          setUser(acc);
+          setPhase(acc.is_approved ? "app" : "pending");
+        } else {
+          setPhase("login");
+        }
+      } else if(event==="SIGNED_OUT"){
+        resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
       }
-    });
-    const { data:{ subscription } } = supabase.auth.onAuthStateChange((event)=>{
-      if(event==="SIGNED_OUT"){ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null); }
     });
     return ()=>subscription.unsubscribe();
   },[]);

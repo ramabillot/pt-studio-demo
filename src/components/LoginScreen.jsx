@@ -99,7 +99,9 @@ export default function LoginScreen({onLogin}) {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.trim(), password: pass });
     if (error) { setErr("Email o password non corretti"); setLoading(false); return; }
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).single();
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+    if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); setLoading(false); return; }
     onLogin(buildUserObj(data.user, profile));
     setLoading(false);
   };
