@@ -2,28 +2,68 @@ import React, { useState, useEffect } from "react";
 import { OBIETTIVI, LIVELLI, DAYS } from "../data.js";
 import { loadAtleti, persistAtleti, getInitials, calcEta, saveMisure } from "../utils.js";
 import { DEMO_MISURE_0 } from "../utils.js";
+import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { SchedaDemoSection } from "./Builder.jsx";
 import { MisureSection, ProgressiSectionPT } from "./AtletaView.jsx";
 
+const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
+
+function rowToAtleta(row) {
+  return {
+    id:          row.id,
+    pt_id:       row.pt_id,
+    nome:        row.nome,
+    cognome:     row.cognome,
+    username:    row.username,
+    pin:         row.pin,
+    sesso:       row.sesso || "",
+    dataNascita: row.data_nascita || "",
+    altezza:     row.altezza_cm ? String(row.altezza_cm) : "",
+    obiettivo:   row.obiettivo || "",
+    livello:     row.livello || "",
+    note:        row.note_pt || "",
+    color:       row.color || COLORS[0],
+    lastSeen:    "—",
+    schede:      0,
+  };
+}
+
+const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
+
 export default function Atleti({setView, setBuilderPreload, user}) {
   const [atleti,setAtleti]=useState(()=>user?.isSupabase ? [] : loadAtleti());
+  const [loading,setLoading]=useState(!!user?.isSupabase);
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
   const [editingProfilo,setEditingProfilo]=useState(false);
   const [editProfiloForm,setEditProfiloForm]=useState(null);
   const [limitErr,setLimitErr]=useState("");
-  const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
+  const [profiloErr,setProfiloErr]=useState("");
+  const [deleteConfirm,setDeleteConfirm]=useState(false);
   const [form,setForm]=useState(FORM_EMPTY);
 
-  const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
-
+  // Seed demo misure only for demo mode
   useEffect(()=>{
+    if(user?.isSupabase) return;
     const existing = localStorage.getItem("pt_misure_0");
     if(!existing) saveMisure(0, DEMO_MISURE_0);
   },[]);
 
-  const addAtleta=()=>{
+  // Load athletes from Supabase for real users
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    setLoading(true);
+    supabase.from("atleti").select("*").eq("pt_id",user.supabaseId)
+      .order("created_at",{ascending:true})
+      .then(({data,error})=>{
+        setLoading(false);
+        if(error){ console.error("[atleti load]",error); return; }
+        setAtleti((data||[]).map(rowToAtleta));
+      });
+  },[user?.supabaseId]);
+
+  const addAtleta=async()=>{
     if(!form.nome||!form.cognome) return;
     if(!form.username.trim()){ setLimitErr("Username obbligatorio"); return; }
     if(!/^\d{4}$/.test(form.pin)){ setLimitErr("Il PIN deve essere di esattamente 4 cifre numeriche"); return; }
@@ -32,34 +72,96 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       return;
     }
     setLimitErr("");
-    const updated=[...atleti,{id:Date.now(),color:COLORS[atleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
-    setAtleti(updated);
-    persistAtleti(updated);
+
+    if(user?.isSupabase){
+      const {data,error}=await supabase.from("atleti").insert({
+        pt_id:       user.supabaseId,
+        nome:        form.nome,
+        cognome:     form.cognome,
+        username:    form.username.trim().toLowerCase(),
+        pin:         form.pin,
+        sesso:       form.sesso,
+        data_nascita: form.dataNascita || null,
+        altezza_cm:  form.altezza ? parseInt(form.altezza) : null,
+        obiettivo:   form.obiettivo,
+        livello:     form.livello,
+        note_pt:     form.note,
+        color:       COLORS[atleti.length%COLORS.length],
+      }).select().single();
+      if(error){
+        setLimitErr(error.code==="23505" ? "Username già in uso per questo account. Scegli un altro username." : error.message);
+        return;
+      }
+      setAtleti(prev=>[...prev,rowToAtleta(data)]);
+    } else {
+      const updated=[...atleti,{id:Date.now(),color:COLORS[atleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
+      setAtleti(updated);
+      persistAtleti(updated);
+    }
     setForm(FORM_EMPTY);
     setShowForm(false);
   };
 
-  const saveProfilo=()=>{
+  const saveProfilo=async()=>{
     if(!editProfiloForm) return;
-    const updated = atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
-    setAtleti(updated);
-    persistAtleti(updated);
-    const updated_sel = updated.find(a=>a.id===selected.id);
-    setSelected(updated_sel);
+    setProfiloErr("");
+
+    if(user?.isSupabase){
+      const {error}=await supabase.from("atleti").update({
+        obiettivo:   editProfiloForm.obiettivo,
+        livello:     editProfiloForm.livello,
+        altezza_cm:  editProfiloForm.altezza ? parseInt(editProfiloForm.altezza) : null,
+        data_nascita: editProfiloForm.dataNascita || null,
+        sesso:       editProfiloForm.sesso,
+        note_pt:     editProfiloForm.note,
+      }).eq("id",selected.id);
+      if(error){ setProfiloErr(error.message); return; }
+      const updated=atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
+      setAtleti(updated);
+      setSelected({...selected,...editProfiloForm});
+    } else {
+      const updated=atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
+      setAtleti(updated);
+      persistAtleti(updated);
+      setSelected(updated.find(a=>a.id===selected.id));
+    }
     setEditingProfilo(false);
   };
+
+  const deleteAtleta=async()=>{
+    if(!selected) return;
+    if(user?.isSupabase){
+      const {error}=await supabase.from("atleti").delete().eq("id",selected.id);
+      if(error){ console.error("[atleti delete]",error); return; }
+    } else {
+      persistAtleti(atleti.filter(a=>a.id!==selected.id));
+    }
+    setAtleti(prev=>prev.filter(a=>a.id!==selected.id));
+    setSelected(null);
+    setDeleteConfirm(false);
+  };
+
+  const openSelected=(a)=>{ setSelected(a); setDeleteConfirm(false); setEditingProfilo(false); setProfiloErr(""); };
+  const closeSelected=()=>{ setSelected(null); setDeleteConfirm(false); };
 
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-        <div><div className="page-title">Atleti</div><div className="page-sub">{atleti.length} atleti attivi</div></div>
+        <div>
+          <div className="page-title">Atleti</div>
+          <div className="page-sub">{loading?"Caricamento…":`${atleti.length} atleti attivi`}</div>
+        </div>
         <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ Nuovo atleta</button>
       </div>
 
+      {loading&&(
+        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"32px 0"}}>Caricamento atleti…</div>
+      )}
+
       <div className="clients-grid">
         {atleti.map(a=>(
-          <div className="client-item" key={a.id} onClick={()=>setSelected(a)}>
+          <div className="client-item" key={a.id} onClick={()=>openSelected(a)}>
             <div className="avatar" style={{background:a.color}}>{getInitials(a.nome,a.cognome)}</div>
             <div className="client-info">
               <div className="client-name">{a.nome} {a.cognome}</div>
@@ -77,7 +179,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       </div>
 
       {selected&&(
-        <div className="overlay" onClick={()=>setSelected(null)}>
+        <div className="overlay" onClick={closeSelected}>
           <div className="client-modal" onClick={e=>e.stopPropagation()}>
             <div className="client-modal-header">
               <div className="avatar" style={{background:selected.color,width:52,height:52,fontSize:18}}>{getInitials(selected.nome,selected.cognome)}</div>
@@ -85,7 +187,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 <div style={{fontSize:20,fontWeight:700}}>{selected.nome} {selected.cognome}</div>
                 <div style={{fontSize:13,color:"var(--muted)",marginTop:2}}>{selected.obiettivo} · {selected.livello}</div>
               </div>
-              <button className="modal-close" onClick={()=>setSelected(null)}>✕</button>
+              <button className="modal-close" onClick={closeSelected}>✕</button>
             </div>
             <div className="client-modal-body">
               <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
@@ -101,7 +203,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>Profilo</div>
                   {!editingProfilo&&(
-                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||""});setEditingProfilo(true);}}>✏️ Modifica</button>
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||""});setEditingProfilo(true);}}>✏️ Modifica</button>
                   )}
                 </div>
                 {editingProfilo&&editProfiloForm?(
@@ -116,6 +218,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     </div>
                     <label className="field-label" style={{marginBottom:10}}>Sesso<select className="field-select" value={editProfiloForm.sesso} onChange={e=>setEditProfiloForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
                     <label className="field-label" style={{marginBottom:10}}>Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={editProfiloForm.note} onChange={e=>setEditProfiloForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+                    {profiloErr&&<div style={{color:"var(--danger)",fontSize:12,marginBottom:8}}>{profiloErr}</div>}
                     <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                       <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setEditingProfilo(false)}>Annulla</button>
                       <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={saveProfilo}>Salva</button>
@@ -159,6 +262,20 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               <div style={{marginTop:24}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
                 <ProgressiSectionPT atleta={selected}/>
+              </div>
+
+              <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)"}}>
+                {!deleteConfirm?(
+                  <button className="btn-danger" style={{fontSize:12}} onClick={()=>setDeleteConfirm(true)}>🗑️ Elimina atleta</button>
+                ):(
+                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <span style={{fontSize:13,color:"var(--text)"}}>Eliminare {selected.nome} {selected.cognome}? L'operazione non è reversibile.</span>
+                    <div style={{display:"flex",gap:8}}>
+                      <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setDeleteConfirm(false)}>Annulla</button>
+                      <button className="btn-danger" onClick={deleteAtleta}>Elimina</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
