@@ -1,7 +1,9 @@
 ﻿import React, { useState, useEffect } from "react";
 import { applyTheme, resetTheme } from "./utils.js";
+import { supabase } from "./supabase.js";
 import LoginScreen from "./components/LoginScreen.jsx";
 import WelcomeScreen from "./components/WelcomeScreen.jsx";
+import PendingApproval from "./components/PendingApproval.jsx";
 import { Sidebar, MobileNav } from "./components/Sidebar.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Library from "./components/Library.jsx";
@@ -10,6 +12,7 @@ import Atleti from "./components/Atleti.jsx";
 import { CalendarView, AdminCalendar } from "./components/Calendar.jsx";
 import AdminStats from "./components/AdminStats.jsx";
 import AdminPT from "./components/AdminPT.jsx";
+import AdminPanel from "./components/AdminPanel.jsx";
 import AtletaView from "./components/AtletaView.jsx";
 
 // ── FONTS & BASE CSS ──────────────────────────────────────────────────────────
@@ -594,27 +597,52 @@ const CSS = `
 
 // ── APP ROOT ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [phase,setPhase]=useState("login");
+  const [phase,setPhase]=useState("loading");
   const [user,setUser]=useState(null);
   const [view,setView]=useState("dashboard");
   const [builderPreload,setBuilderPreload]=useState(null);
+
+  // Restore Supabase session on page load
+  useEffect(()=>{
+    supabase.auth.getSession().then(async({ data:{ session } })=>{
+      if(session?.user){
+        const { data:profile } = await supabase.from("profiles").select("*").eq("id",session.user.id).single();
+        const acc = buildUserObjApp(session.user, profile);
+        if(acc.theme) applyTheme(acc.theme);
+        setUser(acc);
+        setPhase(acc.is_approved ? "app" : "pending");
+      } else {
+        setPhase("login");
+      }
+    });
+    const { data:{ subscription } } = supabase.auth.onAuthStateChange((event)=>{
+      if(event==="SIGNED_OUT"){ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null); }
+    });
+    return ()=>subscription.unsubscribe();
+  },[]);
 
   useEffect(()=>{ if(window.location.pathname==="/admin"&&user?.role==="admin") setView("admin"); },[user]);
 
   const handleLogin=(acc)=>{
     if(acc.theme) applyTheme(acc.theme);
     setUser(acc);
+    if(acc.isSupabase && !acc.is_approved){ setPhase("pending"); return; }
     setPhase("welcome");
     if(acc.role==="admin") setView("dashboard");
   };
   const handleWelcomeDone=()=>{ setPhase("app"); };
-  const handleLogout=()=>{ resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null); };
+  const handleLogout=async()=>{
+    if(user?.isSupabase) await supabase.auth.signOut();
+    resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
+  };
 
   return (
     <>
       <style>{FONTS+CSS}</style>
+      {phase==="loading"&&null}
       {phase==="login"&&<LoginScreen onLogin={handleLogin}/>}
       {phase==="welcome"&&<WelcomeScreen user={user} onDone={handleWelcomeDone}/>}
+      {phase==="pending"&&<PendingApproval user={user} onLogout={handleLogout}/>}
       {phase==="app"&&user?.role==="atleta"&&(
         <AtletaView user={user} onLogout={handleLogout}/>
       )}
@@ -625,10 +653,10 @@ export default function App() {
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
             {view==="library"&&user?.role!=="admin"&&<Library setView={setView}/>}
             {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
-            {view==="atleti"&&user?.role!=="admin"&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload}/>}
+            {view==="atleti"&&user?.role!=="admin"&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
             {view==="calendar"&&user?.role!=="admin"&&<CalendarView setView={setView}/>}
             {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView}/>}
-            {view==="admin-pt"&&user?.role==="admin"&&<AdminPT setView={setView}/>}
+            {view==="admin-pt"&&user?.role==="admin"&&(user.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
             {view==="admin-calendar"&&user?.role==="admin"&&<AdminCalendar setView={setView}/>}
           </div>
           <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
@@ -636,4 +664,21 @@ export default function App() {
       )}
     </>
   );
+}
+
+function buildUserObjApp(supaUser, profile) {
+  return {
+    supabaseId: supaUser.id,
+    email: supaUser.email,
+    name: profile ? (`${profile.nome} ${profile.cognome}`.trim() || supaUser.email) : supaUser.email,
+    nome: profile?.nome || "",
+    cognome: profile?.cognome || "",
+    role: profile?.is_admin ? "admin" : "trainer",
+    is_approved: profile?.is_approved ?? false,
+    is_admin: profile?.is_admin ?? false,
+    piano: profile?.piano ?? "base",
+    max_atleti: profile?.max_atleti ?? 5,
+    isSupabase: true,
+    theme: { accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] },
+  };
 }

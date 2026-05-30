@@ -6,12 +6,13 @@ import { BackBtn } from "./Sidebar.jsx";
 import { SchedaDemoSection } from "./Builder.jsx";
 import { MisureSection, ProgressiSectionPT } from "./AtletaView.jsx";
 
-export default function Atleti({setView, setBuilderPreload}) {
+export default function Atleti({setView, setBuilderPreload, user}) {
   const [atleti,setAtleti]=useState(()=>loadAtleti());
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
   const [editingProfilo,setEditingProfilo]=useState(false);
   const [editProfiloForm,setEditProfiloForm]=useState(null);
+  const [limitErr,setLimitErr]=useState("");
   const FORM_EMPTY = {nome:"",cognome:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
   const [form,setForm]=useState(FORM_EMPTY);
 
@@ -24,6 +25,11 @@ export default function Atleti({setView, setBuilderPreload}) {
 
   const addAtleta=()=>{
     if(!form.nome||!form.cognome) return;
+    if(user?.isSupabase && user?.max_atleti != null && atleti.length >= user.max_atleti){
+      setLimitErr(`Hai raggiunto il limite del tuo piano (${user.max_atleti} atleti). Contatta l'amministratore per aumentare il limite.`);
+      return;
+    }
+    setLimitErr("");
     const updated=[...atleti,{id:Date.now(),color:COLORS[atleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
     setAtleti(updated);
     persistAtleti(updated);
@@ -180,6 +186,7 @@ export default function Atleti({setView, setBuilderPreload}) {
               <label className="field-label">Sesso<select className="field-select" value={form.sesso} onChange={e=>setForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
               <label className="field-label">Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
             </div>
+            {limitErr&&<div style={{color:"var(--danger)",fontSize:13,padding:"10px 16px",background:"rgba(255,71,87,.07)",border:"1px solid rgba(255,71,87,.2)",borderRadius:8,margin:"0 0 4px"}}>{limitErr}</div>}
             <div className="form-actions">
               <button className="btn-ghost" onClick={()=>setShowForm(false)}>Annulla</button>
               <button className="btn-primary" onClick={addAtleta}>Aggiungi</button>
