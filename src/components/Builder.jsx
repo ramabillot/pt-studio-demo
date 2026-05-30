@@ -4,10 +4,10 @@ import { loadAtleti, buildPDF, calcSummary, fmtDate, getInitials } from "../util
 import { BackBtn } from "./Sidebar.jsx";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
-export function AtletaSearchField({value, onChange}) {
+export function AtletaSearchField({value, onChange, atleti: propAtleti}) {
   const [q, setQ] = useState(value||"");
   const [showDrop, setShowDrop] = useState(false);
-  const allAtleti = loadAtleti();
+  const allAtleti = propAtleti ?? loadAtleti();
 
   useEffect(()=>{ setQ(value||""); },[value]);
 
@@ -131,7 +131,7 @@ export function SchedaDemoSection({setView, onClose, setBuilderPreload}) {
 }
 
 // ── Builder ───────────────────────────────────────────────────────────────────
-export default function Builder({setView, preload=null, setPreload=null}) {
+export default function Builder({setView, preload=null, setPreload=null, user}) {
   const [selectedAtleta,setSelectedAtleta]=useState(null);
   const [searchQ,setSearchQ]=useState("");
   const [showDrop,setShowDrop]=useState(false);
@@ -148,7 +148,7 @@ export default function Builder({setView, preload=null, setPreload=null}) {
   const [assigned,setAssigned]=useState(false);
   const [showOverwriteConfirm,setShowOverwriteConfirm]=useState(false);
 
-  const allAtleti = loadAtleti();
+  const allAtleti = user?.isSupabase ? [] : loadAtleti();
 
   useEffect(()=>{
     if(!preload) return;

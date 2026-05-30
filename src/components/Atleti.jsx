@@ -7,7 +7,7 @@ import { SchedaDemoSection } from "./Builder.jsx";
 import { MisureSection, ProgressiSectionPT } from "./AtletaView.jsx";
 
 export default function Atleti({setView, setBuilderPreload, user}) {
-  const [atleti,setAtleti]=useState(()=>loadAtleti());
+  const [atleti,setAtleti]=useState(()=>user?.isSupabase ? [] : loadAtleti());
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
   const [editingProfilo,setEditingProfilo]=useState(false);

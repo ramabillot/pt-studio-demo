@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { MONTHS_IT, DAYS_IT, SESSION_TYPES, ADMIN_SESSION_TYPES } from "../data.js";
-import { DEMO_EVENTS, ADMIN_EVENTS, fmtDate, loadSharedCal, saveSharedCal } from "../utils.js";
+import { DEMO_EVENTS, ADMIN_EVENTS, fmtDate, loadSharedCal, saveSharedCal, loadAtleti } from "../utils.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { AtletaSearchField } from "./Builder.jsx";
 import { useEffect } from "react";
@@ -32,7 +32,7 @@ function getMonday(d) {
 
 const HOURS=Array.from({length:16},(_,i)=>i+6);
 
-function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle,enableAtletaSearch=false}) {
+function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle,enableAtletaSearch=false,atletiList=[]}) {
   const now=new Date();
   const todayStr=fmtDate(now);
   const [calView,setCalView]=useState("month");
@@ -213,7 +213,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <label className="field-label">
                 {clientLabel}
                 {enableAtletaSearch
-                  ? <AtletaSearchField value={form.clientName} onChange={v=>setForm(p=>({...p,clientName:v}))}/>
+                  ? <AtletaSearchField value={form.clientName} onChange={v=>setForm(p=>({...p,clientName:v}))} atleti={atletiList}/>
                   : <input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/>
                 }
               </label>
@@ -241,7 +241,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <label className="field-label">
                 {clientLabel}
                 {enableAtletaSearch
-                  ? <AtletaSearchField value={editForm.clientName} onChange={v=>setEditForm(p=>({...p,clientName:v}))}/>
+                  ? <AtletaSearchField value={editForm.clientName} onChange={v=>setEditForm(p=>({...p,clientName:v}))} atleti={atletiList}/>
                   : <input className="field-input" type="text" value={editForm.clientName} onChange={e=>setEditForm(p=>({...p,clientName:e.target.value}))}/>
                 }
               </label>
@@ -267,7 +267,8 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
 export function CalendarView({setView, user}) {
   const [events,setEvents]=useState(()=>user?.isSupabase ? [] : (loadSharedCal()||DEMO_EVENTS));
   useEffect(()=>{ saveSharedCal(events); },[events]);
-  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView} enableAtletaSearch={true}/>;
+  const atletiList = user?.isSupabase ? [] : loadAtleti();
+  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView} enableAtletaSearch={true} atletiList={atletiList}/>;
 }
 
 export function AdminCalendar({setView}) {
