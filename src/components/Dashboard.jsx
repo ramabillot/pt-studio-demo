@@ -1,16 +1,38 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ADMIN_PT } from "../data.js";
+import { supabase } from "../supabase.js";
 
 export default function Dashboard({user,setView}) {
   const oggi=new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
+  const [ptStats,setPtStats]=useState(null);
+
+  useEffect(()=>{
+    if(user.role!=="admin"||!user.isSupabase) return;
+    supabase.from("profiles").select("id,is_approved,created_at").eq("is_admin",false)
+      .then(({data:pts})=>{
+        if(!pts) return;
+        const som=new Date(); som.setDate(1); som.setHours(0,0,0,0);
+        setPtStats({
+          total:    pts.length,
+          approved: pts.filter(p=>p.is_approved).length,
+          pending:  pts.filter(p=>!p.is_approved).length,
+          newMonth: pts.filter(p=>new Date(p.created_at)>=som).length,
+        });
+      });
+  },[user]);
 
   if(user.role==="admin") {
-    const adminStats=[
+    const adminStats = user.isSupabase && ptStats ? [
+      {icon:"👥",val:String(ptStats.total),    label:"PT registrati"},
+      {icon:"✅",val:String(ptStats.approved), label:"PT approvati"},
+      {icon:"⏳",val:String(ptStats.pending),  label:"In attesa"},
+      {icon:"✨",val:String(ptStats.newMonth), label:"Nuovi questo mese"},
+    ] : !user.isSupabase ? [
       {icon:"👥",val:String(ADMIN_PT.length),label:"PT attivi"},
       {icon:"📋",val:"39",                   label:"Schede totali create"},
       {icon:"🟢",val:"99.8%",                label:"Uptime sistema"},
       {icon:"✨",val:"2",                    label:"Nuovi PT questo mese"},
-    ];
+    ] : [];
     const adminNav=[
       {id:"admin-stats",    icon:"📊",label:"Statistiche",  desc:"Grafici e metriche"},
       {id:"admin-pt",       icon:"👥",label:"I miei PT",    desc:"Gestisci i PT registrati"},
