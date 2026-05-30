@@ -26,7 +26,7 @@ export function Sidebar({user,view,setView,onLogout}) {
     logoLastClick.current = now;
   };
 
-  const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
+  const items = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
   const logo = user.theme?.logo || ["PT","Studio"];
   return (
     <div className="sidebar">
@@ -51,7 +51,7 @@ export function Sidebar({user,view,setView,onLogout}) {
 }
 
 export function MobileNav({user,view,setView,onLogout}) {
-  const items = user.role==="admin" ? NAV_ADMIN : NAV_TRAINER;
+  const items = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
   return (
     <nav className="mobile-nav">
       <div className="mobile-nav-logout-bar">

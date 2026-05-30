@@ -21,7 +21,7 @@ export default function Dashboard({user,setView}) {
       });
   },[user]);
 
-  if(user.role==="admin") {
+  if(user.role==="admin" || user.is_admin) {
     const adminStats = user.isSupabase && ptStats ? [
       {icon:"👥",val:String(ptStats.total),    label:"PT registrati"},
       {icon:"✅",val:String(ptStats.approved), label:"PT approvati"},

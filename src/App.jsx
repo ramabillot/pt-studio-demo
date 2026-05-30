@@ -643,6 +643,11 @@ export default function App() {
     resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
   };
 
+  // Fallback: is_admin flag è l'autorità, role="admin" è il percorso normale.
+  // Se il profilo viene letto con is_admin=true ma role finisce "trainer" per un
+  // problema di lettura, is_admin garantisce comunque l'accesso alle viste admin.
+  const isAdmin = user?.role==="admin" || !!user?.is_admin;
+
   return (
     <>
       <style>{FONTS+CSS}</style>
@@ -658,13 +663,13 @@ export default function App() {
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content">
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
-            {view==="library"&&user?.role!=="admin"&&<Library setView={setView}/>}
-            {view==="builder"&&user?.role!=="admin"&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
-            {view==="atleti"&&user?.role!=="admin"&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
-            {view==="calendar"&&user?.role!=="admin"&&<CalendarView setView={setView}/>}
-            {view==="admin-stats"&&user?.role==="admin"&&<AdminStats setView={setView} user={user}/>}
-            {view==="admin-pt"&&user?.role==="admin"&&(user.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
-            {view==="admin-calendar"&&user?.role==="admin"&&<AdminCalendar setView={setView}/>}
+            {view==="library"&&!isAdmin&&<Library setView={setView}/>}
+            {view==="builder"&&!isAdmin&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
+            {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
+            {view==="calendar"&&!isAdmin&&<CalendarView setView={setView}/>}
+            {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
+            {view==="admin-pt"&&isAdmin&&(user?.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
+            {view==="admin-calendar"&&isAdmin&&<AdminCalendar setView={setView}/>}
           </div>
           <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
         </div>

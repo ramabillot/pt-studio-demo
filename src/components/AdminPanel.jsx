@@ -19,7 +19,7 @@ export default function AdminPanel({ setView }) {
       .select("*")
       .eq("is_admin", false)
       .order("created_at", { ascending: false });
-    if (error) setErr(error.message);
+    if (error) { console.error("[AdminPanel] fetchPTs:", error); setErr(error.message); }
     else setPts(data || []);
     setLoading(false);
   };
