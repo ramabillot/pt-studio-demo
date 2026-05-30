@@ -264,8 +264,8 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
   );
 }
 
-export function CalendarView({setView}) {
-  const [events,setEvents]=useState(()=>loadSharedCal()||DEMO_EVENTS);
+export function CalendarView({setView, user}) {
+  const [events,setEvents]=useState(()=>user?.isSupabase ? [] : (loadSharedCal()||DEMO_EVENTS));
   useEffect(()=>{ saveSharedCal(events); },[events]);
   return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView} enableAtletaSearch={true}/>;
 }

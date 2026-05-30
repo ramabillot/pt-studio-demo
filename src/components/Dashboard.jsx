@@ -67,11 +67,16 @@ export default function Dashboard({user,setView}) {
     );
   }
 
-  const stats=[
-    {icon:"👥",val:"4",label:"Atleti attivi"},
-    {icon:"📋",val:"6",label:"Schede create"},
+  const stats = user.isSupabase ? [
+    {icon:"👥",val:"0",  label:"Atleti attivi"},
+    {icon:"📋",val:"0",  label:"Schede create"},
+    {icon:"📅",val:"—",  label:"Prossimo appuntamento"},
+    {icon:"💪",val:"20", label:"Esercizi in libreria"},
+  ] : [
+    {icon:"👥",val:"4",         label:"Atleti attivi"},
+    {icon:"📋",val:"6",         label:"Schede create"},
     {icon:"📅",val:"Oggi 10:00",label:"Prossimo appuntamento"},
-    {icon:"💪",val:"20",label:"Esercizi in libreria"},
+    {icon:"💪",val:"20",        label:"Esercizi in libreria"},
   ];
   const quickNav=[
     {id:"library", icon:"📚",label:"Libreria",  desc:"Sfoglia 20 esercizi"},
@@ -82,7 +87,7 @@ export default function Dashboard({user,setView}) {
   return (
     <div>
       <div className="page-head">
-        <div className="page-title">Ciao, {user.name.split(" ")[0]} 👋</div>
+        <div className="page-title">Ciao, {user.nome || (user.isSupabase ? user.email : user.name.split(" ")[0])} 👋</div>
         <div className="page-sub" style={{textTransform:"capitalize"}}>{oggi}</div>
       </div>
       <div className="stats-grid">

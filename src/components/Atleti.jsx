@@ -13,7 +13,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const [editingProfilo,setEditingProfilo]=useState(false);
   const [editProfiloForm,setEditProfiloForm]=useState(null);
   const [limitErr,setLimitErr]=useState("");
-  const FORM_EMPTY = {nome:"",cognome:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
+  const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
   const [form,setForm]=useState(FORM_EMPTY);
 
   const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
@@ -25,6 +25,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
   const addAtleta=()=>{
     if(!form.nome||!form.cognome) return;
+    if(!form.username.trim()){ setLimitErr("Username obbligatorio"); return; }
+    if(!/^\d{4}$/.test(form.pin)){ setLimitErr("Il PIN deve essere di esattamente 4 cifre numeriche"); return; }
     if(user?.isSupabase && user?.max_atleti != null && atleti.length >= user.max_atleti){
       setLimitErr(`Hai raggiunto il limite del tuo piano (${user.max_atleti} atleti). Contatta l'amministratore per aumentare il limite.`);
       return;
@@ -52,7 +54,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       <BackBtn setView={setView}/>
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
         <div><div className="page-title">Atleti</div><div className="page-sub">{atleti.length} atleti attivi</div></div>
-        <button className="btn-primary" onClick={()=>setShowForm(true)}>+ Nuovo atleta</button>
+        <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ Nuovo atleta</button>
       </div>
 
       <div className="clients-grid">
@@ -176,6 +178,10 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 <label className="field-label">Cognome<input className="field-input" type="text" placeholder="Rossi" value={form.cognome} onChange={e=>setForm(p=>({...p,cognome:e.target.value}))}/></label>
               </div>
               <div className="form-row">
+                <label className="field-label">Username<input className="field-input" type="text" placeholder="marco_rossi" value={form.username} onChange={e=>setForm(p=>({...p,username:e.target.value}))}/></label>
+                <label className="field-label">PIN (4 cifre)<input className="field-input" type="text" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e=>setForm(p=>({...p,pin:e.target.value.replace(/\D/g,"")}))} style={{letterSpacing:"0.3em"}}/></label>
+              </div>
+              <div className="form-row">
                 <label className="field-label">Obiettivo<select className="field-select" value={form.obiettivo} onChange={e=>setForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
                 <label className="field-label">Livello<select className="field-select" value={form.livello} onChange={e=>setForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
               </div>
@@ -188,7 +194,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
             </div>
             {limitErr&&<div style={{color:"var(--danger)",fontSize:13,padding:"10px 16px",background:"rgba(255,71,87,.07)",border:"1px solid rgba(255,71,87,.2)",borderRadius:8,margin:"0 0 4px"}}>{limitErr}</div>}
             <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setShowForm(false)}>Annulla</button>
+              <button className="btn-ghost" onClick={()=>{setShowForm(false);setLimitErr("");}}>Annulla</button>
               <button className="btn-primary" onClick={addAtleta}>Aggiungi</button>
             </div>
           </div>

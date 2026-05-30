@@ -666,7 +666,7 @@ export default function App() {
             {view==="library"&&!isAdmin&&<Library setView={setView}/>}
             {view==="builder"&&!isAdmin&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload}/>}
             {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
-            {view==="calendar"&&!isAdmin&&<CalendarView setView={setView}/>}
+            {view==="calendar"&&!isAdmin&&<CalendarView setView={setView} user={user}/>}
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&isAdmin&&(user?.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
             {view==="admin-calendar"&&isAdmin&&<AdminCalendar setView={setView}/>}
