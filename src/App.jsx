@@ -677,7 +677,7 @@ function buildUserObjApp(supaUser, profile) {
   return {
     supabaseId: supaUser.id,
     email: supaUser.email,
-    name: profile ? (`${profile.nome} ${profile.cognome}`.trim() || supaUser.email) : supaUser.email,
+    name: profile ? ((`${profile.nome || ""} ${profile.cognome || ""}`).trim() || supaUser.email) : supaUser.email,
     nome: profile?.nome || "",
     cognome: profile?.cognome || "",
     role: profile?.is_admin ? "admin" : "trainer",

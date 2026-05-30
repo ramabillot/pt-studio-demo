@@ -7,7 +7,7 @@ function buildUserObj(supaUser, profile) {
     supabaseId: supaUser.id,
     email: supaUser.email,
     name: profile
-      ? (`${profile.nome} ${profile.cognome}`.trim() || supaUser.email)
+      ? ((`${profile.nome || ""} ${profile.cognome || ""}`).trim() || supaUser.email)
       : supaUser.email,
     nome: profile?.nome || "",
     cognome: profile?.cognome || "",
