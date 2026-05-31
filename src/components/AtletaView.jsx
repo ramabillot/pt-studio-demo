@@ -94,12 +94,12 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
         setMisure((data||[]).map(r=>({
           dbId: r.id,
           data: r.data,
-          peso: r.peso!=null ? String(r.peso) : "",
-          vita: r.vita!=null ? String(r.vita) : "",
-          fianchi: r.fianchi!=null ? String(r.fianchi) : "",
-          petto: r.petto!=null ? String(r.petto) : "",
-          braccio: r.braccio!=null ? String(r.braccio) : "",
-          grassoPerc: r.grasso_perc!=null ? String(r.grasso_perc) : "",
+          peso: r.peso_kg!=null ? String(r.peso_kg) : "",
+          vita: r.vita_cm!=null ? String(r.vita_cm) : "",
+          fianchi: r.fianchi_cm!=null ? String(r.fianchi_cm) : "",
+          petto: r.petto_cm!=null ? String(r.petto_cm) : "",
+          braccio: r.braccio_cm!=null ? String(r.braccio_cm) : "",
+          grassoPerc: r.grasso_percent!=null ? String(r.grasso_percent) : "",
           fcRiposo: r.fc_riposo!=null ? String(r.fc_riposo) : "",
         })));
       });
@@ -111,12 +111,12 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
       const existing = misure.find(m=>m.data===form.data);
       console.log("[misurazioni save] atleta_id:", supabaseAtletaId, "| pt_id:", ptId, "| data:", form.data, "| existing:", existing?.dbId||null);
       const payload = {
-        peso: form.peso ? parseFloat(form.peso) : null,
-        vita: form.vita ? parseFloat(form.vita) : null,
-        fianchi: form.fianchi ? parseFloat(form.fianchi) : null,
-        petto: form.petto ? parseFloat(form.petto) : null,
-        braccio: form.braccio ? parseFloat(form.braccio) : null,
-        grasso_perc: form.grassoPerc ? parseFloat(form.grassoPerc) : null,
+        peso_kg: form.peso ? parseFloat(form.peso) : null,
+        vita_cm: form.vita ? parseFloat(form.vita) : null,
+        fianchi_cm: form.fianchi ? parseFloat(form.fianchi) : null,
+        petto_cm: form.petto ? parseFloat(form.petto) : null,
+        braccio_cm: form.braccio ? parseFloat(form.braccio) : null,
+        grasso_percent: form.grassoPerc ? parseFloat(form.grassoPerc) : null,
         fc_riposo: form.fcRiposo ? parseInt(form.fcRiposo) : null,
       };
       if(existing?.dbId){
@@ -662,10 +662,10 @@ export default function AtletaView({user, onLogout}) {
     supabase.rpc("get_misurazioni_atleta",{p_atleta_id:user.id})
       .then(({data})=>{
         setSupaMisurazioni((data||[]).map(r=>({
-          data:r.data, peso:r.peso?String(r.peso):"", vita:r.vita?String(r.vita):"",
-          fianchi:r.fianchi?String(r.fianchi):"", petto:r.petto?String(r.petto):"",
-          braccio:r.braccio?String(r.braccio):"",
-          grassoPerc:r.grasso_perc?String(r.grasso_perc):"",
+          data:r.data, peso:r.peso_kg?String(r.peso_kg):"", vita:r.vita_cm?String(r.vita_cm):"",
+          fianchi:r.fianchi_cm?String(r.fianchi_cm):"", petto:r.petto_cm?String(r.petto_cm):"",
+          braccio:r.braccio_cm?String(r.braccio_cm):"",
+          grassoPerc:r.grasso_percent?String(r.grasso_percent):"",
           fcRiposo:r.fc_riposo?String(r.fc_riposo):"",
         })));
       });
