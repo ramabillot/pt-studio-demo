@@ -398,7 +398,7 @@ export function ProgressiSectionPT({atleta, user}) {
 }
 
 // ── Progressi screen (atleta view) ────────────────────────────────────────────
-function AtletaProgressi({scheda}) {
+function AtletaProgressi({scheda, user}) {
   const [selIds,setSelIds]=useState([]);
   const [lockedExId,setLockedExId]=useState(null);
 
@@ -426,7 +426,7 @@ function AtletaProgressi({scheda}) {
     });
   });
 
-  const sessions=loadSessions();
+  const sessions = user?.isSupabase ? [] : loadSessions();
   const counts=countSessionsPerEx(sessions);
   const colorMap = Object.fromEntries(allExercises.map((ex,i)=>[ex.id, LINE_COLORS[i%LINE_COLORS.length]]));
 
@@ -508,7 +508,7 @@ function AtletaProgressi({scheda}) {
 
       <div className="prog-section" style={{marginTop:8}}>
         <div className="prog-section-head">📏 Le mie misurazioni</div>
-        <MisureSection atletaId={0} readOnly={true}/>
+        <MisureSection atletaId={user?.isSupabase ? user.id : 0} readOnly={true}/>
       </div>
     </div>
   );
@@ -606,7 +606,7 @@ export default function AtletaView({user, onLogout}) {
     finally{setPdfStateAtleta(null);}
   };
 
-  const _allSessions = loadSessions();
+  const _allSessions = user.isSupabase ? [] : loadSessions();
   const sessionTotal = _allSessions.length;
   const latestSessionDate = _allSessions.length > 0
     ? [..._allSessions].sort((a,b)=>b.date.localeCompare(a.date))[0].date
@@ -704,7 +704,7 @@ export default function AtletaView({user, onLogout}) {
         <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
       </div>
 
-      {atlView==="progressi"&&<AtletaProgressi scheda={scheda}/>}
+      {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user}/>}
 
       {atlView==="scheda"&&<div className="cliente-body">
         <div className="appt-section">
