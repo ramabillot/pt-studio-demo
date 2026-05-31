@@ -544,7 +544,7 @@ export default function AtletaView({user, onLogout}) {
 
   useEffect(()=>{
     if(user.isSupabase){
-      supabase.rpc("get_scheda_atleta",{p_atleta_id:user.id}).then(({data})=>{
+      supabase.rpc("get_scheda_atleta",{p_atleta_id:user.id}).then(async ({data})=>{
         if(!data) return;
         const giorni={}, dayNames={}, giornoIds={}, esercizioDbIds={};
         const sortedG=[...(data.scheda_giorni||[])].sort((a,b)=>a.ordine-b.ordine);
@@ -558,7 +558,14 @@ export default function AtletaView({user, onLogout}) {
             return {id:ex.esercizio_id_int||0, exDbId:ex.id, name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10", rest:ex.rest_sec||90, cat:exFull?.cat||""};
           });
         });
-        setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:"", obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
+        let ptName = "";
+        const ptId = data.pt_id || user.pt_id;
+        if(ptId){
+          const {data: ptProfile} = await supabase
+            .from("profiles").select("nome, cognome").eq("id", ptId).maybeSingle();
+          if(ptProfile) ptName = (`${ptProfile.nome||""} ${ptProfile.cognome||""}`).trim();
+        }
+        setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:ptName, obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
         setSchedaMeta({id:data.id, giornoIds, esercizioDbIds});
         if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
       });
@@ -628,6 +635,7 @@ export default function AtletaView({user, onLogout}) {
   };
 
   const handleSave = async ()=>{
+    console.log("[handleSave] isSupabase:", user.isSupabase, "| schedaMeta:", schedaMeta, "| activeDay:", activeDay, "| pt_id:", user.pt_id);
     if(user.isSupabase){
       const gid=schedaMeta?.giornoIds[activeDay];
       const esercizi=scheda?.giorni[activeDay]||[];
@@ -640,16 +648,19 @@ export default function AtletaView({user, onLogout}) {
           }
         }
       });
+      console.log("[handleSave] → Supabase RPC | gid:", gid, "| serieRows:", serieRows);
       const {error}=await supabase.rpc("save_sessione_atleta",{
         p_atleta_id:user.id, p_pt_id:user.pt_id,
         p_scheda_id:schedaMeta?.id||null, p_giorno_id:gid||null,
         p_data:selectedDate, p_serie:serieRows,
       });
+      console.log("[handleSave] save_sessione_atleta error:", error);
       if(!error){
         const {data:newSess}=await supabase.rpc("get_sessioni_atleta",{p_atleta_id:user.id});
         setSupaSessions(newSess||[]);
       }
     } else {
+      console.log("[handleSave] → localStorage path");
       const sessions=loadSessions().filter(s=>!(s.date===selectedDate&&s.day===activeDay));
       sessions.push({date:selectedDate,day:activeDay,weights:pesi});
       saveSessions(sessions);
