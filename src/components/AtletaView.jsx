@@ -66,9 +66,9 @@ function ProgressiMultiChart({lines}) {
 }
 
 // ── Misure section ────────────────────────────────────────────────────────────
-export function MisureSection({atletaId, readOnly=false}) {
+export function MisureSection({atletaId, readOnly=false, externalMisure=null}) {
   const todayStr = fmtDate(new Date());
-  const [misure, setMisure] = useState(()=>loadMisure(atletaId));
+  const [misure, setMisure] = useState(()=>externalMisure!==null?externalMisure:loadMisure(atletaId));
   const [form, setForm] = useState({
     data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""
   });
@@ -76,6 +76,7 @@ export function MisureSection({atletaId, readOnly=false}) {
   const [expanded, setExpanded] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [selMisure, setSelMisure] = useState([]);
+  useEffect(()=>{ if(externalMisure!==null) setMisure(externalMisure); },[externalMisure]);
 
   const handleSave = () => {
     if(!form.peso && !form.vita) return;
@@ -398,7 +399,7 @@ export function ProgressiSectionPT({atleta, user}) {
 }
 
 // ── Progressi screen (atleta view) ────────────────────────────────────────────
-function AtletaProgressi({scheda, user, sessions}) {
+function AtletaProgressi({scheda, user, sessions, misurazioni}) {
   const [selIds,setSelIds]=useState([]);
   const [lockedExId,setLockedExId]=useState(null);
 
@@ -507,7 +508,7 @@ function AtletaProgressi({scheda, user, sessions}) {
 
       <div className="prog-section" style={{marginTop:8}}>
         <div className="prog-section-head">📏 Le mie misurazioni</div>
-        <MisureSection atletaId={user?.isSupabase ? user.id : 0} readOnly={true}/>
+        <MisureSection atletaId={user?.isSupabase ? user.id : 0} readOnly={true} externalMisure={user?.isSupabase ? (misurazioni||[]) : null}/>
       </div>
     </div>
   );
@@ -532,6 +533,8 @@ export default function AtletaView({user, onLogout}) {
   const [calEvents, setCalEvents] = useState([]);
   const [apptExpanded, setApptExpanded] = useState(false);
   const [supaSessions, setSupaSessions] = useState(null);
+  const [schedaMeta, setSchedaMeta] = useState(null);
+  const [supaMisurazioni, setSupaMisurazioni] = useState(null);
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -540,44 +543,77 @@ export default function AtletaView({user, onLogout}) {
   };
 
   useEffect(()=>{
-    try {
-      const raw = localStorage.getItem("pt_scheda_0");
-      if(raw) {
-        const s = JSON.parse(raw);
-        setScheda(s);
-        const giorni = Object.keys(s.giorni);
-        setActiveDay(giorni[0]);
-      }
-    } catch {}
-  },[]);
+    if(user.isSupabase){
+      supabase.rpc("get_scheda_atleta",{p_atleta_id:user.id}).then(({data})=>{
+        if(!data) return;
+        const giorni={}, dayNames={}, giornoIds={}, esercizioDbIds={};
+        const sortedG=[...(data.scheda_giorni||[])].sort((a,b)=>a.ordine-b.ordine);
+        sortedG.forEach(g=>{
+          const key=g.giorno_key||`G${g.ordine}`;
+          dayNames[key]=g.nome||`Giorno ${key}`;
+          giornoIds[key]=g.id;
+          giorni[key]=(g.scheda_esercizi||[]).sort((a,b)=>a.ordine-b.ordine).map(ex=>{
+            const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int);
+            if(ex.esercizio_id_int) esercizioDbIds[ex.esercizio_id_int]=ex.id;
+            return {id:ex.esercizio_id_int||0, exDbId:ex.id, name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10", rest:ex.rest_sec||90, cat:exFull?.cat||""};
+          });
+        });
+        setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:"", obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
+        setSchedaMeta({id:data.id, giornoIds, esercizioDbIds});
+        if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
+      });
+    } else {
+      try{const raw=localStorage.getItem("pt_scheda_0");if(raw){const s=JSON.parse(raw);setScheda(s);setActiveDay(Object.keys(s.giorni)[0]);}}catch{}
+    }
+  },[user.id]);
 
   useEffect(()=>{
-    try {
-      const raw = localStorage.getItem("pt_calendar_shared");
-      if(raw) setCalEvents(JSON.parse(raw));
-    } catch {}
-  },[]);
+    if(user.isSupabase){
+      supabase.rpc("get_appuntamenti_atleta",{p_atleta_id:user.id}).then(({data})=>{
+        if(data) setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:r.ora||"00:00",clientName:user.name,type:r.tipo||"Allenamento"})));
+      });
+    } else {
+      try{const raw=localStorage.getItem("pt_calendar_shared");if(raw)setCalEvents(JSON.parse(raw));}catch{}
+    }
+  },[user.id]);
 
   useEffect(()=>{
     if(!user.isSupabase) return;
-    supabase.from("sessioni")
-      .select("data, sessione_serie(nome_esercizio, peso)")
-      .eq("atleta_id", user.id)
-      .order("data")
-      .then(({data,error})=>{
-        if(error){ console.error("[sessioni atleta]",error); setSupaSessions([]); return; }
-        setSupaSessions(data||[]);
+    supabase.rpc("get_sessioni_atleta",{p_atleta_id:user.id})
+      .then(({data,error})=>{ setSupaSessions(error?[]:(data||[])); });
+    supabase.rpc("get_misurazioni_atleta",{p_atleta_id:user.id})
+      .then(({data})=>{
+        setSupaMisurazioni((data||[]).map(r=>({
+          data:r.data, peso:r.peso?String(r.peso):"", vita:r.vita?String(r.vita):"",
+          fianchi:r.fianchi?String(r.fianchi):"", petto:r.petto?String(r.petto):"",
+          braccio:r.braccio?String(r.braccio):"",
+          grassoPerc:r.grasso_perc?String(r.grasso_perc):"",
+          fcRiposo:r.fc_riposo?String(r.fc_riposo):"",
+        })));
       });
   },[user.id]);
 
   useEffect(()=>{
     if(!activeDay) return;
-    const sessions = loadSessions();
-    const sess = sessions.find(s=>s.date===selectedDate&&s.day===activeDay);
-    setPesi(sess?sess.weights:{});
-    setSaved(!!sess);
-    setJustSaved(false);
-  },[activeDay, selectedDate]);
+    if(user.isSupabase){
+      if(!supaSessions||!schedaMeta) return;
+      const gid=schedaMeta.giornoIds[activeDay];
+      const sess=supaSessions.find(s=>s.data===selectedDate&&s.giorno_id===gid);
+      if(sess){
+        const w=(sess.sessione_serie||[]).reduce((acc,sr)=>{
+          const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio);
+          if(ex) acc[ex.id]=String(sr.peso||0);
+          return acc;
+        },{});
+        setPesi(w); setSaved(true);
+      } else { setPesi({}); setSaved(false); }
+      setJustSaved(false);
+    } else {
+      const sessions=loadSessions();
+      const sess=sessions.find(s=>s.date===selectedDate&&s.day===activeDay);
+      setPesi(sess?sess.weights:{}); setSaved(!!sess); setJustSaved(false);
+    }
+  },[activeDay, selectedDate, supaSessions, schedaMeta]);
 
   const prevDate = ()=>{
     const d = new Date(selectedDate+"T12:00");
@@ -591,15 +627,36 @@ export default function AtletaView({user, onLogout}) {
     setSelectedDate(fmtDate(d));
   };
 
-  const handleSave = ()=>{
-    const sessions = loadSessions().filter(s=>!(s.date===selectedDate&&s.day===activeDay));
-    sessions.push({date:selectedDate, day:activeDay, weights:pesi});
-    saveSessions(sessions);
-    setSaved(true);
-    setJustSaved(true);
-    setStatsVer(v=>v+1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(()=>setJustSaved(false), 2500);
+  const handleSave = async ()=>{
+    if(user.isSupabase){
+      const gid=schedaMeta?.giornoIds[activeDay];
+      const esercizi=scheda?.giorni[activeDay]||[];
+      const serieRows=[];
+      esercizi.forEach(ex=>{
+        const peso=parseFloat(pesi[ex.id]||0);
+        if(peso>0){
+          for(let i=0;i<(ex.sets||3);i++){
+            serieRows.push({nome_esercizio:ex.name,serie_numero:i+1,peso});
+          }
+        }
+      });
+      const {error}=await supabase.rpc("save_sessione_atleta",{
+        p_atleta_id:user.id, p_pt_id:user.pt_id,
+        p_scheda_id:schedaMeta?.id||null, p_giorno_id:gid||null,
+        p_data:selectedDate, p_serie:serieRows,
+      });
+      if(!error){
+        const {data:newSess}=await supabase.rpc("get_sessioni_atleta",{p_atleta_id:user.id});
+        setSupaSessions(newSess||[]);
+      }
+    } else {
+      const sessions=loadSessions().filter(s=>!(s.date===selectedDate&&s.day===activeDay));
+      sessions.push({date:selectedDate,day:activeDay,weights:pesi});
+      saveSessions(sessions);
+    }
+    setSaved(true); setJustSaved(true); setStatsVer(v=>v+1);
+    window.scrollTo({top:0,behavior:"smooth"});
+    setTimeout(()=>setJustSaved(false),2500);
   };
 
   const handlePDFAtleta = async () => {
@@ -732,7 +789,7 @@ export default function AtletaView({user, onLogout}) {
         <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
       </div>
 
-      {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user} sessions={chartSessions}/>}
+      {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user} sessions={chartSessions} misurazioni={supaMisurazioni}/>}
 
       {atlView==="scheda"&&<div className="cliente-body">
         <div className="appt-section">
