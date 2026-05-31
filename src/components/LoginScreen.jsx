@@ -21,6 +21,23 @@ function buildUserObj(supaUser, profile) {
   };
 }
 
+function buildAtletaObj(row) {
+  return {
+    id: row.id,
+    pt_id: row.pt_id,
+    supabaseId: row.id,
+    name: (`${row.nome || ""} ${row.cognome || ""}`).trim() || row.username,
+    nome: row.nome || "",
+    cognome: row.cognome || "",
+    username: row.username,
+    role: "atleta",
+    isSupabase: true,
+    is_approved: true,
+    color: row.color || "#e8ff47",
+    theme: { accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] },
+  };
+}
+
 export default function LoginScreen({onLogin}) {
   // mode: "login" | "register" | "forgot" | "registered"
   const [mode, setMode] = useState("login");
@@ -95,8 +112,23 @@ export default function LoginScreen({onLogin}) {
       onLogin({ username: u, ...acc });
       return;
     }
-    if (!user.trim() || !pass) { setErr("Inserisci email e password"); return; }
+    if (!user.trim() || !pass) { setErr("Inserisci utente e password o PIN"); return; }
     setLoading(true);
+
+    // Atleti non hanno "@" — usano username + PIN via RPC (nessuna sessione Auth)
+    if (!user.includes("@")) {
+      const { data, error } = await supabase.rpc("login_atleta", { p_username: user.trim(), p_pin: pass });
+      if (!error && data) {
+        onLogin(buildAtletaObj(data));
+        setLoading(false);
+        return;
+      }
+      setErr("Username o PIN non corretti");
+      setLoading(false);
+      return;
+    }
+
+    // PT / admin: email + password via Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.trim(), password: pass });
     if (error) { setErr("Email o password non corretti"); setLoading(false); return; }
     const { data: profile, error: profileErr } = await supabase
@@ -170,7 +202,7 @@ export default function LoginScreen({onLogin}) {
                 onKeyDown={e=>e.key==="Enter"&&submit()}/>
             </div>
             <div className="login-field">
-              <label>Password</label>
+              <label>Password o PIN</label>
               <input className="login-input" type="password" placeholder="••••••••" value={pass}
                 onChange={e=>{setPass(e.target.value);setErr("");}}
                 onKeyDown={e=>e.key==="Enter"&&submit()}/>

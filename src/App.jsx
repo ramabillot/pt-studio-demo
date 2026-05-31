@@ -640,7 +640,8 @@ export default function App() {
   };
   const handleWelcomeDone=()=>{ setPhase("app"); };
   const handleLogout=async()=>{
-    if(user?.isSupabase) await supabase.auth.signOut();
+    // Gli atleti Supabase non hanno sessione Auth — signOut non necessario
+    if(user?.isSupabase && user?.role !== "atleta") await supabase.auth.signOut();
     resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
   };
 
