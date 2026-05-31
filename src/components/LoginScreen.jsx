@@ -115,20 +115,16 @@ export default function LoginScreen({onLogin}) {
     if (!user.trim() || !pass) { setErr("Inserisci utente e password o PIN"); return; }
     setLoading(true);
 
-    // Atleti non hanno "@" — usano username + PIN via RPC (nessuna sessione Auth)
-    if (!user.includes("@")) {
-      const { data, error } = await supabase.rpc("login_atleta", { p_username: user.trim(), p_pin: pass });
-      if (!error && data) {
-        onLogin(buildAtletaObj(data));
-        setLoading(false);
-        return;
-      }
-      setErr("Username o PIN non corretti");
+    // Prova sempre login atleta prima (gli username possono contenere "@")
+    const { data: atletaData, error: atletaErr } = await supabase.rpc("login_atleta", { p_username: user.trim(), p_pin: pass });
+    console.log("[login_atleta] username:", user.trim(), "| data:", atletaData, "| error:", atletaErr);
+    if (!atletaErr && atletaData) {
+      onLogin(buildAtletaObj(atletaData));
       setLoading(false);
       return;
     }
 
-    // PT / admin: email + password via Supabase Auth
+    // Fallback: login PT / admin via email + password Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.trim(), password: pass });
     if (error) { setErr("Email o password non corretti"); setLoading(false); return; }
     const { data: profile, error: profileErr } = await supabase
