@@ -23,13 +23,15 @@ function rowToAtleta(row) {
     obiettivo:   row.obiettivo || "",
     livello:     row.livello || "",
     note:        row.note_pt || "",
+    telefono:    row.telefono || "",
+    email:       row.email || "",
     color:       row.color || COLORS[0],
     lastSeen:    "—",
     schede:      Array.isArray(row.schede) ? (row.schede[0]?.count || 0) : 0,
   };
 }
 
-const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:""};
+const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:"",telefono:"",email:""};
 
 export default function Atleti({setView, setBuilderPreload, user}) {
   const [atleti,setAtleti]=useState(()=>user?.isSupabase ? [] : loadAtleti());
@@ -45,6 +47,9 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   // Scheda Supabase dell'atleta selezionato
   const [atletaScheda,setAtletaScheda]=useState(null);
   const [loadingScheda,setLoadingScheda]=useState(false);
+  // Credenziali
+  const [changePIN,setChangePIN]=useState({show:false,pin:"",err:""});
+  const [copied,setCopied]=useState(null); // "username" | "pin" | null
 
   // Seed demo misure only for demo mode
   useEffect(()=>{
@@ -89,6 +94,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         obiettivo:   form.obiettivo,
         livello:     form.livello,
         note_pt:     form.note,
+        telefono:    form.telefono||null,
+        email:       form.email||null,
         color:       COLORS[atleti.length%COLORS.length],
       }).select().single();
       if(error){
@@ -117,6 +124,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         data_nascita: editProfiloForm.dataNascita || null,
         sesso:       editProfiloForm.sesso,
         note_pt:     editProfiloForm.note,
+        telefono:    editProfiloForm.telefono||null,
+        email:       editProfiloForm.email||null,
       }).eq("id",selected.id);
       if(error){ setProfiloErr(error.message); return; }
       const updated=atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
@@ -192,8 +201,21 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     };
   };
 
-  const openSelected=(a)=>{ setSelected(a); setDeleteConfirm(false); setEditingProfilo(false); setProfiloErr(""); };
-  const closeSelected=()=>{ setSelected(null); setDeleteConfirm(false); };
+  const savePINChange=async()=>{
+    if(!/^\d{4}$/.test(changePIN.pin)){ setChangePIN(p=>({...p,err:"Il PIN deve essere di 4 cifre numeriche"})); return; }
+    const {error}=await supabase.from("atleti").update({pin:changePIN.pin}).eq("id",selected.id);
+    if(error){ setChangePIN(p=>({...p,err:error.message})); return; }
+    setAtleti(prev=>prev.map(a=>a.id===selected.id?{...a,pin:changePIN.pin}:a));
+    setSelected(prev=>({...prev,pin:changePIN.pin}));
+    setChangePIN({show:false,pin:"",err:""});
+  };
+
+  const copyToClipboard=(text,key)=>{
+    navigator.clipboard.writeText(text).then(()=>{ setCopied(key); setTimeout(()=>setCopied(null),1800); });
+  };
+
+  const openSelected=(a)=>{ setSelected(a); setDeleteConfirm(false); setEditingProfilo(false); setProfiloErr(""); setChangePIN({show:false,pin:"",err:""}); };
+  const closeSelected=()=>{ setSelected(null); setDeleteConfirm(false); setChangePIN({show:false,pin:"",err:""}); };
 
   return (
     <div>
@@ -241,6 +263,51 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               <button className="modal-close" onClick={closeSelected}>✕</button>
             </div>
             <div className="client-modal-body">
+
+              {/* ── Credenziali accesso ── */}
+              <div style={{marginBottom:20,padding:"12px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10}}>
+                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Credenziali accesso</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:12,color:"var(--muted)",width:72,flexShrink:0}}>Username</span>
+                    <code style={{flex:1,fontSize:13,color:"var(--text)",background:"rgba(255,255,255,.06)",padding:"4px 8px",borderRadius:6}}>{selected.username}</code>
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px",flexShrink:0}} onClick={()=>copyToClipboard(selected.username,"username")}>
+                      {copied==="username"?"✓ Copiato":"Copia"}
+                    </button>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:12,color:"var(--muted)",width:72,flexShrink:0}}>PIN</span>
+                    <code style={{flex:1,fontSize:13,color:"var(--text)",background:"rgba(255,255,255,.06)",padding:"4px 8px",borderRadius:6}}>{selected.pin}</code>
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px",flexShrink:0}} onClick={()=>copyToClipboard(selected.pin,"pin")}>
+                      {copied==="pin"?"✓ Copiato":"Copia"}
+                    </button>
+                  </div>
+                </div>
+                {user?.isSupabase&&(
+                  <div style={{marginTop:10}}>
+                    {!changePIN.show?(
+                      <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setChangePIN({show:true,pin:"",err:""})}>🔑 Cambia PIN</button>
+                    ):(
+                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <input
+                          className="field-input"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="Nuovo PIN (4 cifre)"
+                          value={changePIN.pin}
+                          onChange={e=>setChangePIN(p=>({...p,pin:e.target.value.replace(/\D/g,""),err:""}))}
+                          style={{width:150,letterSpacing:"0.3em"}}
+                        />
+                        <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={savePINChange}>Salva PIN</button>
+                        <button className="btn-ghost" style={{fontSize:12,padding:"6px 10px"}} onClick={()=>setChangePIN({show:false,pin:"",err:""})}>Annulla</button>
+                        {changePIN.err&&<span style={{fontSize:12,color:"var(--danger)"}}>{changePIN.err}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
               {selected.isDemoAtleta?(
                 <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
@@ -288,7 +355,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>Profilo</div>
                   {!editingProfilo&&(
-                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||""});setEditingProfilo(true);}}>✏️ Modifica</button>
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||"",telefono:selected.telefono||"",email:selected.email||""});setEditingProfilo(true);}}>✏️ Modifica</button>
                   )}
                 </div>
                 {editingProfilo&&editProfiloForm?(
@@ -303,6 +370,10 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     </div>
                     <label className="field-label" style={{marginBottom:10}}>Sesso<select className="field-select" value={editProfiloForm.sesso} onChange={e=>setEditProfiloForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
                     <label className="field-label" style={{marginBottom:10}}>Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={editProfiloForm.note} onChange={e=>setEditProfiloForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+                    <div className="form-row" style={{marginBottom:10}}>
+                      <label className="field-label">Telefono<input className="field-input" type="tel" placeholder="+39 333 1234567" value={editProfiloForm.telefono||""} onChange={e=>setEditProfiloForm(p=>({...p,telefono:e.target.value}))}/></label>
+                      <label className="field-label">Email<input className="field-input" type="email" placeholder="atleta@email.com" value={editProfiloForm.email||""} onChange={e=>setEditProfiloForm(p=>({...p,email:e.target.value}))}/></label>
+                    </div>
                     {profiloErr&&<div style={{color:"var(--danger)",fontSize:12,marginBottom:8}}>{profiloErr}</div>}
                     <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                       <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setEditingProfilo(false)}>Annulla</button>
@@ -327,6 +398,15 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                       <div className="profilo-cell-label">Note PT</div>
                       <div className="profilo-cell-val" style={{fontSize:13,whiteSpace:"pre-wrap"}}>{selected.note||"—"}</div>
                     </div>
+                    {(selected.telefono||selected.email)&&(
+                      <div className="profilo-cell" style={{gridColumn:"1/-1"}}>
+                        <div className="profilo-cell-label">Contatti</div>
+                        <div className="profilo-cell-val" style={{fontSize:13,display:"flex",gap:16,flexWrap:"wrap"}}>
+                          {selected.telefono&&<span>📞 {selected.telefono}</span>}
+                          {selected.email&&<span>✉️ {selected.email}</span>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -397,6 +477,10 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               </div>
               <label className="field-label">Sesso<select className="field-select" value={form.sesso} onChange={e=>setForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
               <label className="field-label">Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+              <div className="form-row">
+                <label className="field-label">Telefono <span style={{color:"var(--muted)",fontSize:11}}>(opzionale)</span><input className="field-input" type="tel" placeholder="+39 333 1234567" value={form.telefono} onChange={e=>setForm(p=>({...p,telefono:e.target.value}))}/></label>
+                <label className="field-label">Email <span style={{color:"var(--muted)",fontSize:11}}>(opzionale)</span><input className="field-input" type="email" placeholder="atleta@email.com" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></label>
+              </div>
             </div>
             {limitErr&&<div style={{color:"var(--danger)",fontSize:13,padding:"10px 16px",background:"rgba(255,71,87,.07)",border:"1px solid rgba(255,71,87,.2)",borderRadius:8,margin:"0 0 4px"}}>{limitErr}</div>}
             <div className="form-actions">
