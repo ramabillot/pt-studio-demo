@@ -66,9 +66,13 @@ function ProgressiMultiChart({lines}) {
 }
 
 // ── Misure section ────────────────────────────────────────────────────────────
-export function MisureSection({atletaId, readOnly=false, externalMisure=null}) {
+export function MisureSection({atletaId, readOnly=false, externalMisure=null, ptId=null, supabaseAtletaId=null}) {
   const todayStr = fmtDate(new Date());
-  const [misure, setMisure] = useState(()=>externalMisure!==null?externalMisure:loadMisure(atletaId));
+  const [misure, setMisure] = useState(()=>
+    externalMisure!==null ? externalMisure :
+    supabaseAtletaId ? [] :
+    loadMisure(atletaId)
+  );
   const [form, setForm] = useState({
     data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""
   });
@@ -78,21 +82,77 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null}) {
   const [selMisure, setSelMisure] = useState([]);
   useEffect(()=>{ if(externalMisure!==null) setMisure(externalMisure); },[externalMisure]);
 
-  const handleSave = () => {
+  // Load from Supabase when PT views an athlete's misurazioni
+  useEffect(()=>{
+    if(!supabaseAtletaId) return;
+    supabase.from("misurazioni")
+      .select("*")
+      .eq("atleta_id", supabaseAtletaId)
+      .order("data")
+      .then(({data})=>{
+        setMisure((data||[]).map(r=>({
+          dbId: r.id,
+          data: r.data,
+          peso: r.peso!=null ? String(r.peso) : "",
+          vita: r.vita!=null ? String(r.vita) : "",
+          fianchi: r.fianchi!=null ? String(r.fianchi) : "",
+          petto: r.petto!=null ? String(r.petto) : "",
+          braccio: r.braccio!=null ? String(r.braccio) : "",
+          grassoPerc: r.grasso_perc!=null ? String(r.grasso_perc) : "",
+          fcRiposo: r.fc_riposo!=null ? String(r.fc_riposo) : "",
+        })));
+      });
+  },[supabaseAtletaId]);
+
+  const handleSave = async () => {
     if(!form.peso && !form.vita) return;
-    const newEntry = {...form};
-    const updated = [...misure.filter(m=>m.data!==form.data), newEntry]
-      .sort((a,b)=>a.data.localeCompare(b.data));
-    setMisure(updated);
-    saveMisure(atletaId, updated);
+    if(supabaseAtletaId){
+      const existing = misure.find(m=>m.data===form.data);
+      const payload = {
+        peso: form.peso ? parseFloat(form.peso) : null,
+        vita: form.vita ? parseFloat(form.vita) : null,
+        fianchi: form.fianchi ? parseFloat(form.fianchi) : null,
+        petto: form.petto ? parseFloat(form.petto) : null,
+        braccio: form.braccio ? parseFloat(form.braccio) : null,
+        grasso_perc: form.grassoPerc ? parseFloat(form.grassoPerc) : null,
+        fc_riposo: form.fcRiposo ? parseInt(form.fcRiposo) : null,
+      };
+      if(existing?.dbId){
+        const {error}=await supabase.from("misurazioni").update(payload).eq("id",existing.dbId);
+        if(!error) setMisure(prev=>prev.map(m=>m.data===form.data?{...m,...form}:m));
+      } else {
+        const {data,error}=await supabase.from("misurazioni").insert({
+          ...payload, pt_id:ptId, atleta_id:supabaseAtletaId, data:form.data,
+        }).select().single();
+        if(!error&&data){
+          const newEntry={...form, dbId:data.id};
+          setMisure(prev=>[...prev.filter(m=>m.data!==form.data),newEntry].sort((a,b)=>a.data.localeCompare(b.data)));
+        }
+      }
+    } else {
+      const newEntry = {...form};
+      const updated = [...misure.filter(m=>m.data!==form.data), newEntry]
+        .sort((a,b)=>a.data.localeCompare(b.data));
+      setMisure(updated);
+      saveMisure(atletaId, updated);
+    }
     setForm({data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""});
     setShowAvanzati(false);
   };
 
-  const handleDelete = (idx) => {
-    const updated = misure.filter((_,i)=>i!==idx);
-    setMisure(updated);
-    saveMisure(atletaId, updated);
+  const handleDelete = async (idx) => {
+    if(supabaseAtletaId){
+      const entry=misure[idx];
+      if(entry?.dbId){
+        const {error}=await supabase.from("misurazioni").delete().eq("id",entry.dbId);
+        if(error){ console.error("[misurazioni delete]",error); setDeleteConfirm(null); return; }
+      }
+      setMisure(prev=>prev.filter((_,i)=>i!==idx));
+    } else {
+      const updated = misure.filter((_,i)=>i!==idx);
+      setMisure(updated);
+      saveMisure(atletaId, updated);
+    }
     setDeleteConfirm(null);
   };
 

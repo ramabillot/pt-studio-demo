@@ -341,7 +341,11 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
               <div style={{marginTop:24}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
-                <MisureSection atletaId={selected.id}/>
+                <MisureSection
+                  atletaId={selected.id}
+                  ptId={user?.supabaseId}
+                  supabaseAtletaId={user?.isSupabase ? selected.id : null}
+                />
               </div>
 
               <div style={{marginTop:24}}>

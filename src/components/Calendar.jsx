@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MONTHS_IT, DAYS_IT, SESSION_TYPES, ADMIN_SESSION_TYPES } from "../data.js";
 import { DEMO_EVENTS, ADMIN_EVENTS, fmtDate, loadSharedCal, saveSharedCal, loadAtleti } from "../utils.js";
+import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { AtletaSearchField } from "./Builder.jsx";
-import { useEffect } from "react";
 
 export function typeColor(type) {
   const t=(type||"").toLowerCase();
@@ -32,7 +32,13 @@ function getMonday(d) {
 
 const HOURS=Array.from({length:16},(_,i)=>i+6);
 
-function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSubtitle,enableAtletaSearch=false,atletiList=[]}) {
+const FORM_EMPTY = (type) => ({clientName:"", atletaId:null, time:"10:00", type});
+
+function CalendarBase({
+  events, setEvents, sessionTypes, clientLabel, setView, pageSubtitle,
+  enableAtletaSearch=false, atletiList=[],
+  onAdd=null, onEdit=null, onDelete=null,
+}) {
   const now=new Date();
   const todayStr=fmtDate(now);
   const [calView,setCalView]=useState("month");
@@ -43,20 +49,46 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
   const [showAddForm,setShowAddForm]=useState(null);
   const [editEv,setEditEv]=useState(null);
   const [deleteConfirm,setDeleteConfirm]=useState(null);
-  const [form,setForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
-  const [editForm,setEditForm]=useState({clientName:"",time:"10:00",type:sessionTypes[0]});
+  const [form,setForm]=useState(FORM_EMPTY(sessionTypes[0]));
+  const [editForm,setEditForm]=useState(FORM_EMPTY(sessionTypes[0]));
+  const [saving,setSaving]=useState(false);
 
   const evsByDate=(ds)=>[...events].filter(e=>e.date===ds).sort((a,b)=>a.time.localeCompare(b.time));
 
-  const openAddForm=(date,time="10:00")=>{ setShowAddForm(date); setForm({clientName:"",time,type:sessionTypes[0]}); };
-  const addEvent=()=>{
+  const openAddForm=(date,time="10:00")=>{ setShowAddForm(date); setForm({...FORM_EMPTY(sessionTypes[0]),time}); };
+
+  const addEvent=async()=>{
     if(!form.clientName) return;
-    setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showAddForm,time:form.time,type:form.type}]);
-    setShowAddForm(null); setForm({clientName:"",time:"10:00",type:sessionTypes[0]});
+    setSaving(true);
+    if(onAdd){
+      const newEv=await onAdd({clientName:form.clientName,atletaId:form.atletaId,date:showAddForm,time:form.time,type:form.type});
+      if(newEv) setEvents(prev=>[...prev,newEv]);
+    } else {
+      setEvents(prev=>[...prev,{id:Date.now(),clientName:form.clientName,date:showAddForm,time:form.time,type:form.type}]);
+    }
+    setSaving(false);
+    setShowAddForm(null);
+    setForm(FORM_EMPTY(sessionTypes[0]));
   };
-  const deleteEvent=(id)=>{ setEvents(prev=>prev.filter(e=>e.id!==id)); setDeleteConfirm(null); };
-  const startEdit=(ev)=>{ setEditEv(ev); setEditForm({clientName:ev.clientName,time:ev.time,type:ev.type}); };
-  const saveEdit=()=>{ setEvents(prev=>prev.map(e=>e.id===editEv.id?{...e,...editForm}:e)); setEditEv(null); };
+
+  const deleteEvent=async(id)=>{
+    if(onDelete) await onDelete(id);
+    setEvents(prev=>prev.filter(e=>e.id!==id));
+    setDeleteConfirm(null);
+  };
+
+  const startEdit=(ev)=>{
+    setEditEv(ev);
+    setEditForm({clientName:ev.clientName,atletaId:ev.atletaId||null,time:ev.time,type:ev.type});
+  };
+
+  const saveEdit=async()=>{
+    setSaving(true);
+    if(onEdit) await onEdit(editEv.id,{clientName:editForm.clientName,atletaId:editForm.atletaId,time:editForm.time,type:editForm.type});
+    setEvents(prev=>prev.map(e=>e.id===editEv.id?{...e,...editForm}:e));
+    setSaving(false);
+    setEditEv(null);
+  };
 
   const prevM=()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); };
   const nextM=()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); };
@@ -74,6 +106,13 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
   const nextW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()+7); setWeekStart(d); };
   const weekDays=Array.from({length:7},(_,i)=>{ const d=new Date(weekStart); d.setDate(d.getDate()+i); return d; });
   const weekLabel=`${weekDays[0].getDate()} ${MONTHS_IT[weekDays[0].getMonth()]} — ${weekDays[6].getDate()} ${MONTHS_IT[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`;
+
+  const atletaSearchProps = (f, setF) => enableAtletaSearch ? {
+    value: f.clientName,
+    onChange: v => setF(p=>({...p, clientName:v, atletaId:null})),
+    onSelect: a => setF(p=>({...p, clientName:`${a.nome} ${a.cognome}`, atletaId:a.id})),
+    atleti: atletiList,
+  } : null;
 
   return (
     <div>
@@ -213,7 +252,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <label className="field-label">
                 {clientLabel}
                 {enableAtletaSearch
-                  ? <AtletaSearchField value={form.clientName} onChange={v=>setForm(p=>({...p,clientName:v}))} atleti={atletiList}/>
+                  ? <AtletaSearchField {...atletaSearchProps(form,setForm)}/>
                   : <input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/>
                 }
               </label>
@@ -224,7 +263,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
             </div>
             <div className="form-actions">
               <button className="btn-ghost" onClick={()=>setShowAddForm(null)}>Annulla</button>
-              <button className="btn-primary" onClick={addEvent}>Salva</button>
+              <button className="btn-primary" onClick={addEvent} disabled={saving}>{saving?"Salvataggio…":"Salva"}</button>
             </div>
           </div>
         </div>
@@ -241,7 +280,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <label className="field-label">
                 {clientLabel}
                 {enableAtletaSearch
-                  ? <AtletaSearchField value={editForm.clientName} onChange={v=>setEditForm(p=>({...p,clientName:v}))} atleti={atletiList}/>
+                  ? <AtletaSearchField {...atletaSearchProps(editForm,setEditForm)}/>
                   : <input className="field-input" type="text" value={editForm.clientName} onChange={e=>setEditForm(p=>({...p,clientName:e.target.value}))}/>
                 }
               </label>
@@ -254,7 +293,7 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
               <button className="btn-danger" onClick={()=>{deleteEvent(editEv.id);setEditEv(null);}}>Elimina</button>
               <div style={{display:"flex",gap:10}}>
                 <button className="btn-ghost" onClick={()=>setEditEv(null)}>Annulla</button>
-                <button className="btn-primary" onClick={saveEdit}>Salva modifiche</button>
+                <button className="btn-primary" onClick={saveEdit} disabled={saving}>{saving?"Salvataggio…":"Salva modifiche"}</button>
               </div>
             </div>
           </div>
@@ -265,10 +304,84 @@ function CalendarBase({events,setEvents,sessionTypes,clientLabel,setView,pageSub
 }
 
 export function CalendarView({setView, user}) {
-  const [events,setEvents]=useState(()=>user?.isSupabase ? [] : (loadSharedCal()||DEMO_EVENTS));
-  useEffect(()=>{ saveSharedCal(events); },[events]);
-  const atletiList = user?.isSupabase ? [] : loadAtleti();
-  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView} enableAtletaSearch={true} atletiList={atletiList}/>;
+  const [events,setEvents]=useState(()=> user?.isSupabase ? [] : (loadSharedCal()||DEMO_EVENTS));
+  const [atletiList,setAtletiList]=useState(()=> user?.isSupabase ? [] : loadAtleti());
+
+  // Demo: persist to localStorage
+  useEffect(()=>{ if(!user?.isSupabase) saveSharedCal(events); },[events]);
+
+  // Supabase: load events
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    supabase.from("appuntamenti")
+      .select("*, atleti(nome, cognome)")
+      .eq("pt_id", user.supabaseId)
+      .order("data")
+      .then(({data,error})=>{
+        if(error){ console.error("[calendar load]",error); return; }
+        setEvents((data||[]).map(r=>({
+          id: r.id,
+          clientName: r.atleti ? `${r.atleti.nome||""} ${r.atleti.cognome||""}`.trim() : (r.titolo||""),
+          date: r.data,
+          time: r.ora_inizio || "00:00",
+          type: r.tipo || "Allenamento",
+          atletaId: r.atleta_id,
+        })));
+      });
+  },[user?.supabaseId]);
+
+  // Supabase: load athletes for search dropdown
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    supabase.from("atleti")
+      .select("id, nome, cognome, obiettivo, color")
+      .eq("pt_id", user.supabaseId)
+      .then(({data})=>{ if(data) setAtletiList(data); });
+  },[user?.supabaseId]);
+
+  const onAdd = !user?.isSupabase ? null : async ({clientName,atletaId,date,time,type})=>{
+    const {data,error}=await supabase.from("appuntamenti").insert({
+      pt_id: user.supabaseId,
+      atleta_id: atletaId||null,
+      titolo: clientName,
+      data: date,
+      ora_inizio: time,
+      tipo: type,
+    }).select("*, atleti(nome, cognome)").single();
+    if(error){ console.error("[calendar add]",error); return null; }
+    return {
+      id: data.id,
+      clientName: data.atleti ? `${data.atleti.nome||""} ${data.atleti.cognome||""}`.trim() : (data.titolo||clientName),
+      date: data.data,
+      time: data.ora_inizio||"00:00",
+      type: data.tipo||"Allenamento",
+      atletaId: data.atleta_id,
+    };
+  };
+
+  const onEdit = !user?.isSupabase ? null : async (id,{clientName,atletaId,time,type})=>{
+    const {error}=await supabase.from("appuntamenti").update({
+      atleta_id: atletaId||null,
+      titolo: clientName,
+      ora_inizio: time,
+      tipo: type,
+    }).eq("id",id);
+    if(error) console.error("[calendar edit]",error);
+  };
+
+  const onDelete = !user?.isSupabase ? null : async (id)=>{
+    const {error}=await supabase.from("appuntamenti").delete().eq("id",id);
+    if(error) console.error("[calendar delete]",error);
+  };
+
+  return (
+    <CalendarBase
+      events={events} setEvents={setEvents}
+      sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView}
+      enableAtletaSearch={true} atletiList={atletiList}
+      onAdd={onAdd} onEdit={onEdit} onDelete={onDelete}
+    />
+  );
 }
 
 export function AdminCalendar({setView}) {

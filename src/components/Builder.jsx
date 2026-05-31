@@ -5,7 +5,7 @@ import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
-export function AtletaSearchField({value, onChange, atleti: propAtleti}) {
+export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti}) {
   const [q, setQ] = useState(value||"");
   const [showDrop, setShowDrop] = useState(false);
   const allAtleti = propAtleti ?? loadAtleti();
@@ -20,6 +20,7 @@ export function AtletaSearchField({value, onChange, atleti: propAtleti}) {
     const name = `${a.nome} ${a.cognome}`;
     setQ(name);
     onChange(name);
+    if(onSelect) onSelect(a);
     setShowDrop(false);
   };
 
