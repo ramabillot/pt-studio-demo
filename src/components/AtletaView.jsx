@@ -570,7 +570,7 @@ export default function AtletaView({user, onLogout}) {
   useEffect(()=>{
     if(user.isSupabase){
       supabase.rpc("get_appuntamenti_atleta",{p_atleta_id:user.id}).then(({data})=>{
-        if(data) setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:r.ora||"00:00",clientName:user.name,type:r.tipo||"Allenamento"})));
+        if(data) setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:r.ora_inizio||"00:00",clientName:user.name,type:r.tipo||"Allenamento"})));
       });
     } else {
       try{const raw=localStorage.getItem("pt_calendar_shared");if(raw)setCalEvents(JSON.parse(raw));}catch{}

@@ -108,7 +108,7 @@ create or replace function public.get_appuntamenti_atleta(p_atleta_id uuid)
 returns json language plpgsql security definer as $$
 begin
   return (
-    select coalesce(json_agg(row_to_json(a) order by a.data, a.ora), '[]'::json)
+    select coalesce(json_agg(row_to_json(a) order by a.data, a.ora_inizio), '[]'::json)
     from public.appuntamenti a
     where a.atleta_id = p_atleta_id
   );
