@@ -87,7 +87,7 @@ export default function Dashboard({user,setView}) {
   return (
     <div>
       <div className="page-head">
-        <div className="page-title">Ciao, {user.nome || (user.isSupabase ? user.email : user.name.split(" ")[0])} 👋</div>
+        <div className="page-title">Ciao, {user.nome || (user.isSupabase ? user.email.split("@")[0] : user.name.split(" ")[0])} 👋</div>
         <div className="page-sub" style={{textTransform:"capitalize"}}>{oggi}</div>
       </div>
       <div className="stats-grid">

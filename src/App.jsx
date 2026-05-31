@@ -613,6 +613,7 @@ export default function App() {
         if(session?.user){
           const { data:profile, error:profileErr } = await supabase
             .from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+          console.log("[profile restore] user.id:", session.user.id, "| profile:", profile, "| error:", profileErr);
           if(profileErr || !profile){ setPhase("login"); return; }
           const acc = buildUserObjApp(session.user, profile);
           if(acc.theme) applyTheme(acc.theme);
