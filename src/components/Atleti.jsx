@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { OBIETTIVI, LIVELLI, DAYS } from "../data.js";
+import { OBIETTIVI, LIVELLI, DAYS, EXERCISES, CAT_COLORS } from "../data.js";
 import { loadAtleti, persistAtleti, getInitials, calcEta, saveMisure } from "../utils.js";
 import { DEMO_MISURE_0 } from "../utils.js";
 import { supabase } from "../supabase.js";
@@ -42,6 +42,9 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const [profiloErr,setProfiloErr]=useState("");
   const [deleteConfirm,setDeleteConfirm]=useState(false);
   const [form,setForm]=useState(FORM_EMPTY);
+  // Scheda Supabase dell'atleta selezionato
+  const [atletaScheda,setAtletaScheda]=useState(null);
+  const [loadingScheda,setLoadingScheda]=useState(false);
 
   // Seed demo misure only for demo mode
   useEffect(()=>{
@@ -141,6 +144,54 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     setDeleteConfirm(false);
   };
 
+  // Carica scheda Supabase quando un atleta reale viene selezionato
+  useEffect(()=>{
+    if(!selected || !user?.isSupabase){ setAtletaScheda(null); return; }
+    setLoadingScheda(true);
+    supabase.from("schede")
+      .select("*, scheda_giorni(*, scheda_esercizi(*))")
+      .eq("atleta_id",selected.id)
+      .maybeSingle()
+      .then(({data})=>{ setAtletaScheda(data||null); setLoadingScheda(false); });
+  },[selected?.id,user?.isSupabase]);
+
+  // Converte una scheda Supabase nel formato locale giorni/dayNames per il Builder
+  const schedaToPreload=(scheda,atleta)=>{
+    const giorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
+    const dayNames={A:"",B:"",C:"",D:"",E:"",F:"",G:""};
+    (scheda.scheda_giorni||[])
+      .sort((a,b)=>a.ordine-b.ordine)
+      .forEach(g=>{
+        const key=g.giorno_key||String.fromCharCode(65+g.ordine);
+        dayNames[key]=g.nome||"";
+        giorni[key]=(g.scheda_esercizi||[])
+          .sort((a,b)=>a.ordine-b.ordine)
+          .map((ex,i)=>{
+            const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int)||{};
+            return {
+              ...exFull,
+              id:ex.esercizio_id_int||0,
+              name:ex.nome||exFull.name||"",
+              sets:ex.serie||3,
+              reps:parseInt(ex.reps)||10,
+              rest:ex.rest_sec||90,
+              uid:Date.now()+i,
+            };
+          });
+      });
+    return {
+      schedaId:scheda.id,
+      atleta,
+      atletaId:atleta.id,
+      nome:atleta.nome,
+      cognome:atleta.cognome,
+      obiettivo:scheda.obiettivo||"",
+      livello:scheda.livello||"",
+      giorni,
+      dayNames,
+    };
+  };
+
   const openSelected=(a)=>{ setSelected(a); setDeleteConfirm(false); setEditingProfilo(false); setProfiloErr(""); };
   const closeSelected=()=>{ setSelected(null); setDeleteConfirm(false); };
 
@@ -193,6 +244,40 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
               {selected.isDemoAtleta?(
                 <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
+              ):user?.isSupabase?(
+                loadingScheda?(
+                  <div style={{color:"var(--muted)",fontSize:14}}>Caricamento scheda…</div>
+                ):atletaScheda?(
+                  <div>
+                    {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
+                      const key=g.giorno_key||String.fromCharCode(65+g.ordine);
+                      const label=g.nome?`${key} — ${g.nome}`:`Giorno ${key}`;
+                      return <span key={g.id} className="scheda-chip">📋 {label} · {(g.scheda_esercizi||[]).length} esercizi</span>;
+                    })}
+                    <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                      <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
+                        setBuilderPreload(schedaToPreload(atletaScheda,selected));
+                        closeSelected();
+                        setView("builder");
+                      }}>✏️ Modifica nel Builder</button>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <div style={{color:"var(--muted)",fontSize:14,flex:1}}>Nessuna scheda assegnata ancora.</div>
+                    <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
+                      setBuilderPreload({
+                        atleta:selected,atletaId:selected.id,
+                        nome:selected.nome,cognome:selected.cognome,
+                        obiettivo:selected.obiettivo||"",livello:selected.livello||"",
+                        giorni:{A:[],B:[],C:[],D:[],E:[],F:[],G:[]},
+                        dayNames:{A:"",B:"",C:"",D:"",E:"",F:"",G:""},
+                      });
+                      closeSelected();
+                      setView("builder");
+                    }}>+ Crea scheda</button>
+                  </div>
+                )
               ):selected.schede>0?(
                 Array.from({length:selected.schede},(_,i)=>(
                   <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
@@ -261,7 +346,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
               <div style={{marginTop:24}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
-                <ProgressiSectionPT atleta={selected}/>
+                <ProgressiSectionPT atleta={selected} user={user}/>
               </div>
 
               <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)"}}>

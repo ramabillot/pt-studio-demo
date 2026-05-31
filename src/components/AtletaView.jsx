@@ -5,6 +5,7 @@ import {
   loadSessions, saveSessions, loadMisure, saveMisure,
   buildPDF, getFakeExercises, countSessionsPerEx, DEMO_MISURE_0, FAKE_SESSIONS,
 } from "../utils.js";
+import { supabase } from "../supabase.js";
 import ResetDemoDialog from "./ResetDemoDialog.jsx";
 import { VideoModal } from "./Library.jsx";
 import { typeColor, typeBg } from "./Calendar.jsx";
@@ -278,10 +279,27 @@ function AtletaExCard({ex, peso, onPesoChange}) {
 }
 
 // ── Progressi section (PT modal) ──────────────────────────────────────────────
-export function ProgressiSectionPT({atleta}) {
+export function ProgressiSectionPT({atleta, user}) {
   const [selIds,setSelIds]=useState(null);
+  const [supaSessions,setSupaSessions]=useState(null); // null = loading
 
-  if(atleta.id===2||atleta.id===4) {
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    setSupaSessions(null);
+    supabase.from("sessioni")
+      .select("data, sessione_serie(nome_esercizio, peso)")
+      .eq("atleta_id", atleta.id)
+      .order("data")
+      .then(({data,error})=>{
+        if(error){ console.error("[progressi PT]",error); setSupaSessions([]); return; }
+        setSupaSessions(data||[]);
+      });
+  },[atleta.id, user?.isSupabase]);
+
+  if(user?.isSupabase && supaSessions===null)
+    return <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>Caricamento sessioni…</div>;
+
+  if(!user?.isSupabase && (atleta.id===2||atleta.id===4)) {
     return (
       <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0",lineHeight:1.6}}>
         Dati insufficienti — servono almeno 3 sessioni per visualizzare i progressi.
@@ -289,11 +307,25 @@ export function ProgressiSectionPT({atleta}) {
     );
   }
 
-  const sessions = atleta.isDemoAtleta ? loadSessions() : (FAKE_SESSIONS[atleta.id]||[]);
-  const exercises = atleta.isDemoAtleta
-    ? [...new Set(sessions.flatMap(s=>Object.keys(s.weights||{}).map(Number)))]
-        .map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean)
-    : getFakeExercises(atleta.id);
+  let sessions, exercises;
+  if(user?.isSupabase) {
+    sessions=(supaSessions||[]).map(s=>({
+      date:s.data,
+      weights:Object.fromEntries(
+        (s.sessione_serie||[])
+          .map(sr=>{ const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio); return ex?[ex.id,String(sr.peso||0)]:null; })
+          .filter(Boolean)
+      )
+    }));
+    const exIds=[...new Set(sessions.flatMap(s=>Object.keys(s.weights).map(Number)))];
+    exercises=exIds.map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean);
+  } else {
+    sessions=atleta.isDemoAtleta?loadSessions():(FAKE_SESSIONS[atleta.id]||[]);
+    exercises=atleta.isDemoAtleta
+      ?[...new Set(sessions.flatMap(s=>Object.keys(s.weights||{}).map(Number)))]
+          .map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean)
+      :getFakeExercises(atleta.id);
+  }
 
   if(!sessions.length||!exercises.length) {
     return <div style={{color:"var(--muted)",fontSize:13}}>Nessuna sessione registrata ancora.</div>;

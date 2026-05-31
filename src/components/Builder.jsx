@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { EXERCISES, CATEGORIES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from "../data.js";
 import { loadAtleti, buildPDF, calcSummary, fmtDate, getInitials } from "../utils.js";
+import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
@@ -44,7 +45,7 @@ export function AtletaSearchField({value, onChange, atleti: propAtleti}) {
               onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.05)"}
               onMouseLeave={e=>e.currentTarget.style.background=""}
             >
-              <div style={{width:28,height:28,borderRadius:7,background:a.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>
+              <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>
                 {getInitials(a.nome,a.cognome)}
               </div>
               <div style={{minWidth:0}}>
@@ -59,7 +60,7 @@ export function AtletaSearchField({value, onChange, atleti: propAtleti}) {
   );
 }
 
-// ── Scheda demo section (used in Atleti modal) ────────────────────────────────
+// ── Scheda demo section (used in Atleti modal for demo atleta) ────────────────
 export function SchedaDemoSection({setView, onClose, setBuilderPreload}) {
   const [sd, setSd] = useState(undefined);
 
@@ -147,18 +148,53 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   const [toast,setToast]=useState(null);
   const [assigned,setAssigned]=useState(false);
   const [showOverwriteConfirm,setShowOverwriteConfirm]=useState(false);
+  // Supabase: UUID della scheda esistente (null = nuova)
+  const [schedaId,setSchedaId]=useState(null);
+  const [assegnaLoading,setAssegnaLoading]=useState(false);
+  // Atleti reali da Supabase
+  const [realAtleti,setRealAtleti]=useState([]);
 
-  const allAtleti = user?.isSupabase ? [] : loadAtleti();
+  // Carica atleti reali da Supabase
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    supabase.from("atleti").select("*").eq("pt_id",user.supabaseId)
+      .order("created_at",{ascending:true})
+      .then(({data})=>{
+        setRealAtleti((data||[]).map(r=>({
+          id:r.id, nome:r.nome, cognome:r.cognome,
+          obiettivo:r.obiettivo||"", livello:r.livello||"",
+          color:r.color||"#e8ff47",
+        })));
+      });
+  },[user?.supabaseId]);
 
+  const allAtleti = user?.isSupabase ? realAtleti : loadAtleti();
+
+  // Quando atleta selezionato (utenti reali): carica schedaId esistente
+  useEffect(()=>{
+    if(!selectedAtleta || !user?.isSupabase) { setSchedaId(null); return; }
+    supabase.from("schede").select("id").eq("atleta_id",selectedAtleta.id)
+      .maybeSingle()
+      .then(({data})=>setSchedaId(data?.id||null));
+  },[selectedAtleta?.id]);
+
+  // Preload (da "Modifica nel Builder" in Atleti.jsx)
   useEffect(()=>{
     if(!preload) return;
-    const atleta = allAtleti.find(a=>a.id===preload.atletaId)||null;
-    if(atleta) {
-      setSelectedAtleta(atleta);
-      setSearchQ(`${atleta.nome} ${atleta.cognome}`);
-    } else if(preload.nome||preload.cognome) {
-      setSearchQ(`${preload.nome} ${preload.cognome}`.trim());
+    // Supporta preload.atleta (oggetto completo) per utenti reali
+    if(preload.atleta) {
+      setSelectedAtleta(preload.atleta);
+      setSearchQ(`${preload.atleta.nome} ${preload.atleta.cognome}`);
+    } else {
+      const atleta = allAtleti.find(a=>a.id===preload.atletaId)||null;
+      if(atleta) {
+        setSelectedAtleta(atleta);
+        setSearchQ(`${atleta.nome} ${atleta.cognome}`);
+      } else if(preload.nome||preload.cognome) {
+        setSearchQ(`${preload.nome} ${preload.cognome}`.trim());
+      }
     }
+    if(preload.schedaId) setSchedaId(preload.schedaId);
     if(preload.obiettivo) setObiettivo(preload.obiettivo);
     if(preload.livello) setLivello(preload.livello);
     const giorniKeys = Object.keys(preload.giorni||{});
@@ -190,7 +226,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     if(a.livello) setLivello(a.livello);
   };
 
-  const clearAtleta=()=>{ setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); };
+  const clearAtleta=()=>{ setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); setSchedaId(null); };
 
   const activeDays=ALL_DAYS.slice(0,numDays);
   const scheda=giorni[activeDay]||[];
@@ -225,7 +261,80 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     finally{setPdfState(null);}
   };
 
-  const doAssegna=()=>{
+  // ── Assegna scheda su Supabase ────────────────────────────────────────────
+  const doAssegnaSupabase=async()=>{
+    if(!selectedAtleta) return;
+    setAssegnaLoading(true);
+    try {
+      // Se scheda esiste già: elimina (cascade elimina giorni ed esercizi)
+      if(schedaId) {
+        await supabase.from("schede").delete().eq("id",schedaId);
+      }
+
+      // Insert scheda
+      const {data:nuovaScheda,error:schedaErr}=await supabase.from("schede").insert({
+        pt_id:       user.supabaseId,
+        atleta_id:   selectedAtleta.id,
+        nome:        `${selectedAtleta.nome} ${selectedAtleta.cognome}`.trim(),
+        obiettivo,
+        livello,
+        attiva:      true,
+        assegnata_il: fmtDate(new Date()),
+      }).select().single();
+      if(schedaErr) throw schedaErr;
+
+      // Insert scheda_giorni
+      const giornoRows=activeDays.map((key,ordine)=>({
+        scheda_id: nuovaScheda.id,
+        pt_id:     user.supabaseId,
+        giorno_key: key,
+        nome:      dayNames[key]||"",
+        ordine,
+      }));
+      const {data:giornoData,error:giornoErr}=await supabase
+        .from("scheda_giorni").insert(giornoRows).select();
+      if(giornoErr) throw giornoErr;
+
+      // Mappa giorno_key → id Supabase
+      const giornoIdByKey=Object.fromEntries(giornoData.map(g=>[g.giorno_key,g.id]));
+
+      // Insert scheda_esercizi
+      const eserciziRows=[];
+      activeDays.forEach(key=>{
+        (giorni[key]||[]).forEach((ex,ordine)=>{
+          eserciziRows.push({
+            giorno_id:       giornoIdByKey[key],
+            pt_id:           user.supabaseId,
+            nome:            ex.name,
+            esercizio_id_int: ex.id,
+            serie:           ex.sets,
+            reps:            String(ex.reps),
+            rest_sec:        ex.rest,
+            peso_iniziale:   0,
+            ordine,
+          });
+        });
+      });
+      if(eserciziRows.length>0){
+        const {error:exErr}=await supabase.from("scheda_esercizi").insert(eserciziRows);
+        if(exErr) throw exErr;
+      }
+
+      setSchedaId(nuovaScheda.id);
+      setShowOverwriteConfirm(false);
+      setToast(`✓ Scheda assegnata a ${selectedAtleta.nome} ${selectedAtleta.cognome}`);
+      setAssigned(true);
+      setTimeout(()=>setAssigned(false),2000);
+    } catch(e){
+      console.error("[doAssegna supabase]",e);
+      setToast(`❌ Errore: ${e.message}`);
+    } finally {
+      setAssegnaLoading(false);
+    }
+  };
+
+  // ── Assegna scheda demo (localStorage) ───────────────────────────────────
+  const doAssegnaDemo=()=>{
     if(!selectedAtleta||totalEx===0) return;
     const key=`pt_scheda_${selectedAtleta.id}`;
     const payload={
@@ -242,15 +351,24 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     setShowOverwriteConfirm(false);
     setToast(`✓ Scheda assegnata a ${selectedAtleta.nome} ${selectedAtleta.cognome} — l'atleta può accedere ora con atleta / atleta`);
     setAssigned(true);
-    setTimeout(()=>setAssigned(false), 2000);
+    setTimeout(()=>setAssigned(false),2000);
   };
+
+  const doAssegna=()=>{ user?.isSupabase ? doAssegnaSupabase() : doAssegnaDemo(); };
 
   const handleAssegna=()=>{
     if(!selectedAtleta||totalEx===0) return;
-    const key=`pt_scheda_${selectedAtleta.id}`;
-    if(localStorage.getItem(key)) { setShowOverwriteConfirm(true); return; }
-    doAssegna();
+    if(user?.isSupabase){
+      if(schedaId){ setShowOverwriteConfirm(true); return; }
+      doAssegna();
+    } else {
+      const key=`pt_scheda_${selectedAtleta.id}`;
+      if(localStorage.getItem(key)){ setShowOverwriteConfirm(true); return; }
+      doAssegna();
+    }
   };
+
+  const canAssegna = selectedAtleta && (user?.isSupabase || selectedAtleta?.hasAccount);
 
   return (
     <div>
@@ -290,7 +408,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
                       onMouseEnter={e=>e.currentTarget.style.background="var(--border)"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}
                     >
-                      <div style={{width:28,height:28,borderRadius:7,background:a.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
+                      <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
                       <div>
                         <div style={{fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
                         <div style={{fontSize:11,color:"var(--muted)"}}>{a.obiettivo} · {a.livello}</div>
@@ -384,7 +502,9 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             <span className="overwrite-confirm-text">⚠️ Questo atleta ha già una scheda assegnata. Sostituirla?</span>
             <div className="overwrite-confirm-actions">
               <button className="btn-ghost" style={{padding:"7px 14px",fontSize:13}} onClick={()=>setShowOverwriteConfirm(false)}>Annulla</button>
-              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:13}} onClick={doAssegna}>Sì, sostituisci</button>
+              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:13}} onClick={doAssegna} disabled={assegnaLoading}>
+                {assegnaLoading?"Salvataggio…":"Sì, sostituisci"}
+              </button>
             </div>
           </div>
         )}
@@ -393,7 +513,16 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
           <div className="actions-row">
             {scheda.length>0&&<button className="btn-ghost" onClick={clear}>Svuota Giorno {activeDay}</button>}
             <button className="btn-primary" onClick={handlePDF}>⬇ Esporta PDF completo</button>
-            {selectedAtleta?.hasAccount&&<button className="btn-primary" style={{background:assigned?"var(--accent2)":"var(--accent2)",color:"#07070d",opacity:assigned?1:1,cursor:assigned?"default":"pointer",transition:"all .2s"}} disabled={assigned} onClick={handleAssegna}>{assigned?"✓ Assegnata!":"📲 Assegna all'atleta"}</button>}
+            {canAssegna&&(
+              <button
+                className="btn-primary"
+                style={{background:assigned?"var(--accent2)":"var(--accent2)",color:"#07070d",cursor:assigned?"default":"pointer",transition:"all .2s"}}
+                disabled={assigned||assegnaLoading}
+                onClick={handleAssegna}
+              >
+                {assegnaLoading?"Salvataggio…":assigned?"✓ Assegnata!":"📲 Assegna all'atleta"}
+              </button>
+            )}
           </div>
         )}
       </div>
