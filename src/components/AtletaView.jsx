@@ -644,7 +644,7 @@ export default function AtletaView({user, onLogout}) {
         const peso=parseFloat(pesi[ex.id]||0);
         if(peso>0){
           for(let i=0;i<(ex.sets||3);i++){
-            serieRows.push({nome_esercizio:ex.name,serie_numero:i+1,reps:String(ex.reps||"10"),peso});
+            serieRows.push({nome_esercizio:ex.name,serie_numero:i+1,reps:parseInt(ex.reps||10),peso});
           }
         }
       });

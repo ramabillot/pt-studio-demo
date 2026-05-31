@@ -79,7 +79,7 @@ begin
   select v_id, p_pt_id,
     s->>'nome_esercizio',
     (s->>'serie_numero')::integer,
-    s->>'reps',
+    (s->>'reps')::integer,
     (s->>'peso')::numeric,
     true
   from jsonb_array_elements(p_serie) s
