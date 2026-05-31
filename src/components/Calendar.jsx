@@ -324,7 +324,7 @@ export function CalendarView({setView, user}) {
           clientName: r.atleti ? `${r.atleti.nome||""} ${r.atleti.cognome||""}`.trim() : (r.titolo||""),
           date: r.data,
           time: r.ora_inizio || "00:00",
-          type: r.tipo || "Allenamento",
+          type: "Allenamento",
           atletaId: r.atleta_id,
         })));
       });
@@ -347,7 +347,6 @@ export function CalendarView({setView, user}) {
       titolo: clientName,
       data: date,
       ora_inizio: time,
-      tipo: type,
     }).select("*, atleti(nome, cognome)").single();
     console.log("[calendar add] result data:", data, "| error:", error);
     if(error){ console.error("[calendar add] FAILED:",error); return null; }
@@ -356,7 +355,7 @@ export function CalendarView({setView, user}) {
       clientName: data.atleti ? `${data.atleti.nome||""} ${data.atleti.cognome||""}`.trim() : (data.titolo||clientName),
       date: data.data,
       time: data.ora_inizio||"00:00",
-      type: data.tipo||"Allenamento",
+      type: "Allenamento",
       atletaId: data.atleta_id,
     };
   };
@@ -366,7 +365,6 @@ export function CalendarView({setView, user}) {
       atleta_id: atletaId||null,
       titolo: clientName,
       ora_inizio: time,
-      tipo: type,
     }).eq("id",id);
     if(error) console.error("[calendar edit]",error);
   };
