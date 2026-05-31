@@ -25,7 +25,7 @@ function rowToAtleta(row) {
     note:        row.note_pt || "",
     color:       row.color || COLORS[0],
     lastSeen:    "—",
-    schede:      0,
+    schede:      Array.isArray(row.schede) ? (row.schede[0]?.count || 0) : 0,
   };
 }
 
@@ -57,7 +57,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   useEffect(()=>{
     if(!user?.isSupabase) return;
     setLoading(true);
-    supabase.from("atleti").select("*").eq("pt_id",user.supabaseId)
+    supabase.from("atleti").select("*, schede(count)").eq("pt_id",user.supabaseId)
       .order("created_at",{ascending:true})
       .then(({data,error})=>{
         setLoading(false);
@@ -221,7 +221,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 {a.livello&&<span className="tag">{a.livello}</span>}
               </div>
               <div className="client-meta">
-                <span>🕐 {a.lastSeen}</span>
+                {!user?.isSupabase&&<span>🕐 {a.lastSeen}</span>}
                 <span>📋 {a.schede} schede</span>
               </div>
             </div>
@@ -334,8 +334,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               <div style={{marginTop:16,padding:"14px 16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>Statistiche</div>
                 <div style={{display:"flex",gap:24,fontSize:14}}>
-                  <div><span style={{color:"var(--muted)"}}>Ultimo accesso: </span><strong>{selected.lastSeen}</strong></div>
-                  <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||1}</strong></div>
+                  {!user?.isSupabase&&<div><span style={{color:"var(--muted)"}}>Ultimo accesso: </span><strong>{selected.lastSeen}</strong></div>}
+                  <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||0}</strong></div>
                 </div>
               </div>
 
