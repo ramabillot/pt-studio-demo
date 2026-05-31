@@ -71,14 +71,15 @@ begin
   delete from public.sessioni
   where atleta_id = p_atleta_id and data = p_data and giorno_id = p_giorno_id;
 
-  insert into public.sessioni (pt_id, atleta_id, scheda_id, giorno_id, data)
-  values (p_pt_id, p_atleta_id, p_scheda_id, p_giorno_id, p_data)
+  insert into public.sessioni (pt_id, atleta_id, scheda_id, giorno_id, data, note)
+  values (p_pt_id, p_atleta_id, p_scheda_id, p_giorno_id, p_data, '')
   returning id into v_id;
 
-  insert into public.sessione_serie (sessione_id, pt_id, nome_esercizio, serie_numero, peso, completata)
+  insert into public.sessione_serie (sessione_id, pt_id, nome_esercizio, serie_numero, reps, peso, completata)
   select v_id, p_pt_id,
     s->>'nome_esercizio',
     (s->>'serie_numero')::integer,
+    s->>'reps',
     (s->>'peso')::numeric,
     true
   from jsonb_array_elements(p_serie) s

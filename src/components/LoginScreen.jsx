@@ -117,7 +117,6 @@ export default function LoginScreen({onLogin}) {
 
     // Prova sempre login atleta prima (gli username possono contenere "@")
     const { data: atletaData, error: atletaErr } = await supabase.rpc("login_atleta", { p_username: user.trim(), p_pin: pass });
-    console.log("[login_atleta] username:", user.trim(), "| data:", atletaData, "| error:", atletaErr);
     if (!atletaErr && atletaData) {
       onLogin(buildAtletaObj(atletaData));
       setLoading(false);
@@ -129,7 +128,6 @@ export default function LoginScreen({onLogin}) {
     if (error) { setErr("Email o password non corretti"); setLoading(false); return; }
     const { data: profile, error: profileErr } = await supabase
       .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
-    console.log("[profile query] user.id:", data.user.id, "| profile:", profile, "| error:", profileErr);
     if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); setLoading(false); return; }
     onLogin(buildUserObj(data.user, profile));
     setLoading(false);
