@@ -340,6 +340,7 @@ export function CalendarView({setView, user}) {
   },[user?.supabaseId]);
 
   const onAdd = !user?.isSupabase ? null : async ({clientName,atletaId,date,time,type})=>{
+    console.log("[calendar add] payload:", {clientName, atletaId, date, time, type, pt_id: user.supabaseId});
     const {data,error}=await supabase.from("appuntamenti").insert({
       pt_id: user.supabaseId,
       atleta_id: atletaId||null,
@@ -348,7 +349,8 @@ export function CalendarView({setView, user}) {
       ora_inizio: time,
       tipo: type,
     }).select("*, atleti(nome, cognome)").single();
-    if(error){ console.error("[calendar add]",error); return null; }
+    console.log("[calendar add] result data:", data, "| error:", error);
+    if(error){ console.error("[calendar add] FAILED:",error); return null; }
     return {
       id: data.id,
       clientName: data.atleti ? `${data.atleti.nome||""} ${data.atleti.cognome||""}`.trim() : (data.titolo||clientName),

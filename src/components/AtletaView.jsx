@@ -89,7 +89,8 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
       .select("*")
       .eq("atleta_id", supabaseAtletaId)
       .order("data")
-      .then(({data})=>{
+      .then(({data, error})=>{
+        console.log("[misurazioni load] atleta_id:", supabaseAtletaId, "| rows:", data?.length, "| error:", error);
         setMisure((data||[]).map(r=>({
           dbId: r.id,
           data: r.data,
@@ -108,6 +109,7 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
     if(!form.peso && !form.vita) return;
     if(supabaseAtletaId){
       const existing = misure.find(m=>m.data===form.data);
+      console.log("[misurazioni save] atleta_id:", supabaseAtletaId, "| pt_id:", ptId, "| data:", form.data, "| existing:", existing?.dbId||null);
       const payload = {
         peso: form.peso ? parseFloat(form.peso) : null,
         vita: form.vita ? parseFloat(form.vita) : null,
@@ -174,8 +176,17 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
         .map(m=>({date:m.data,kg:+m[f.key]}))
     }));
 
+  const lastMisura = misure.length > 0 ? misure[misure.length-1] : null;
+
   return (
     <div>
+      {lastMisura&&(
+        <div style={{fontSize:12,color:"var(--muted)",marginBottom:12}}>
+          Ultima misurazione: <strong style={{color:"var(--text)"}}>
+            {new Date(lastMisura.data+"T12:00").toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"})}
+          </strong>
+        </div>
+      )}
       {!readOnly&&(
         <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Nuova misurazione</div>
