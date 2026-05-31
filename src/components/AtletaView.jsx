@@ -398,7 +398,7 @@ export function ProgressiSectionPT({atleta, user}) {
 }
 
 // ── Progressi screen (atleta view) ────────────────────────────────────────────
-function AtletaProgressi({scheda, user}) {
+function AtletaProgressi({scheda, user, sessions}) {
   const [selIds,setSelIds]=useState([]);
   const [lockedExId,setLockedExId]=useState(null);
 
@@ -426,7 +426,6 @@ function AtletaProgressi({scheda, user}) {
     });
   });
 
-  const sessions = user?.isSupabase ? [] : loadSessions();
   const counts=countSessionsPerEx(sessions);
   const colorMap = Object.fromEntries(allExercises.map((ex,i)=>[ex.id, LINE_COLORS[i%LINE_COLORS.length]]));
 
@@ -532,6 +531,7 @@ export default function AtletaView({user, onLogout}) {
   const logoClickRef = useRef(0);
   const [calEvents, setCalEvents] = useState([]);
   const [apptExpanded, setApptExpanded] = useState(false);
+  const [supaSessions, setSupaSessions] = useState(null);
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -557,6 +557,18 @@ export default function AtletaView({user, onLogout}) {
       if(raw) setCalEvents(JSON.parse(raw));
     } catch {}
   },[]);
+
+  useEffect(()=>{
+    if(!user.isSupabase) return;
+    supabase.from("sessioni")
+      .select("data, sessione_serie(nome_esercizio, peso)")
+      .eq("atleta_id", user.id)
+      .order("data")
+      .then(({data,error})=>{
+        if(error){ console.error("[sessioni atleta]",error); setSupaSessions([]); return; }
+        setSupaSessions(data||[]);
+      });
+  },[user.id]);
 
   useEffect(()=>{
     if(!activeDay) return;
@@ -606,7 +618,10 @@ export default function AtletaView({user, onLogout}) {
     finally{setPdfStateAtleta(null);}
   };
 
-  const _allSessions = user.isSupabase ? [] : loadSessions();
+  const _rawSupa = user.isSupabase ? (supaSessions||[]) : null;
+  const _allSessions = user.isSupabase
+    ? _rawSupa.map(s=>({date:s.data}))
+    : loadSessions();
   const sessionTotal = _allSessions.length;
   const latestSessionDate = _allSessions.length > 0
     ? [..._allSessions].sort((a,b)=>b.date.localeCompare(a.date))[0].date
@@ -617,6 +632,19 @@ export default function AtletaView({user, onLogout}) {
     const _sd = new Date(todayStr+"T12:00");
     while(_sessionDates.has(fmtDate(_sd))){ sessionStreak++; _sd.setDate(_sd.getDate()-1); }
   }
+  // Sessioni in formato locale {date, weights:{exId:peso}} per i grafici progressi
+  const chartSessions = user.isSupabase
+    ? _rawSupa.map(s=>({
+        date:s.data,
+        weights:(s.sessione_serie||[]).reduce((acc,sr)=>{
+          const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio);
+          if(!ex) return acc;
+          const prev=parseFloat(acc[ex.id]||0), val=parseFloat(sr.peso||0);
+          if(val>prev) acc[ex.id]=String(val);
+          return acc;
+        },{})
+      }))
+    : loadSessions();
 
   const userNameLower = (user.name||"").toLowerCase();
   const futureAppts = calEvents
@@ -704,7 +732,7 @@ export default function AtletaView({user, onLogout}) {
         <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
       </div>
 
-      {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user}/>}
+      {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user} sessions={chartSessions}/>}
 
       {atlView==="scheda"&&<div className="cliente-body">
         <div className="appt-section">
