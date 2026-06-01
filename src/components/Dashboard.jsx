@@ -5,6 +5,7 @@ import { supabase } from "../supabase.js";
 export default function Dashboard({user,setView}) {
   const oggi=new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
   const [ptStats,setPtStats]=useState(null);
+  const [trainerStats,setTrainerStats]=useState(null);
 
   useEffect(()=>{
     if(user.role!=="admin"||!user.isSupabase) return;
@@ -19,6 +20,29 @@ export default function Dashboard({user,setView}) {
           newMonth: pts.filter(p=>new Date(p.created_at)>=som).length,
         });
       });
+  },[user]);
+
+  useEffect(()=>{
+    if(user.role==="admin"||!user.isSupabase) return;
+    const uid=user.supabaseId;
+    Promise.all([
+      supabase.from("atleti").select("id",{count:"exact",head:true}).eq("pt_id",uid),
+      supabase.from("schede").select("id",{count:"exact",head:true}).eq("pt_id",uid),
+      supabase.from("appuntamenti").select("data,ora_inizio")
+        .eq("pt_id",uid)
+        .gte("data",new Date().toISOString().slice(0,10))
+        .order("data").order("ora_inizio").limit(1),
+    ]).then(([atlRes,schedRes,apptRes])=>{
+      const nextAppt=apptRes.data?.[0];
+      let apptLabel="—";
+      if(nextAppt){
+        const d=new Date(nextAppt.data+"T12:00");
+        const today=new Date(); today.setHours(0,0,0,0);
+        const isToday=d.toDateString()===today.toDateString();
+        apptLabel=(isToday?"Oggi ":"")+(nextAppt.ora_inizio?.slice(0,5)||"");
+      }
+      setTrainerStats({atleti:atlRes.count??0, schede:schedRes.count??0, appt:apptLabel});
+    });
   },[user]);
 
   if(user.role==="admin" || user.is_admin) {
@@ -68,10 +92,10 @@ export default function Dashboard({user,setView}) {
   }
 
   const stats = user.isSupabase ? [
-    {icon:"👥",val:"0",  label:"Atleti attivi"},
-    {icon:"📋",val:"0",  label:"Schede create"},
-    {icon:"📅",val:"—",  label:"Prossimo appuntamento"},
-    {icon:"💪",val:"20", label:"Esercizi in libreria"},
+    {icon:"👥",val:trainerStats?String(trainerStats.atleti):"…",label:"Atleti attivi"},
+    {icon:"📋",val:trainerStats?String(trainerStats.schede):"…",label:"Schede create"},
+    {icon:"📅",val:trainerStats?trainerStats.appt:"…",          label:"Prossimo appuntamento"},
+    {icon:"💪",val:"20",                                          label:"Esercizi in libreria"},
   ] : [
     {icon:"👥",val:"4",         label:"Atleti attivi"},
     {icon:"📋",val:"6",         label:"Schede create"},

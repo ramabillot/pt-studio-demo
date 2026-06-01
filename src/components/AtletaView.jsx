@@ -231,7 +231,7 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
                 <div className="misure-entry">
                   <span className="misure-date">{fmtDateShort(m.data)}</span>
                   {badges.map(f=>(
-                    <span key={f.key} className="misura-badge">{f.emoji} {m[f.key]} {f.unit}</span>
+                    <span key={f.key} className="misura-badge">{f.emoji} {f.label} {m[f.key]} {f.unit}</span>
                   ))}
                   <div style={{flex:1}}/>
                   {!readOnly&&(
@@ -632,8 +632,7 @@ export default function AtletaView({user, onLogout}) {
         let ptName = "";
         const ptId = data.pt_id || user.pt_id;
         if(ptId){
-          const {data: ptProfile} = await supabase
-            .from("profiles").select("nome, cognome").eq("id", ptId).maybeSingle();
+          const {data: ptProfile} = await supabase.rpc("get_pt_name", {p_pt_id: ptId});
           if(ptProfile) ptName = (`${ptProfile.nome||""} ${ptProfile.cognome||""}`).trim();
         }
         setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:ptName, obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
