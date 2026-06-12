@@ -33,10 +33,10 @@ export const THEME_MAP = {
   border:"--border", accent2:"--accent2", accent3:"--accent3",
 };
 
-export const CAT_COLORS     = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3" };
+export const CAT_COLORS     = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3", Core:"#a47ffe" };
 export const LINE_COLORS    = ["#e8ff47","#47ffe8","#ff47a3","#ff9f47","#a47ffe","#47a3ff","#ff4757","#2ecc71"];
-export const CAT_COLORS_PDF = { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95] };
-export const CATEGORIES     = ["Tutte","Braccia","Spalle","Schiena","Gambe"];
+export const CAT_COLORS_PDF = { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95], Core:[164,127,254] };
+export const CATEGORIES     = ["Tutte","Braccia","Spalle","Schiena","Gambe","Core"];
 export const DAYS           = ["A","B","C"];
 export const OBIETTIVI      = ["Ipertrofia","Dimagrimento","Forza","Resistenza","Tonificazione"];
 export const LIVELLI        = ["Principiante","Intermedio","Avanzato"];

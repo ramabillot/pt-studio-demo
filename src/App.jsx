@@ -665,7 +665,7 @@ export default function App() {
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content">
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
-            {view==="library"&&!isAdmin&&<Library setView={setView}/>}
+            {view==="library"&&!isAdmin&&<Library setView={setView} user={user}/>}
             {view==="builder"&&!isAdmin&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload} user={user}/>}
             {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
             {view==="calendar"&&!isAdmin&&<CalendarView setView={setView} user={user}/>}

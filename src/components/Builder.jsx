@@ -143,8 +143,9 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   const [activeDay,setActiveDay]=useState("A");
   const [giorni,setGiorni]=useState({A:[],B:[],C:[],D:[],E:[],F:[],G:[]});
   const [dayNames,setDayNames]=useState({A:"",B:"",C:"",D:"",E:"",F:"",G:""});
-  const [selId,setSelId]=useState(EXERCISES[0].id);
+  const [selId,setSelId]=useState(String(EXERCISES[0].id));
   const [sets,setSets]=useState(3); const [reps,setReps]=useState(10); const [rest,setRest]=useState(90);
+  const [customExercises,setCustomExercises]=useState([]);
   const [pdfState,setPdfState]=useState(null);
   const [toast,setToast]=useState(null);
   const [assigned,setAssigned]=useState(false);
@@ -154,6 +155,13 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   const [assegnaLoading,setAssegnaLoading]=useState(false);
   // Atleti reali da Supabase
   const [realAtleti,setRealAtleti]=useState([]);
+
+  // Carica esercizi custom del PT
+  useEffect(()=>{
+    if(!user?.isSupabase) return;
+    supabase.from("esercizi_custom").select("*").order("created_at",{ascending:false})
+      .then(({data})=>setCustomExercises(data||[]));
+  },[user?.supabaseId]);
 
   // Carica atleti reali da Supabase
   useEffect(()=>{
@@ -244,7 +252,17 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     if(!newDays.includes(activeDay)) setActiveDay(newDays[newDays.length-1]);
   };
 
-  const add=()=>{ const ex=EXERCISES.find(e=>e.id===Number(selId)); setGiorni(prev=>({...prev,[activeDay]:[...(prev[activeDay]||[]),{...ex,sets,reps,rest,uid:Date.now()}]})); };
+  const add=()=>{
+    let exObj;
+    if(String(selId).startsWith("c:")){
+      const raw=customExercises.find(e=>e.id===String(selId).slice(2));
+      if(raw) exObj={id:null,name:raw.nome,cat:raw.categoria,muscles:raw.descrizione||""};
+    } else {
+      exObj=EXERCISES.find(e=>e.id===Number(selId));
+    }
+    if(!exObj) return;
+    setGiorni(prev=>({...prev,[activeDay]:[...(prev[activeDay]||[]),{...exObj,sets,reps,rest,uid:Date.now()}]}));
+  };
   const del=(uid)=>setGiorni(prev=>({...prev,[activeDay]:(prev[activeDay]||[]).filter(r=>r.uid!==uid)}));
   const clear=()=>setGiorni(prev=>({...prev,[activeDay]:[]}));
 
@@ -463,7 +481,12 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
         <div className="builder-top">
           <label>Esercizio
             <select value={selId} onChange={e=>setSelId(e.target.value)}>
-              {CATEGORIES.slice(1).map(cat=><optgroup key={cat} label={`── ${cat} ──`}>{EXERCISES.filter(e=>e.cat===cat).map(ex=><option key={ex.id} value={ex.id}>{ex.name}</option>)}</optgroup>)}
+              {CATEGORIES.slice(1).filter(cat=>EXERCISES.some(e=>e.cat===cat)||customExercises.some(e=>e.categoria===cat)).map(cat=>(
+                <optgroup key={cat} label={`── ${cat} ──`}>
+                  {EXERCISES.filter(e=>e.cat===cat).map(ex=><option key={ex.id} value={String(ex.id)}>{ex.name}</option>)}
+                  {customExercises.filter(e=>e.categoria===cat).map(ex=><option key={ex.id} value={`c:${ex.id}`}>{ex.nome}</option>)}
+                </optgroup>
+              ))}
             </select>
           </label>
           <label>Serie<input type="number" min={1} max={20} value={sets} onChange={e=>setSets(Number(e.target.value))}/></label>
