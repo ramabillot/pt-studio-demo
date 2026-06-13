@@ -120,7 +120,7 @@ export default function AdminPanel({ setView }) {
                 type="number" min={1} max={500}
                 value={pt.max_atleti}
                 onChange={e=>save(pt.id,{max_atleti:Number(e.target.value)})}
-                style={{background:"transparent",border:"none",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,width:48,textAlign:"center",outline:"none"}}
+                style={{background:"transparent",border:"none",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,width:64,textAlign:"center",outline:"none"}}
               />
             </div>
 

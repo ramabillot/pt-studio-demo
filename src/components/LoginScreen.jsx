@@ -39,7 +39,7 @@ function buildAtletaObj(row) {
 }
 
 export default function LoginScreen({onLogin}) {
-  // mode: "login" | "register" | "forgot" | "registered"
+  // mode: "login" | "register" | "registered"
   const [mode, setMode] = useState("login");
   // Login fields
   const [user, setUser] = useState("");
@@ -50,17 +50,15 @@ export default function LoginScreen({onLogin}) {
   const [rEmail, setREmail] = useState("");
   const [rPass, setRPass] = useState("");
   const [rPass2, setRPass2] = useState("");
-  // Forgot
-  const [fEmail, setFEmail] = useState("");
-  const [fMsg, setFMsg] = useState("");
   // Shared
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const canvasRef = useRef(null);
 
   const reset = () => { setErr(""); setLoading(false); };
-  const goLogin = () => { setMode("login"); reset(); setFMsg(""); };
+  const goLogin = () => { setMode("login"); reset(); };
 
   // ── Canvas background animation (unchanged) ───────────────────────────────
   useEffect(()=>{
@@ -149,18 +147,6 @@ export default function LoginScreen({onLogin}) {
     setLoading(false);
   };
 
-  const forgotPwd = async () => {
-    setErr(""); setFMsg("");
-    if (!fEmail.trim()) { setErr("Inserisci la tua email"); return; }
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(fEmail.trim(), {
-      redirectTo: window.location.origin,
-    });
-    if (error) { setErr(error.message); }
-    else { setFMsg("Email inviata! Controlla la tua casella."); }
-    setLoading(false);
-  };
-
   // ── Shared secondary link style ───────────────────────────────────────────
   const linkBtn = (onClick, label, color="var(--muted)") => (
     <button onClick={onClick} style={{background:"none",border:"none",color,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:0}}>
@@ -207,7 +193,7 @@ export default function LoginScreen({onLogin}) {
             </button>
             <div style={{display:"flex",justifyContent:"space-between",marginTop:14,flexWrap:"wrap",gap:8}}>
               {linkBtn(()=>{setMode("register");reset();},"Registrati →","var(--accent)")}
-              {linkBtn(()=>{setMode("forgot");reset();},"Password dimenticata?")}
+              {linkBtn(()=>setShowForgotModal(true),"Password dimenticata?")}
             </div>
 
             {/* Demo hints (invariato) */}
@@ -288,27 +274,6 @@ export default function LoginScreen({onLogin}) {
             </div>
           </>}
 
-          {/* ── FORGOT PASSWORD ── */}
-          {mode==="forgot"&&<>
-            <div className="login-sub">Recupera la tua password</div>
-            <div className="login-field">
-              <label>La tua email</label>
-              <input className="login-input" type="email" placeholder="marco@email.com" value={fEmail}
-                onChange={e=>{setFEmail(e.target.value);setErr("");setFMsg("");}}
-                onKeyDown={e=>e.key==="Enter"&&forgotPwd()}/>
-            </div>
-            {err&&<div className="login-err">{err}</div>}
-            {fMsg
-              ? <div style={{color:"var(--accent2)",fontSize:13,textAlign:"center",padding:"8px 0",lineHeight:1.6}}>{fMsg}</div>
-              : <button className="login-btn" onClick={forgotPwd} disabled={loading}>
-                  {loading?"Invio in corso…":"Invia email di recupero"}
-                </button>
-            }
-            <div style={{textAlign:"center",marginTop:14}}>
-              {linkBtn(goLogin,"← Torna al login")}
-            </div>
-          </>}
-
           {/* ── REGISTERED (success) ── */}
           {mode==="registered"&&(
             <div style={{textAlign:"center",padding:"8px 0 4px"}}>
@@ -325,6 +290,29 @@ export default function LoginScreen({onLogin}) {
           )}
         </div>
       </div>
+
+      {/* ── Modal "contatta admin" per reset password ── */}
+      {showForgotModal&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(8px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}
+          onClick={()=>setShowForgotModal(false)}>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,padding:"28px 28px 24px",maxWidth:380,width:"100%",animation:"slideUp .2s ease"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,marginBottom:12}}>
+              Reset password
+            </div>
+            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.7,marginBottom:24}}>
+              Per reimpostare la password contatta l'amministratore all'indirizzo{" "}
+              <strong style={{color:"var(--text)"}}>supporto@ptstudio.it</strong>.
+              <br/>Provvederà a ripristinare il tuo accesso.
+            </div>
+            <button
+              className="login-btn"
+              style={{marginTop:0}}
+              onClick={()=>setShowForgotModal(false)}
+            >Ho capito</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
