@@ -16,6 +16,8 @@ const NAV_ADMIN = [
   { id:"admin-calendar", icon:"📅",  label:"Calendario"   },
 ];
 
+const NAV_ACCOUNT = { id:"account", icon:"⚙", label:"Account" };
+
 export function Sidebar({user,view,setView,onLogout}) {
   const [showReset, setShowReset] = useState(false);
   const logoLastClick = useRef(0);
@@ -26,7 +28,8 @@ export function Sidebar({user,view,setView,onLogout}) {
     logoLastClick.current = now;
   };
 
-  const items = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
+  const baseItems = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
+  const items = user.isSupabase ? [...baseItems, NAV_ACCOUNT] : baseItems;
   const logo = user.theme?.logo || ["PT","Studio"];
   return (
     <div className="sidebar">
@@ -51,7 +54,8 @@ export function Sidebar({user,view,setView,onLogout}) {
 }
 
 export function MobileNav({user,view,setView,onLogout}) {
-  const items = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
+  const baseItems = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
+  const items = user.isSupabase ? [...baseItems, NAV_ACCOUNT] : baseItems;
   return (
     <nav className="mobile-nav">
       <div className="mobile-nav-logout-bar">

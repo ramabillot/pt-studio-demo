@@ -14,6 +14,7 @@ import AdminStats from "./components/AdminStats.jsx";
 import AdminPT from "./components/AdminPT.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
 import AtletaView from "./components/AtletaView.jsx";
+import AccountSettings from "./components/AccountSettings.jsx";
 
 // ── FONTS & BASE CSS ──────────────────────────────────────────────────────────
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap');`;
@@ -672,6 +673,7 @@ export default function App() {
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&isAdmin&&(user?.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
             {view==="admin-calendar"&&isAdmin&&<AdminCalendar setView={setView}/>}
+            {view==="account"&&user?.isSupabase&&<AccountSettings setView={setView} user={user}/>}
           </div>
           <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
         </div>
