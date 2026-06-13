@@ -9,6 +9,10 @@ export default function AdminPanel({ setView }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
   const [err, setErr] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null); // {id, email, nome, cognome, isPending}
+  const [deleteTyped, setDeleteTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState("");
 
   useEffect(() => { fetchPTs(); }, []);
 
@@ -30,6 +34,30 @@ export default function AdminPanel({ setView }) {
     if (!error) setPts(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p));
     setSaving(s => ({ ...s, [id]: false }));
   };
+
+  const openDeleteModal = (pt) => {
+    setDeleteModal({ id: pt.id, email: pt.email, nome: pt.nome, cognome: pt.cognome, isPending: !pt.is_approved });
+    setDeleteTyped("");
+    setDeleteErr("");
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal || deleteTyped !== deleteModal.email) return;
+    setDeleting(true); setDeleteErr("");
+    const { error } = await supabase.rpc("admin_delete_pt", { p_pt_id: deleteModal.id });
+    if (error) {
+      console.error("[deletePT]", error);
+      setDeleteErr(error.message);
+      setDeleting(false);
+      return;
+    }
+    setPts(prev => prev.filter(p => p.id !== deleteModal.id));
+    setDeleteModal(null);
+    setDeleteTyped("");
+    setDeleting(false);
+  };
+
+  const ptLabel = (pt) => [pt.nome, pt.cognome].filter(Boolean).join(" ") || pt.email;
 
   return (
     <div>
@@ -121,9 +149,79 @@ export default function AdminPanel({ setView }) {
             }}>
               {pt.is_approved?"Approvato":"In attesa"}
             </span>
+
+            {/* Rifiuta (pending) / Elimina PT (approvato) */}
+            <button
+              onClick={()=>openDeleteModal(pt)}
+              style={{
+                background:"none",border:"1px solid rgba(255,71,87,.2)",
+                color:"rgba(255,71,87,.7)",
+                fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                padding:"7px 14px",borderRadius:8,cursor:"pointer",
+                transition:"all .15s",
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,71,87,.08)";e.currentTarget.style.color="var(--danger)";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="rgba(255,71,87,.7)";}}
+            >
+              {pt.is_approved?"🗑 Elimina PT":"✗ Rifiuta"}
+            </button>
           </div>
         </div>
       ))}
+
+      {/* ── Modal conferma eliminazione PT ── */}
+      {deleteModal&&(
+        <div className="overlay" onClick={()=>{ if(!deleting){ setDeleteModal(null); setDeleteTyped(""); setDeleteErr(""); }}}>
+          <div style={{
+            background:"var(--card)",border:"1px solid rgba(255,71,87,.3)",
+            borderRadius:16,padding:"28px 28px 24px",maxWidth:440,width:"100%",
+            animation:"slideUp .2s ease",
+          }} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:17,fontWeight:700,color:"var(--text)",marginBottom:10}}>
+              {deleteModal.isPending?"Rifiuta richiesta":"Elimina PT"}
+            </div>
+            <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.65,marginBottom:18}}>
+              {deleteModal.isPending
+                ? <>Stai <strong style={{color:"var(--text)"}}>rifiutando</strong> la richiesta di <strong style={{color:"var(--text)"}}>{ptLabel(deleteModal)}</strong>. Il loro account verrà eliminato definitivamente.</>
+                : <>Questa azione elimina <strong style={{color:"var(--text)"}}>{ptLabel(deleteModal)}</strong>, tutti i suoi atleti e l'intero storico (schede, sessioni, misurazioni, appuntamenti). <strong style={{color:"var(--danger)"}}>Non è reversibile.</strong></>
+              }
+            </div>
+            <div style={{fontSize:12,color:"var(--muted)",marginBottom:7}}>
+              Digita <strong style={{color:"var(--text)"}}>{deleteModal.email}</strong> per confermare:
+            </div>
+            <input
+              className="field-input"
+              type="text"
+              value={deleteTyped}
+              autoComplete="off"
+              onChange={e=>{ setDeleteTyped(e.target.value); setDeleteErr(""); }}
+              placeholder={deleteModal.email}
+              style={{marginBottom:14,fontSize:13,width:"100%"}}
+            />
+            {deleteErr&&<div style={{fontSize:12,color:"var(--danger)",marginBottom:10}}>{deleteErr}</div>}
+            <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+              <button
+                className="btn-ghost"
+                style={{fontSize:13,padding:"7px 16px"}}
+                disabled={deleting}
+                onClick={()=>{ setDeleteModal(null); setDeleteTyped(""); setDeleteErr(""); }}
+              >Annulla</button>
+              <button
+                className="btn-danger"
+                style={{
+                  fontSize:13,padding:"7px 18px",
+                  opacity:deleteTyped===deleteModal.email&&!deleting?1:.4,
+                  cursor:deleteTyped===deleteModal.email&&!deleting?"pointer":"default",
+                }}
+                disabled={deleteTyped!==deleteModal.email||deleting}
+                onClick={confirmDelete}
+              >
+                {deleting?"…":deleteModal.isPending?"Rifiuta":"Elimina PT"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

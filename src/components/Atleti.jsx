@@ -28,6 +28,7 @@ function rowToAtleta(row) {
     color:       row.color || COLORS[0],
     lastSeen:    "—",
     schede:      Array.isArray(row.schede) ? (row.schede[0]?.count || 0) : 0,
+    archivedAt:  row.archived_at || null,
   };
 }
 
@@ -42,23 +43,21 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const [editProfiloForm,setEditProfiloForm]=useState(null);
   const [limitErr,setLimitErr]=useState("");
   const [profiloErr,setProfiloErr]=useState("");
-  const [deleteConfirm,setDeleteConfirm]=useState(false);
+  const [archiveConfirm,setArchiveConfirm]=useState(false);
+  const [hardDelete,setHardDelete]=useState({show:false,typed:""});
+  const [showArchived,setShowArchived]=useState(false);
   const [form,setForm]=useState(FORM_EMPTY);
-  // Scheda Supabase dell'atleta selezionato
   const [atletaScheda,setAtletaScheda]=useState(null);
   const [loadingScheda,setLoadingScheda]=useState(false);
-  // Credenziali
   const [changePIN,setChangePIN]=useState({show:false,pin:"",err:""});
-  const [copied,setCopied]=useState(null); // "username" | "pin" | null
+  const [copied,setCopied]=useState(null);
 
-  // Seed demo misure only for demo mode
   useEffect(()=>{
     if(user?.isSupabase) return;
     const existing = localStorage.getItem("pt_misure_0");
     if(!existing) saveMisure(0, DEMO_MISURE_0);
   },[]);
 
-  // Load athletes from Supabase for real users
   useEffect(()=>{
     if(!user?.isSupabase) return;
     setLoading(true);
@@ -71,11 +70,14 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       });
   },[user?.supabaseId]);
 
+  const activeAtleti=atleti.filter(a=>!a.archivedAt);
+  const archivedAtleti=atleti.filter(a=>!!a.archivedAt);
+
   const addAtleta=async()=>{
     if(!form.nome||!form.cognome) return;
     if(!form.username.trim()){ setLimitErr("Username obbligatorio"); return; }
     if(!/^\d{4}$/.test(form.pin)){ setLimitErr("Il PIN deve essere di esattamente 4 cifre numeriche"); return; }
-    if(user?.isSupabase && user?.max_atleti != null && atleti.length >= user.max_atleti){
+    if(user?.isSupabase && user?.max_atleti != null && activeAtleti.length >= user.max_atleti){
       setLimitErr(`Hai raggiunto il limite del tuo piano (${user.max_atleti} atleti). Contatta l'amministratore per aumentare il limite.`);
       return;
     }
@@ -96,15 +98,15 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         note_pt:     form.note,
         telefono:    form.telefono||null,
         email:       form.email||null,
-        color:       COLORS[atleti.length%COLORS.length],
+        color:       COLORS[activeAtleti.length%COLORS.length],
       }).select().single();
       if(error){
-        setLimitErr(error.code==="23505" ? "Username già in uso per questo account. Scegli un altro username." : error.message);
+        setLimitErr(error.code==="23505" ? "Username già in uso. Scegli un altro username." : error.message);
         return;
       }
       setAtleti(prev=>[...prev,rowToAtleta(data)]);
     } else {
-      const updated=[...atleti,{id:Date.now(),color:COLORS[atleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form}];
+      const updated=[...atleti,{id:Date.now(),color:COLORS[activeAtleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form,archivedAt:null}];
       setAtleti(updated);
       persistAtleti(updated);
     }
@@ -140,20 +142,44 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     setEditingProfilo(false);
   };
 
-  const deleteAtleta=async()=>{
+  const archiveAtleta=async()=>{
+    if(!selected) return;
+    const now=new Date().toISOString();
+    if(user?.isSupabase){
+      const {error}=await supabase.from("atleti").update({archived_at:now}).eq("id",selected.id);
+      if(error){ console.error("[archive]",error); return; }
+    } else {
+      persistAtleti(atleti.map(a=>a.id===selected.id?{...a,archivedAt:now}:a));
+    }
+    setAtleti(prev=>prev.map(a=>a.id===selected.id?{...a,archivedAt:now}:a));
+    setSelected(null);
+    setArchiveConfirm(false);
+  };
+
+  const restoreAtleta=async(atletaId)=>{
+    if(user?.isSupabase){
+      const {error}=await supabase.from("atleti").update({archived_at:null}).eq("id",atletaId);
+      if(error){ console.error("[restore]",error); return; }
+    } else {
+      persistAtleti(atleti.map(a=>a.id===atletaId?{...a,archivedAt:null}:a));
+    }
+    setAtleti(prev=>prev.map(a=>a.id===atletaId?{...a,archivedAt:null}:a));
+    setSelected(null);
+  };
+
+  const hardDeleteAtleta=async()=>{
     if(!selected) return;
     if(user?.isSupabase){
       const {error}=await supabase.from("atleti").delete().eq("id",selected.id);
-      if(error){ console.error("[atleti delete]",error); return; }
+      if(error){ console.error("[hard delete]",error); return; }
     } else {
       persistAtleti(atleti.filter(a=>a.id!==selected.id));
     }
     setAtleti(prev=>prev.filter(a=>a.id!==selected.id));
     setSelected(null);
-    setDeleteConfirm(false);
+    setHardDelete({show:false,typed:""});
   };
 
-  // Carica scheda Supabase quando un atleta reale viene selezionato
   useEffect(()=>{
     if(!selected || !user?.isSupabase){ setAtletaScheda(null); return; }
     setLoadingScheda(true);
@@ -164,7 +190,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       .then(({data})=>{ setAtletaScheda(data||null); setLoadingScheda(false); });
   },[selected?.id,user?.isSupabase]);
 
-  // Converte una scheda Supabase nel formato locale giorni/dayNames per il Builder
   const schedaToPreload=(scheda,atleta)=>{
     const giorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
     const dayNames={A:"",B:"",C:"",D:"",E:"",F:"",G:""};
@@ -214,8 +239,24 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     navigator.clipboard.writeText(text).then(()=>{ setCopied(key); setTimeout(()=>setCopied(null),1800); });
   };
 
-  const openSelected=(a)=>{ setSelected(a); setDeleteConfirm(false); setEditingProfilo(false); setProfiloErr(""); setChangePIN({show:false,pin:"",err:""}); };
-  const closeSelected=()=>{ setSelected(null); setDeleteConfirm(false); setChangePIN({show:false,pin:"",err:""}); };
+  const openSelected=(a)=>{
+    setSelected(a);
+    setArchiveConfirm(false);
+    setHardDelete({show:false,typed:""});
+    setEditingProfilo(false);
+    setProfiloErr("");
+    setChangePIN({show:false,pin:"",err:""});
+  };
+  const closeSelected=()=>{
+    setSelected(null);
+    setArchiveConfirm(false);
+    setHardDelete({show:false,typed:""});
+    setChangePIN({show:false,pin:"",err:""});
+  };
+
+  const subtitleText=loading
+    ? "Caricamento…"
+    : `${activeAtleti.length} atleti attivi${archivedAtleti.length>0?` · ${archivedAtleti.length} archiviati`:""}`;
 
   return (
     <div>
@@ -223,7 +264,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
         <div>
           <div className="page-title">Atleti</div>
-          <div className="page-sub">{loading?"Caricamento…":`${atleti.length} atleti attivi`}</div>
+          <div className="page-sub">{subtitleText}</div>
         </div>
         <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ Nuovo atleta</button>
       </div>
@@ -233,7 +274,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       )}
 
       <div className="clients-grid">
-        {atleti.map(a=>(
+        {activeAtleti.map(a=>(
           <div className="client-item" key={a.id} onClick={()=>openSelected(a)}>
             <div className="avatar" style={{background:a.color}}>{getInitials(a.nome,a.cognome)}</div>
             <div className="client-info">
@@ -251,13 +292,51 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         ))}
       </div>
 
+      {/* ── Sezione archiviati ── */}
+      {archivedAtleti.length>0&&(
+        <div style={{marginTop:20}}>
+          <button
+            onClick={()=>setShowArchived(p=>!p)}
+            style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:"4px 0",marginBottom:showArchived?10:0}}
+          >
+            <span style={{fontSize:10}}>{showArchived?"▼":"▶"}</span>
+            Archiviati ({archivedAtleti.length})
+          </button>
+          {showArchived&&archivedAtleti.map(a=>(
+            <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:8,opacity:.65}}>
+              <div className="avatar" style={{background:a.color,width:36,height:36,fontSize:13}}>{getInitials(a.nome,a.cognome)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:600,color:"var(--muted)"}}>{a.nome} {a.cognome}</div>
+                {a.obiettivo&&<div style={{fontSize:12,color:"var(--muted)",opacity:.7}}>{a.obiettivo}</div>}
+              </div>
+              <button
+                className="btn-ghost"
+                style={{fontSize:11,padding:"4px 10px",flexShrink:0}}
+                onClick={()=>openSelected(a)}
+              >Dettagli</button>
+              <button
+                className="btn-ghost"
+                style={{fontSize:11,padding:"4px 10px",color:"var(--accent2)",borderColor:"rgba(71,255,232,.25)",flexShrink:0}}
+                onClick={()=>restoreAtleta(a.id)}
+              >Ripristina</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Modal atleta ── */}
       {selected&&(
         <div className="overlay" onClick={closeSelected}>
           <div className="client-modal" onClick={e=>e.stopPropagation()}>
             <div className="client-modal-header">
               <div className="avatar" style={{background:selected.color,width:52,height:52,fontSize:18}}>{getInitials(selected.nome,selected.cognome)}</div>
               <div style={{flex:1}}>
-                <div style={{fontSize:20,fontWeight:700}}>{selected.nome} {selected.cognome}</div>
+                <div style={{fontSize:20,fontWeight:700,display:"flex",alignItems:"center",gap:8}}>
+                  {selected.nome} {selected.cognome}
+                  {selected.archivedAt&&(
+                    <span style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",background:"rgba(255,159,71,.12)",color:"#ff9f47",padding:"2px 8px",borderRadius:100}}>Archiviato</span>
+                  )}
+                </div>
                 <div style={{fontSize:13,color:"var(--muted)",marginTop:2}}>{selected.obiettivo} · {selected.livello}</div>
               </div>
               <button className="modal-close" onClick={closeSelected}>✕</button>
@@ -283,7 +362,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     </button>
                   </div>
                 </div>
-                {user?.isSupabase&&(
+                {user?.isSupabase&&!selected.archivedAt&&(
                   <div style={{marginTop:10}}>
                     {!changePIN.show?(
                       <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setChangePIN({show:true,pin:"",err:""})}>🔑 Cambia PIN</button>
@@ -308,53 +387,57 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 )}
               </div>
 
-              <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
-              {selected.isDemoAtleta?(
-                <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
-              ):user?.isSupabase?(
-                loadingScheda?(
-                  <div style={{color:"var(--muted)",fontSize:14}}>Caricamento scheda…</div>
-                ):atletaScheda?(
-                  <div>
-                    {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
-                      const key=g.giorno_key||String.fromCharCode(65+g.ordine);
-                      const label=g.nome?`${key} — ${g.nome}`:`Giorno ${key}`;
-                      return <span key={g.id} className="scheda-chip">📋 {label} · {(g.scheda_esercizi||[]).length} esercizi</span>;
-                    })}
-                    <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                      <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
-                        setBuilderPreload(schedaToPreload(atletaScheda,selected));
-                        closeSelected();
-                        setView("builder");
-                      }}>✏️ Modifica nel Builder</button>
-                    </div>
-                  </div>
-                ):(
-                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                    <div style={{color:"var(--muted)",fontSize:14,flex:1}}>Nessuna scheda assegnata ancora.</div>
-                    <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
-                      setBuilderPreload({
-                        atleta:selected,atletaId:selected.id,
-                        nome:selected.nome,cognome:selected.cognome,
-                        obiettivo:selected.obiettivo||"",livello:selected.livello||"",
-                        giorni:{A:[],B:[],C:[],D:[],E:[],F:[],G:[]},
-                        dayNames:{A:"",B:"",C:"",D:"",E:"",F:"",G:""},
-                      });
-                      closeSelected();
-                      setView("builder");
-                    }}>+ Crea scheda</button>
-                  </div>
-                )
-              ):selected.schede>0?(
-                Array.from({length:selected.schede},(_,i)=>(
-                  <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
-                ))
-              ):<div style={{color:"var(--muted)",fontSize:14}}>Nessuna scheda assegnata ancora.</div>}
+              {!selected.archivedAt&&(
+                <>
+                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
+                  {selected.isDemoAtleta?(
+                    <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
+                  ):user?.isSupabase?(
+                    loadingScheda?(
+                      <div style={{color:"var(--muted)",fontSize:14}}>Caricamento scheda…</div>
+                    ):atletaScheda?(
+                      <div>
+                        {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
+                          const key=g.giorno_key||String.fromCharCode(65+g.ordine);
+                          const label=g.nome?`${key} — ${g.nome}`:`Giorno ${key}`;
+                          return <span key={g.id} className="scheda-chip">📋 {label} · {(g.scheda_esercizi||[]).length} esercizi</span>;
+                        })}
+                        <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                          <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
+                            setBuilderPreload(schedaToPreload(atletaScheda,selected));
+                            closeSelected();
+                            setView("builder");
+                          }}>✏️ Modifica nel Builder</button>
+                        </div>
+                      </div>
+                    ):(
+                      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                        <div style={{color:"var(--muted)",fontSize:14,flex:1}}>Nessuna scheda assegnata ancora.</div>
+                        <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
+                          setBuilderPreload({
+                            atleta:selected,atletaId:selected.id,
+                            nome:selected.nome,cognome:selected.cognome,
+                            obiettivo:selected.obiettivo||"",livello:selected.livello||"",
+                            giorni:{A:[],B:[],C:[],D:[],E:[],F:[],G:[]},
+                            dayNames:{A:"",B:"",C:"",D:"",E:"",F:"",G:""},
+                          });
+                          closeSelected();
+                          setView("builder");
+                        }}>+ Crea scheda</button>
+                      </div>
+                    )
+                  ):selected.schede>0?(
+                    Array.from({length:selected.schede},(_,i)=>(
+                      <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
+                    ))
+                  ):<div style={{color:"var(--muted)",fontSize:14}}>Nessuna scheda assegnata ancora.</div>}
+                </>
+              )}
 
               <div style={{marginTop:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>Profilo</div>
-                  {!editingProfilo&&(
+                  {!editingProfilo&&!selected.archivedAt&&(
                     <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||"",telefono:selected.telefono||"",email:selected.email||""});setEditingProfilo(true);}}>✏️ Modifica</button>
                   )}
                 </div>
@@ -419,38 +502,83 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 </div>
               </div>
 
-              <div style={{marginTop:24}}>
-                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
-                <MisureSection
-                  atletaId={selected.id}
-                  ptId={user?.supabaseId}
-                  supabaseAtletaId={user?.isSupabase ? selected.id : null}
-                />
-              </div>
-
-              <div style={{marginTop:24}}>
-                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
-                <ProgressiSectionPT atleta={selected} user={user}/>
-              </div>
-
-              <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)"}}>
-                {!deleteConfirm?(
-                  <button className="btn-danger" style={{fontSize:12}} onClick={()=>setDeleteConfirm(true)}>🗑️ Elimina atleta</button>
-                ):(
-                  <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                    <span style={{fontSize:13,color:"var(--text)"}}>Eliminare {selected.nome} {selected.cognome}? L'operazione non è reversibile.</span>
-                    <div style={{display:"flex",gap:8}}>
-                      <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setDeleteConfirm(false)}>Annulla</button>
-                      <button className="btn-danger" onClick={deleteAtleta}>Elimina</button>
-                    </div>
+              {!selected.archivedAt&&(
+                <>
+                  <div style={{marginTop:24}}>
+                    <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
+                    <MisureSection
+                      atletaId={selected.id}
+                      ptId={user?.supabaseId}
+                      supabaseAtletaId={user?.isSupabase ? selected.id : null}
+                    />
                   </div>
+                  <div style={{marginTop:24}}>
+                    <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
+                    <ProgressiSectionPT atleta={selected} user={user}/>
+                  </div>
+                </>
+              )}
+
+              {/* ── Azioni distruttive ── */}
+              <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:10}}>
+                {selected.archivedAt?(
+                  // Atleta archiviato → ripristina o elimina definitivamente
+                  <>
+                    <button
+                      style={{background:"rgba(71,255,232,.08)",border:"1px solid rgba(71,255,232,.2)",color:"var(--accent2)",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"9px 16px",borderRadius:9,cursor:"pointer",alignSelf:"flex-start"}}
+                      onClick={()=>restoreAtleta(selected.id)}
+                    >↩ Ripristina atleta</button>
+                    {!hardDelete.show?(
+                      <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)",alignSelf:"flex-start"}} onClick={()=>setHardDelete({show:true,typed:""})}>Elimina definitivamente…</button>
+                    ):(
+                      <HardDeleteConfirm
+                        name={`${selected.nome} ${selected.cognome}`}
+                        typed={hardDelete.typed}
+                        onChange={v=>setHardDelete(p=>({...p,typed:v}))}
+                        onCancel={()=>setHardDelete({show:false,typed:""})}
+                        onConfirm={hardDeleteAtleta}
+                      />
+                    )}
+                  </>
+                ):(
+                  // Atleta attivo → archivia o elimina definitivamente
+                  <>
+                    {!archiveConfirm&&!hardDelete.show&&(
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <button className="btn-ghost" style={{fontSize:12}} onClick={()=>setArchiveConfirm(true)}>Archivia atleta</button>
+                        <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)"}} onClick={()=>setHardDelete({show:true,typed:""})}>Elimina definitivamente…</button>
+                      </div>
+                    )}
+                    {archiveConfirm&&(
+                      <div style={{background:"rgba(255,159,71,.06)",border:"1px solid rgba(255,159,71,.2)",borderRadius:9,padding:"12px 14px"}}>
+                        <div style={{fontSize:13,color:"var(--text)",marginBottom:10}}>
+                          Archiviare <strong>{selected.nome} {selected.cognome}</strong>? Non potrà più accedere, ma tutti i dati vengono conservati. Potrai ripristinarlo in qualsiasi momento.
+                        </div>
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setArchiveConfirm(false)}>Annulla</button>
+                          <button style={{background:"rgba(255,159,71,.15)",border:"1px solid rgba(255,159,71,.3)",color:"#ff9f47",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"5px 14px",borderRadius:8,cursor:"pointer"}} onClick={archiveAtleta}>Archivia</button>
+                        </div>
+                      </div>
+                    )}
+                    {hardDelete.show&&(
+                      <HardDeleteConfirm
+                        name={`${selected.nome} ${selected.cognome}`}
+                        typed={hardDelete.typed}
+                        onChange={v=>setHardDelete(p=>({...p,typed:v}))}
+                        onCancel={()=>setHardDelete({show:false,typed:""})}
+                        onConfirm={hardDeleteAtleta}
+                      />
+                    )}
+                  </>
                 )}
               </div>
+
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Form nuovo atleta ── */}
       {showForm&&(
         <div className="overlay" onClick={()=>setShowForm(false)}>
           <div className="form-modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
@@ -490,6 +618,37 @@ export default function Atleti({setView, setBuilderPreload, user}) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function HardDeleteConfirm({name, typed, onChange, onCancel, onConfirm}) {
+  return (
+    <div style={{background:"rgba(255,71,87,.06)",border:"1px solid rgba(255,71,87,.25)",borderRadius:9,padding:"14px 16px"}}>
+      <div style={{fontSize:13,color:"var(--text)",marginBottom:4,fontWeight:600}}>Eliminazione definitiva</div>
+      <div style={{fontSize:12,color:"var(--muted)",lineHeight:1.5,marginBottom:12}}>
+        Questa azione elimina <strong style={{color:"var(--text)"}}>{name}</strong> e tutto il suo storico (schede, sessioni, misurazioni). Non è reversibile.
+      </div>
+      <div style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>
+        Digita <strong style={{color:"var(--text)"}}>{name}</strong> per confermare:
+      </div>
+      <input
+        className="field-input"
+        type="text"
+        value={typed}
+        onChange={e=>onChange(e.target.value)}
+        placeholder={name}
+        style={{marginBottom:10,fontSize:13}}
+      />
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={onCancel}>Annulla</button>
+        <button
+          className="btn-danger"
+          style={{fontSize:12,padding:"5px 14px",opacity:typed===name?1:.4,cursor:typed===name?"pointer":"default"}}
+          disabled={typed!==name}
+          onClick={onConfirm}
+        >Elimina definitivamente</button>
+      </div>
     </div>
   );
 }
