@@ -585,6 +585,102 @@ function AtletaProgressi({scheda, user, sessions, misurazioni}) {
   );
 }
 
+// ── Calendario mensile storico allenamenti ────────────────────────────────────
+const MONTHS_CAL = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const WEEKDAYS_CAL = ["L","M","M","G","V","S","D"];
+
+function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDate, onDaySelect, todayStr}) {
+  const pad = n => String(n).padStart(2,"0");
+  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0…Sun=6
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const cells = [];
+  for(let i=0; i<firstWeekday; i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+
+  const now = new Date();
+  const isCurrentMonth = year===now.getFullYear() && month===now.getMonth();
+
+  return (
+    <div style={{marginBottom:20}}>
+      {/* Month nav */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <button className="date-nav-btn" onClick={onPrev} style={{fontSize:20,padding:"4px 12px"}}>‹</button>
+        <span style={{fontWeight:700,fontSize:15,color:"var(--text)",letterSpacing:.5}}>{MONTHS_CAL[month]} {year}</span>
+        <button className="date-nav-btn" onClick={onNext} disabled={isCurrentMonth} style={{fontSize:20,padding:"4px 12px"}}>›</button>
+      </div>
+
+      {/* Weekday header */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:3}}>
+        {WEEKDAYS_CAL.map((d,i)=>(
+          <div key={i} style={{textAlign:"center",fontSize:9,fontWeight:700,letterSpacing:.8,color:"var(--muted)",textTransform:"uppercase",padding:"2px 0"}}>{d}</div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+        {cells.map((day,idx)=>{
+          if(!day) return <div key={idx}/>;
+          const dateStr=`${year}-${pad(month+1)}-${pad(day)}`;
+          const sessions=sessionsByDate[dateStr]||[];
+          const hasSession=sessions.length>0;
+          const isToday=dateStr===todayStr;
+          const isSelected=dateStr===selectedDate&&hasSession;
+          const firstLabel=sessions[0]?.dayLabel||"";
+          const extra=sessions.length>1?sessions.length-1:0;
+
+          return (
+            <div
+              key={idx}
+              onClick={()=>hasSession&&onDaySelect(dateStr,sessions[0].giornoKey)}
+              style={{
+                position:"relative",
+                minHeight:54,
+                borderRadius:8,
+                border:"1px solid var(--border)",
+                background:isSelected?"var(--card2)":"var(--card)",
+                outline:isToday?"2px solid var(--accent)":isSelected?"2px solid var(--accent2)":"2px solid transparent",
+                outlineOffset:"-2px",
+                cursor:hasSession?"pointer":"default",
+                overflow:"hidden",
+                display:"flex",
+                flexDirection:"column",
+                alignItems:"center",
+                padding:"6px 3px 5px",
+                gap:3,
+                transition:"outline .1s",
+              }}
+            >
+              {/* accent fill layer — opacity-based so it follows var(--accent) across themes */}
+              {hasSession&&(
+                <div style={{position:"absolute",inset:0,background:"var(--accent)",opacity:.13,borderRadius:7,pointerEvents:"none"}}/>
+              )}
+
+              {/* Day number */}
+              <span style={{position:"relative",fontSize:12,fontWeight:hasSession?700:400,color:hasSession?"var(--text)":"var(--muted)",lineHeight:1}}>
+                {day}
+              </span>
+
+              {/* Session label + overflow badge */}
+              {hasSession&&(
+                <div style={{position:"relative",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                  <span style={{fontSize:9,fontWeight:700,color:"var(--accent)",textAlign:"center",width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:.2,padding:"0 2px",lineHeight:1.25}}>
+                    {firstLabel.length>9?firstLabel.slice(0,9)+"…":firstLabel}
+                  </span>
+                  {extra>0&&(
+                    <span style={{fontSize:8,fontWeight:700,color:"var(--muted)",background:"var(--card2)",borderRadius:3,padding:"1px 4px",lineHeight:1.4}}>+{extra}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── AtletaView ────────────────────────────────────────────────────────────────
 export default function AtletaView({user, onLogout}) {
   const todayStr = fmtDate(new Date());
@@ -606,6 +702,7 @@ export default function AtletaView({user, onLogout}) {
   const [supaSessions, setSupaSessions] = useState(null);
   const [schedaMeta, setSchedaMeta] = useState(null);
   const [supaMisurazioni, setSupaMisurazioni] = useState(null);
+  const [calMonth, setCalMonth] = useState(()=>{ const n=new Date(); return {year:n.getFullYear(),month:n.getMonth()}; });
 
   const handleLogoClick = () => {
     const now = Date.now();
@@ -846,6 +943,26 @@ export default function AtletaView({user, onLogout}) {
   const dayNamesScheda = scheda.dayNames||{};
   const activeDayLabel = dayNamesScheda[activeDay] || `Giorno ${activeDay}`;
 
+  // Build session-by-date map for the calendar.
+  // Inverts schedaMeta.giornoIds (key→id) to id→key for Supabase sessions.
+  const _giornoIdToKey = schedaMeta
+    ? Object.fromEntries(Object.entries(schedaMeta.giornoIds).map(([k,v])=>[v,k]))
+    : {};
+  const sessionsByDate = (()=>{
+    const map = {};
+    const add = (dateStr, giornoKey) => {
+      if(!giornoKey) return;
+      const dayLabel = scheda?.dayNames?.[giornoKey] || `Giorno ${giornoKey}`;
+      (map[dateStr] = map[dateStr] || []).push({giornoKey, dayLabel});
+    };
+    if(user.isSupabase){
+      (supaSessions||[]).forEach(s=>add(s.data, _giornoIdToKey[s.giorno_id]));
+    } else {
+      loadSessions().forEach(s=>add(s.date, s.day));
+    }
+    return map;
+  })();
+
   const saveBtnLabel = isToday
     ? (saved ? `Aggiorna sessione — ${activeDayLabel}` : `Salva sessione — ${activeDayLabel}`)
     : `Aggiorna sessione del ${fmtDateShort(selectedDate)} — ${activeDayLabel}`;
@@ -931,12 +1048,18 @@ export default function AtletaView({user, onLogout}) {
           </div>
         )}
 
-        <div className={`date-nav${!isToday?" past":""}`}>
-          <button className="date-nav-btn" onClick={prevDate} title="Giorno precedente">‹</button>
-          <div className="date-nav-label">
-            {isToday?"Oggi — "+fmtDateLong(selectedDate):fmtDateLong(selectedDate)}
-          </div>
-          <button className="date-nav-btn" onClick={nextDate} disabled={isToday} title="Giorno successivo">›</button>
+        <MonthCalendar
+          year={calMonth.year}
+          month={calMonth.month}
+          onPrev={()=>setCalMonth(({year:y,month:m})=>m===0?{year:y-1,month:11}:{year:y,month:m-1})}
+          onNext={()=>setCalMonth(({year:y,month:m})=>m===11?{year:y+1,month:0}:{year:y,month:m+1})}
+          sessionsByDate={sessionsByDate}
+          selectedDate={selectedDate}
+          onDaySelect={(dateStr,giornoKey)=>{setSelectedDate(dateStr);if(giornoKey)setActiveDay(giornoKey);}}
+          todayStr={todayStr}
+        />
+        <div style={{textAlign:"center",fontSize:12,fontWeight:600,color:isToday?"var(--muted)":"var(--accent2)",marginBottom:12,letterSpacing:.3}}>
+          {isToday?`Oggi — ${fmtDateLong(selectedDate)}`:fmtDateLong(selectedDate)}
         </div>
 
         {justSaved&&(
