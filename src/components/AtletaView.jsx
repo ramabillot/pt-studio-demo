@@ -626,14 +626,14 @@ function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDat
           const sessions=sessionsByDate[dateStr]||[];
           const hasSession=sessions.length>0;
           const isToday=dateStr===todayStr;
-          const isSelected=dateStr===selectedDate&&hasSession;
+          const isSelected=dateStr===selectedDate;
           const firstLabel=sessions[0]?.dayLabel||"";
           const extra=sessions.length>1?sessions.length-1:0;
 
           return (
             <div
               key={idx}
-              onClick={()=>hasSession&&onDaySelect(dateStr,sessions[0].giornoKey)}
+              onClick={()=>onDaySelect(dateStr,sessions[0]?.giornoKey)}
               style={{
                 position:"relative",
                 minHeight:54,
@@ -642,7 +642,7 @@ function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDat
                 background:isSelected?"var(--card2)":"var(--card)",
                 outline:isToday?"2px solid var(--accent)":isSelected?"2px solid var(--accent2)":"2px solid transparent",
                 outlineOffset:"-2px",
-                cursor:hasSession?"pointer":"default",
+                cursor:"pointer",
                 overflow:"hidden",
                 display:"flex",
                 flexDirection:"column",
