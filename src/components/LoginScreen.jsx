@@ -302,7 +302,7 @@ export default function LoginScreen({onLogin}) {
             </div>
             <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.7,marginBottom:24}}>
               Per reimpostare la password contatta l'amministratore all'indirizzo{" "}
-              <strong style={{color:"var(--text)"}}>supporto@ptstudio.it</strong>.
+              <strong style={{color:"var(--text)"}}>ptstudio.admin@proton.me</strong>.
               <br/>Provvederà a ripristinare il tuo accesso.
             </div>
             <button
