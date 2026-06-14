@@ -723,7 +723,8 @@ export default function AtletaView({user, onLogout}) {
           giorni[key]=(g.scheda_esercizi||[]).sort((a,b)=>a.ordine-b.ordine).map(ex=>{
             const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int);
             if(ex.esercizio_id_int) esercizioDbIds[ex.esercizio_id_int]=ex.id;
-            return {id:ex.esercizio_id_int||0, exDbId:ex.id, name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10", rest:ex.rest_sec||90, cat:exFull?.cat||""};
+            const exKey=ex.esercizio_id_int!=null?String(ex.esercizio_id_int):`c:${ex.id}`;
+            return {id:ex.esercizio_id_int||0, exKey, exDbId:ex.id, name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10", rest:ex.rest_sec||90, cat:exFull?.cat||""};
           });
         });
         let ptName = "";
@@ -770,13 +771,14 @@ export default function AtletaView({user, onLogout}) {
   useEffect(()=>{
     if(!activeDay) return;
     if(user.isSupabase){
-      if(!supaSessions||!schedaMeta) return;
+      if(!supaSessions||!schedaMeta||!scheda) return;
       const gid=schedaMeta.giornoIds[activeDay];
       const sess=supaSessions.find(s=>s.data===selectedDate&&s.giorno_id===gid);
       if(sess){
+        const dayExercises=scheda.giorni[activeDay]||[];
         const w=(sess.sessione_serie||[]).reduce((acc,sr)=>{
-          const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio);
-          if(ex) acc[ex.id]=String(sr.peso||0);
+          const ex=dayExercises.find(e=>e.name===sr.nome_esercizio);
+          if(ex) acc[ex.exKey]=String(sr.peso||0);
           return acc;
         },{});
         setPesi(w); setSaved(true);
@@ -787,7 +789,7 @@ export default function AtletaView({user, onLogout}) {
       const sess=sessions.find(s=>s.date===selectedDate&&s.day===activeDay);
       setPesi(sess?sess.weights:{}); setSaved(!!sess); setJustSaved(false);
     }
-  },[activeDay, selectedDate, supaSessions, schedaMeta]);
+  },[activeDay, selectedDate, supaSessions, schedaMeta, scheda]);
 
   const prevDate = ()=>{
     const d = new Date(selectedDate+"T12:00");
@@ -808,7 +810,7 @@ export default function AtletaView({user, onLogout}) {
       const esercizi=scheda?.giorni[activeDay]||[];
       const serieRows=[];
       esercizi.forEach(ex=>{
-        const peso=parseFloat(pesi[ex.id]||0);
+        const peso=parseFloat(pesi[ex.exKey]||0);
         if(peso>0){
           for(let i=0;i<(ex.sets||3);i++){
             serieRows.push({nome_esercizio:ex.name,serie_numero:i+1,reps:parseInt(ex.reps||10),peso});
@@ -1078,10 +1080,10 @@ export default function AtletaView({user, onLogout}) {
 
         {esercizi.map(ex=>(
           <AtletaExCard
-            key={ex.id}
+            key={ex.exKey}
             ex={ex}
-            peso={pesi[ex.id]}
-            onPesoChange={val=>setPesi(p=>({...p,[ex.id]:val}))}
+            peso={pesi[ex.exKey]}
+            onPesoChange={val=>setPesi(p=>({...p,[ex.exKey]:val}))}
           />
         ))}
 
