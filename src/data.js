@@ -125,6 +125,8 @@ export const EXERCISES = [
   { id:78, cat:"Core",    name:"Mountain climbers",          muscles:"Core, flessori dell'anca" },
   { id:79, cat:"Core",    name:"Sit-up declinato",           muscles:"Retto dell'addome, flessori dell'anca" },
   { id:80, cat:"Core",    name:"Bird dog",                   muscles:"Erettori spinali, glutei, core" },
+  { id:81, cat:"Glutei",  name:"Hip thrust alla macchina",   muscles:"Gluteo grande, bicipiti femorali" },
+  { id:82, cat:"Glutei",  name:"Kickback alla macchina",     muscles:"Gluteo grande (lavoro monopodalico)" },
 ];
 
 export const DEMO_ATLETI = [
