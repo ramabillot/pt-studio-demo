@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EXERCISES, CATEGORIES, EX_IMAGES, CAT_COLORS } from "../data.js";
+import { EXERCISES, CATEGORIES, EX_IMAGES, CAT_COLORS, ytSearchUrl } from "../data.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { supabase } from "../supabase.js";
 
@@ -39,10 +39,14 @@ function ExCard({ex,onVideo,onDelete}) {
         <span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{ex.cat}</span>
         <div className="ex-name">{ex.name}</div>
         <div className="ex-muscles"><strong>Muscoli:</strong> {ex.muscles||"—"}</div>
-        {ex.yt&&onVideo&&(
+        {ex.yt&&onVideo?(
           <button className="video-btn" onClick={()=>onVideo(ex)}>
             <span className="play-icon">▶</span>Guarda il video
           </button>
+        ):(
+          <a className="video-btn" href={ytSearchUrl(ex.name)} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none"}}>
+            <span className="play-icon">▶</span>Cerca video
+          </a>
         )}
         {onDelete&&(
           <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { EXERCISES, CAT_COLORS, EX_IMAGES, LINE_COLORS, MISURE_FIELDS } from "../data.js";
+import { EXERCISES, CAT_COLORS, EX_IMAGES, LINE_COLORS, MISURE_FIELDS, ytSearchUrl } from "../data.js";
 import {
   fmtDate, fmtDateShort, fmtDateLong, addDays, today,
   loadSessions, saveSessions, loadMisure, saveMisure,
@@ -338,10 +338,14 @@ function AtletaExCard({ex, peso, onPesoChange}) {
           </div>
           <div className="ex-cliente-name">{ex.name}</div>
           <div className="ex-cliente-meta">{ex.sets} serie × {ex.reps} rip · recupero {ex.rest}s</div>
-          {exFull?.yt&&(
+          {exFull?.yt?(
             <button className="video-btn" style={{marginTop:10}} onClick={()=>setShowVideo(true)}>
               <span className="play-icon">▶</span>Guarda il video
             </button>
+          ):ex.name&&(
+            <a className="video-btn" href={ytSearchUrl(ex.name)} target="_blank" rel="noopener noreferrer" style={{marginTop:10,textDecoration:"none"}}>
+              <span className="play-icon">▶</span>Cerca video
+            </a>
           )}
         </div>
       </div>

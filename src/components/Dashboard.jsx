@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ADMIN_PT } from "../data.js";
+import { ADMIN_PT, EXERCISES } from "../data.js";
 import { supabase } from "../supabase.js";
 
 export default function Dashboard({user,setView}) {
@@ -95,15 +95,15 @@ export default function Dashboard({user,setView}) {
     {icon:"👥",val:trainerStats?String(trainerStats.atleti):"…",label:"Atleti attivi"},
     {icon:"📋",val:trainerStats?String(trainerStats.schede):"…",label:"Schede create"},
     {icon:"📅",val:trainerStats?trainerStats.appt:"…",          label:"Prossimo appuntamento"},
-    {icon:"💪",val:"20",                                          label:"Esercizi in libreria"},
+    {icon:"💪",val:String(EXERCISES.length),                      label:"Esercizi in libreria"},
   ] : [
     {icon:"👥",val:"4",         label:"Atleti attivi"},
     {icon:"📋",val:"6",         label:"Schede create"},
     {icon:"📅",val:"Oggi 10:00",label:"Prossimo appuntamento"},
-    {icon:"💪",val:"20",        label:"Esercizi in libreria"},
+    {icon:"💪",val:String(EXERCISES.length),label:"Esercizi in libreria"},
   ];
   const quickNav=[
-    {id:"library", icon:"📚",label:"Libreria",  desc:"Sfoglia 20 esercizi"},
+    {id:"library", icon:"📚",label:"Libreria",  desc:`Sfoglia ${EXERCISES.length} esercizi`},
     {id:"builder", icon:"📋",label:"Builder",   desc:"Crea schede"},
     {id:"atleti",  icon:"👥",label:"Atleti",    desc:"Gestisci i tuoi atleti"},
     {id:"calendar",icon:"📅",label:"Calendario",desc:"Organizza gli appuntamenti"},

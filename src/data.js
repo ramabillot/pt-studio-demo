@@ -33,10 +33,10 @@ export const THEME_MAP = {
   border:"--border", accent2:"--accent2", accent3:"--accent3",
 };
 
-export const CAT_COLORS     = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3", Core:"#a47ffe" };
+export const CAT_COLORS     = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3", Core:"#a47ffe", Petto:"#47a3ff", Glutei:"#ff6b81" };
 export const LINE_COLORS    = ["#e8ff47","#47ffe8","#ff47a3","#ff9f47","#a47ffe","#47a3ff","#ff4757","#2ecc71"];
-export const CAT_COLORS_PDF = { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95], Core:[164,127,254] };
-export const CATEGORIES     = ["Tutte","Braccia","Spalle","Schiena","Gambe","Core"];
+export const CAT_COLORS_PDF = { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95], Core:[164,127,254], Petto:[40,110,200], Glutei:[200,60,85] };
+export const CATEGORIES     = ["Tutte","Petto","Schiena","Spalle","Braccia","Gambe","Glutei","Core"];
 export const DAYS           = ["A","B","C"];
 export const OBIETTIVI      = ["Ipertrofia","Dimagrimento","Forza","Resistenza","Tonificazione"];
 export const LIVELLI        = ["Principiante","Intermedio","Avanzato"];
@@ -64,6 +64,67 @@ export const EXERCISES = [
   { id:18, cat:"Gambe",   name:"Romanian deadlift",          muscles:"Bicipiti femorali, gluteo grande, erettori",   yt:"JCXUYuzwNrM"  },
   { id:19, cat:"Gambe",   name:"Leg curl sdraiato",          muscles:"Bicipiti femorali, gastrocnemio",              yt:"1Tq3QdYUuHs"  },
   { id:20, cat:"Gambe",   name:"Calf raises in piedi",       muscles:"Gastrocnemio, soleo",                          yt:"gwLzBJYoWlQ"  },
+  // ── Esercizi aggiunti 2026-10: senza foto/video dedicati (video = ricerca YouTube) ──
+  { id:21, cat:"Petto",   name:"Panca piana con bilanciere", muscles:"Gran pettorale, deltoide anteriore, tricipite" },
+  { id:22, cat:"Petto",   name:"Panca inclinata con bilanciere", muscles:"Pettorale clavicolare, deltoide anteriore, tricipite" },
+  { id:23, cat:"Petto",   name:"Panca piana con manubri",    muscles:"Gran pettorale, deltoide anteriore, tricipite" },
+  { id:24, cat:"Petto",   name:"Panca inclinata con manubri", muscles:"Pettorale clavicolare, deltoide anteriore" },
+  { id:25, cat:"Petto",   name:"Croci con manubri",          muscles:"Gran pettorale" },
+  { id:26, cat:"Petto",   name:"Croci ai cavi",              muscles:"Gran pettorale, deltoide anteriore" },
+  { id:27, cat:"Petto",   name:"Chest press alla macchina",  muscles:"Gran pettorale, tricipite, deltoide anteriore" },
+  { id:28, cat:"Petto",   name:"Pectoral machine",           muscles:"Gran pettorale" },
+  { id:29, cat:"Petto",   name:"Piegamenti sulle braccia",   muscles:"Gran pettorale, tricipite, core" },
+  { id:30, cat:"Petto",   name:"Dip alle parallele",         muscles:"Pettorale inferiore, tricipite, deltoide anteriore" },
+  { id:31, cat:"Glutei",  name:"Hip thrust con bilanciere",  muscles:"Gluteo grande, bicipiti femorali" },
+  { id:32, cat:"Glutei",  name:"Glute bridge",               muscles:"Gluteo grande, bicipiti femorali" },
+  { id:33, cat:"Glutei",  name:"Abductor machine",           muscles:"Gluteo medio e piccolo" },
+  { id:34, cat:"Glutei",  name:"Kickback ai cavi",           muscles:"Gluteo grande" },
+  { id:35, cat:"Glutei",  name:"Affondi bulgari",            muscles:"Glutei, quadricipiti" },
+  { id:36, cat:"Glutei",  name:"Step-up con manubri",        muscles:"Glutei, quadricipiti" },
+  { id:37, cat:"Glutei",  name:"Stacco sumo",                muscles:"Glutei, adduttori, bicipiti femorali, erettori" },
+  { id:38, cat:"Glutei",  name:"Good morning",               muscles:"Bicipiti femorali, glutei, erettori spinali" },
+  { id:39, cat:"Gambe",   name:"Front squat",                muscles:"Quadricipiti, glutei, core" },
+  { id:40, cat:"Gambe",   name:"Hack squat",                 muscles:"Quadricipiti, glutei" },
+  { id:41, cat:"Gambe",   name:"Affondi con manubri",        muscles:"Quadricipiti, glutei, bicipiti femorali" },
+  { id:42, cat:"Gambe",   name:"Leg extension",              muscles:"Quadricipiti" },
+  { id:43, cat:"Gambe",   name:"Leg curl seduto",            muscles:"Bicipiti femorali" },
+  { id:44, cat:"Gambe",   name:"Goblet squat",               muscles:"Quadricipiti, glutei, core" },
+  { id:45, cat:"Gambe",   name:"Adductor machine",           muscles:"Adduttori" },
+  { id:46, cat:"Gambe",   name:"Calf raises seduto",         muscles:"Soleo, gastrocnemio" },
+  { id:47, cat:"Gambe",   name:"Squat al multipower",        muscles:"Quadricipiti, glutei" },
+  { id:48, cat:"Schiena", name:"Rematore con manubrio",      muscles:"Gran dorsale, romboidi, deltoide posteriore" },
+  { id:49, cat:"Schiena", name:"Lat machine presa stretta",  muscles:"Gran dorsale, bicipite" },
+  { id:50, cat:"Schiena", name:"Pullover ai cavi",           muscles:"Gran dorsale, grande rotondo" },
+  { id:51, cat:"Schiena", name:"T-bar row",                  muscles:"Gran dorsale, romboidi, trapezio" },
+  { id:52, cat:"Schiena", name:"Rematore alla macchina",     muscles:"Gran dorsale, romboidi, trapezio medio" },
+  { id:53, cat:"Schiena", name:"Hyperextension",             muscles:"Erettori spinali, glutei, bicipiti femorali" },
+  { id:54, cat:"Schiena", name:"Trazioni assistite",         muscles:"Gran dorsale, bicipite, romboidi" },
+  { id:55, cat:"Spalle",  name:"Lento avanti con manubri",   muscles:"Deltoide anteriore e mediale, tricipite" },
+  { id:56, cat:"Spalle",  name:"Shoulder press alla macchina", muscles:"Deltoide anteriore e mediale, tricipite" },
+  { id:57, cat:"Spalle",  name:"Alzate laterali ai cavi",    muscles:"Deltoide mediale" },
+  { id:58, cat:"Spalle",  name:"Alzate posteriori con manubri", muscles:"Deltoide posteriore, romboidi" },
+  { id:59, cat:"Spalle",  name:"Tirate al mento",            muscles:"Deltoide mediale, trapezio" },
+  { id:60, cat:"Spalle",  name:"Scrollate con manubri",      muscles:"Trapezio superiore" },
+  { id:61, cat:"Braccia", name:"Curl ai cavi",               muscles:"Bicipite brachiale" },
+  { id:62, cat:"Braccia", name:"Curl su panca Scott",        muscles:"Bicipite brachiale, brachiale" },
+  { id:63, cat:"Braccia", name:"Curl concentrato",           muscles:"Bicipite brachiale" },
+  { id:64, cat:"Braccia", name:"French press con manubrio",  muscles:"Tricipite (capo lungo)" },
+  { id:65, cat:"Braccia", name:"Tricep kickback",            muscles:"Tricipite brachiale" },
+  { id:66, cat:"Braccia", name:"Dip tra panche",             muscles:"Tricipite, deltoide anteriore" },
+  { id:67, cat:"Braccia", name:"Panca presa stretta",        muscles:"Tricipite, gran pettorale" },
+  { id:68, cat:"Braccia", name:"Tricep pushdown con corda",  muscles:"Tricipite (capo laterale e mediale)" },
+  { id:69, cat:"Core",    name:"Plank",                      muscles:"Retto e trasverso dell'addome, core" },
+  { id:70, cat:"Core",    name:"Crunch",                     muscles:"Retto dell'addome" },
+  { id:71, cat:"Core",    name:"Crunch ai cavi",             muscles:"Retto dell'addome" },
+  { id:72, cat:"Core",    name:"Leg raises alla sbarra",     muscles:"Retto dell'addome, flessori dell'anca" },
+  { id:73, cat:"Core",    name:"Russian twist",              muscles:"Obliqui, retto dell'addome" },
+  { id:74, cat:"Core",    name:"Ab wheel rollout",           muscles:"Retto dell'addome, core, gran dorsale" },
+  { id:75, cat:"Core",    name:"Side plank",                 muscles:"Obliqui, gluteo medio" },
+  { id:76, cat:"Core",    name:"Dead bug",                   muscles:"Trasverso dell'addome, retto dell'addome" },
+  { id:77, cat:"Core",    name:"Pallof press",               muscles:"Obliqui, core anti-rotazione" },
+  { id:78, cat:"Core",    name:"Mountain climbers",          muscles:"Core, flessori dell'anca" },
+  { id:79, cat:"Core",    name:"Sit-up declinato",           muscles:"Retto dell'addome, flessori dell'anca" },
+  { id:80, cat:"Core",    name:"Bird dog",                   muscles:"Erettori spinali, glutei, core" },
 ];
 
 export const DEMO_ATLETI = [
@@ -93,6 +154,9 @@ export const ADMIN_SESSION_TYPES = ["Riunione","Call","Visita","Onboarding"];
 
 export const MONTHS_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 export const DAYS_IT   = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+
+// URL di ricerca YouTube per esercizi senza video dedicato
+export const ytSearchUrl = (name) => `https://www.youtube.com/results?search_query=${encodeURIComponent(name+" esecuzione")}`;
 
 export const EX_IMAGES = {
   1:"curl-con-bilanciere", 2:"curl-con-manubri-alternati", 3:"tricep-pushdown-al-cavo",
