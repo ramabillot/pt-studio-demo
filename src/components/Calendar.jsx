@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { MONTHS_IT, DAYS_IT, SESSION_TYPES, ADMIN_SESSION_TYPES } from "../data.js";
-import { DEMO_EVENTS, ADMIN_EVENTS, fmtDate, loadSharedCal, saveSharedCal, loadAtleti } from "../utils.js";
+import { MONTHS_IT, DAYS_IT, SESSION_TYPES } from "../data.js";
+import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { AtletaSearchField } from "./Builder.jsx";
@@ -304,15 +304,11 @@ function CalendarBase({
 }
 
 export function CalendarView({setView, user}) {
-  const [events,setEvents]=useState(()=> user?.isSupabase ? [] : (loadSharedCal()||DEMO_EVENTS));
-  const [atletiList,setAtletiList]=useState(()=> user?.isSupabase ? [] : loadAtleti());
-
-  // Demo: persist to localStorage
-  useEffect(()=>{ if(!user?.isSupabase) saveSharedCal(events); },[events]);
+  const [events,setEvents]=useState([]);
+  const [atletiList,setAtletiList]=useState([]);
 
   // Supabase: load events
   useEffect(()=>{
-    if(!user?.isSupabase) return;
     supabase.from("appuntamenti")
       .select("*, atleti(nome, cognome)")
       .eq("pt_id", user.supabaseId)
@@ -332,15 +328,13 @@ export function CalendarView({setView, user}) {
 
   // Supabase: load athletes for search dropdown
   useEffect(()=>{
-    if(!user?.isSupabase) return;
     supabase.from("atleti")
       .select("id, nome, cognome, obiettivo, color")
       .eq("pt_id", user.supabaseId)
       .then(({data})=>{ if(data) setAtletiList(data); });
   },[user?.supabaseId]);
 
-  const onAdd = !user?.isSupabase ? null : async ({clientName,atletaId,date,time,type})=>{
-    console.log("[calendar add] payload:", {clientName, atletaId, date, time, type, pt_id: user.supabaseId});
+  const onAdd = async ({clientName,atletaId,date,time,type})=>{
     const {data,error}=await supabase.from("appuntamenti").insert({
       pt_id: user.supabaseId,
       atleta_id: atletaId||null,
@@ -348,7 +342,6 @@ export function CalendarView({setView, user}) {
       data: date,
       ora_inizio: time,
     }).select("*, atleti(nome, cognome)").single();
-    console.log("[calendar add] result data:", data, "| error:", error);
     if(error){ console.error("[calendar add] FAILED:",error); return null; }
     return {
       id: data.id,
@@ -360,7 +353,7 @@ export function CalendarView({setView, user}) {
     };
   };
 
-  const onEdit = !user?.isSupabase ? null : async (id,{clientName,atletaId,time,type})=>{
+  const onEdit = async (id,{clientName,atletaId,time,type})=>{
     const {error}=await supabase.from("appuntamenti").update({
       atleta_id: atletaId||null,
       titolo: clientName,
@@ -369,7 +362,7 @@ export function CalendarView({setView, user}) {
     if(error) console.error("[calendar edit]",error);
   };
 
-  const onDelete = !user?.isSupabase ? null : async (id)=>{
+  const onDelete = async (id)=>{
     const {error}=await supabase.from("appuntamenti").delete().eq("id",id);
     if(error) console.error("[calendar delete]",error);
   };
@@ -382,9 +375,4 @@ export function CalendarView({setView, user}) {
       onAdd={onAdd} onEdit={onEdit} onDelete={onDelete}
     />
   );
-}
-
-export function AdminCalendar({setView}) {
-  const [events,setEvents]=useState(ADMIN_EVENTS);
-  return <CalendarBase events={events} setEvents={setEvents} sessionTypes={ADMIN_SESSION_TYPES} clientLabel="PT / Contatto" setView={setView} pageSubtitle="I tuoi appuntamenti con i PT"/>;
 }

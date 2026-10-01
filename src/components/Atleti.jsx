@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { OBIETTIVI, LIVELLI, DAYS, EXERCISES, CAT_COLORS } from "../data.js";
-import { loadAtleti, persistAtleti, getInitials, calcEta, saveMisure } from "../utils.js";
-import { DEMO_MISURE_0 } from "../utils.js";
+import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
+import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
-import { SchedaDemoSection } from "./Builder.jsx";
 import { MisureSection, ProgressiSectionPT } from "./AtletaView.jsx";
 
 const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
@@ -35,8 +33,8 @@ function rowToAtleta(row) {
 const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:"",telefono:"",email:""};
 
 export default function Atleti({setView, setBuilderPreload, user}) {
-  const [atleti,setAtleti]=useState(()=>user?.isSupabase ? [] : loadAtleti());
-  const [loading,setLoading]=useState(!!user?.isSupabase);
+  const [atleti,setAtleti]=useState([]);
+  const [loading,setLoading]=useState(true);
   const [selected,setSelected]=useState(null);
   const [showForm,setShowForm]=useState(false);
   const [editingProfilo,setEditingProfilo]=useState(false);
@@ -53,13 +51,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const [copied,setCopied]=useState(null);
 
   useEffect(()=>{
-    if(user?.isSupabase) return;
-    const existing = localStorage.getItem("pt_misure_0");
-    if(!existing) saveMisure(0, DEMO_MISURE_0);
-  },[]);
-
-  useEffect(()=>{
-    if(!user?.isSupabase) return;
     setLoading(true);
     supabase.from("atleti").select("*, schede(count)").eq("pt_id",user.supabaseId)
       .order("created_at",{ascending:true})
@@ -77,13 +68,13 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     if(!form.nome||!form.cognome) return;
     if(!form.username.trim()){ setLimitErr("Username obbligatorio"); return; }
     if(!/^\d{4}$/.test(form.pin)){ setLimitErr("Il PIN deve essere di esattamente 4 cifre numeriche"); return; }
-    if(user?.isSupabase && user?.max_atleti != null && activeAtleti.length >= user.max_atleti){
+    if(user?.max_atleti != null && activeAtleti.length >= user.max_atleti){
       setLimitErr(`Hai raggiunto il limite del tuo piano (${user.max_atleti} atleti). Contatta l'amministratore per aumentare il limite.`);
       return;
     }
     setLimitErr("");
 
-    if(user?.isSupabase){
+    {
       const {data,error}=await supabase.from("atleti").insert({
         pt_id:       user.supabaseId,
         nome:        form.nome,
@@ -105,10 +96,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         return;
       }
       setAtleti(prev=>[...prev,rowToAtleta(data)]);
-    } else {
-      const updated=[...atleti,{id:Date.now(),color:COLORS[activeAtleti.length%COLORS.length],lastSeen:"Adesso",schede:0,...form,archivedAt:null}];
-      setAtleti(updated);
-      persistAtleti(updated);
     }
     setForm(FORM_EMPTY);
     setShowForm(false);
@@ -118,7 +105,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     if(!editProfiloForm) return;
     setProfiloErr("");
 
-    if(user?.isSupabase){
+    {
       const {error}=await supabase.from("atleti").update({
         obiettivo:   editProfiloForm.obiettivo,
         livello:     editProfiloForm.livello,
@@ -133,11 +120,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       const updated=atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
       setAtleti(updated);
       setSelected({...selected,...editProfiloForm});
-    } else {
-      const updated=atleti.map(a=>a.id===selected.id?{...a,...editProfiloForm}:a);
-      setAtleti(updated);
-      persistAtleti(updated);
-      setSelected(updated.find(a=>a.id===selected.id));
     }
     setEditingProfilo(false);
   };
@@ -145,71 +127,66 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const archiveAtleta=async()=>{
     if(!selected) return;
     const now=new Date().toISOString();
-    if(user?.isSupabase){
-      const {error}=await supabase.from("atleti").update({archived_at:now}).eq("id",selected.id);
-      if(error){ console.error("[archive]",error); return; }
-    } else {
-      persistAtleti(atleti.map(a=>a.id===selected.id?{...a,archivedAt:now}:a));
-    }
+    const {error}=await supabase.from("atleti").update({archived_at:now}).eq("id",selected.id);
+    if(error){ console.error("[archive]",error); return; }
     setAtleti(prev=>prev.map(a=>a.id===selected.id?{...a,archivedAt:now}:a));
     setSelected(null);
     setArchiveConfirm(false);
   };
 
   const restoreAtleta=async(atletaId)=>{
-    if(user?.isSupabase){
-      const {error}=await supabase.from("atleti").update({archived_at:null}).eq("id",atletaId);
-      if(error){ console.error("[restore]",error); return; }
-    } else {
-      persistAtleti(atleti.map(a=>a.id===atletaId?{...a,archivedAt:null}:a));
-    }
+    const {error}=await supabase.from("atleti").update({archived_at:null}).eq("id",atletaId);
+    if(error){ console.error("[restore]",error); return; }
     setAtleti(prev=>prev.map(a=>a.id===atletaId?{...a,archivedAt:null}:a));
     setSelected(null);
   };
 
   const hardDeleteAtleta=async()=>{
     if(!selected) return;
-    if(user?.isSupabase){
-      const {error}=await supabase.from("atleti").delete().eq("id",selected.id);
-      if(error){ console.error("[hard delete]",error); return; }
-    } else {
-      persistAtleti(atleti.filter(a=>a.id!==selected.id));
-    }
+    const {error}=await supabase.from("atleti").delete().eq("id",selected.id);
+    if(error){ console.error("[hard delete]",error); return; }
     setAtleti(prev=>prev.filter(a=>a.id!==selected.id));
     setSelected(null);
     setHardDelete({show:false,typed:""});
   };
 
   useEffect(()=>{
-    if(!selected || !user?.isSupabase){ setAtletaScheda(null); return; }
+    if(!selected){ setAtletaScheda(null); return; }
     setLoadingScheda(true);
     supabase.from("schede")
       .select("*, scheda_giorni(*, scheda_esercizi(*))")
       .eq("atleta_id",selected.id)
+      .eq("attiva",true)
+      .order("created_at",{ascending:false})
+      .limit(1)
       .maybeSingle()
       .then(({data})=>{ setAtletaScheda(data||null); setLoadingScheda(false); });
-  },[selected?.id,user?.isSupabase]);
+  },[selected?.id]);
 
   const schedaToPreload=(scheda,atleta)=>{
     const giorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
     const dayNames={A:"",B:"",C:"",D:"",E:"",F:"",G:""};
+    const giornoIds={};
     (scheda.scheda_giorni||[])
       .sort((a,b)=>a.ordine-b.ordine)
       .forEach(g=>{
         const key=g.giorno_key||String.fromCharCode(65+g.ordine);
         dayNames[key]=g.nome||"";
+        giornoIds[key]=g.id;
         giorni[key]=(g.scheda_esercizi||[])
           .sort((a,b)=>a.ordine-b.ordine)
           .map((ex,i)=>{
             const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int)||{};
             return {
               ...exFull,
-              id:ex.esercizio_id_int||0,
+              id:ex.esercizio_id_int||null,
+              dbId:ex.id,                       // id scheda_esercizi → aggiornamento sul posto
               name:ex.nome||exFull.name||"",
+              muscles:exFull.muscles||"",
               sets:ex.serie||3,
-              reps:parseInt(ex.reps)||10,
+              reps:ex.reps||"10",               // testo: conserva intervalli tipo "8-10"
               rest:ex.rest_sec||90,
-              uid:Date.now()+i,
+              uid:`${g.id}-${i}`,
             };
           });
       });
@@ -223,6 +200,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       livello:scheda.livello||"",
       giorni,
       dayNames,
+      giornoIds,
+      schedaNome:scheda.nome||"",
     };
   };
 
@@ -284,8 +263,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 {a.livello&&<span className="tag">{a.livello}</span>}
               </div>
               <div className="client-meta">
-                {!user?.isSupabase&&<span>🕐 {a.lastSeen}</span>}
-                <span>📋 {a.schede} schede</span>
+                                <span>📋 {a.schede} schede</span>
               </div>
             </div>
           </div>
@@ -362,7 +340,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     </button>
                   </div>
                 </div>
-                {user?.isSupabase&&!selected.archivedAt&&(
+                {!selected.archivedAt&&(
                   <div style={{marginTop:10}}>
                     {!changePIN.show?(
                       <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setChangePIN({show:true,pin:"",err:""})}>🔑 Cambia PIN</button>
@@ -390,10 +368,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               {!selected.archivedAt&&(
                 <>
                   <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
-                  {selected.isDemoAtleta?(
-                    <SchedaDemoSection setView={setView} onClose={()=>setSelected(null)} setBuilderPreload={setBuilderPreload}/>
-                  ):user?.isSupabase?(
-                    loadingScheda?(
+                  {loadingScheda?(
                       <div style={{color:"var(--muted)",fontSize:14}}>Caricamento scheda…</div>
                     ):atletaScheda?(
                       <div>
@@ -425,12 +400,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                           setView("builder");
                         }}>+ Crea scheda</button>
                       </div>
-                    )
-                  ):selected.schede>0?(
-                    Array.from({length:selected.schede},(_,i)=>(
-                      <span key={i} className="scheda-chip">📋 Scheda {i+1} — Giorno {DAYS[i%3]}</span>
-                    ))
-                  ):<div style={{color:"var(--muted)",fontSize:14}}>Nessuna scheda assegnata ancora.</div>}
+                    )}
                 </>
               )}
 
@@ -497,7 +467,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               <div style={{marginTop:16,padding:"14px 16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
                 <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>Statistiche</div>
                 <div style={{display:"flex",gap:24,fontSize:14}}>
-                  {!user?.isSupabase&&<div><span style={{color:"var(--muted)"}}>Ultimo accesso: </span><strong>{selected.lastSeen}</strong></div>}
                   <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||0}</strong></div>
                 </div>
               </div>
@@ -509,7 +478,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     <MisureSection
                       atletaId={selected.id}
                       ptId={user?.supabaseId}
-                      supabaseAtletaId={user?.isSupabase ? selected.id : null}
+                      supabaseAtletaId={selected.id}
                     />
                   </div>
                   <div style={{marginTop:24}}>

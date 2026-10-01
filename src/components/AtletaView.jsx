@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES, LINE_COLORS, MISURE_FIELDS, ytSearchUrl } from "../data.js";
-import {
-  fmtDate, fmtDateShort, fmtDateLong, addDays, today,
-  loadSessions, saveSessions, loadMisure, saveMisure,
-  buildPDF, getFakeExercises, countSessionsPerEx, DEMO_MISURE_0, FAKE_SESSIONS,
-} from "../utils.js";
+import { fmtDate, fmtDateShort, fmtDateLong, buildPDF, countSessionsPerEx, parseNum } from "../utils.js";
 import { supabase } from "../supabase.js";
-import ResetDemoDialog from "./ResetDemoDialog.jsx";
+import * as api from "../api/atleta.js";
 import { VideoModal } from "./Library.jsx";
 import { typeColor, typeBg } from "./Calendar.jsx";
 
@@ -68,11 +64,7 @@ function ProgressiMultiChart({lines}) {
 // ── Misure section ────────────────────────────────────────────────────────────
 export function MisureSection({atletaId, readOnly=false, externalMisure=null, ptId=null, supabaseAtletaId=null}) {
   const todayStr = fmtDate(new Date());
-  const [misure, setMisure] = useState(()=>
-    externalMisure!==null ? externalMisure :
-    supabaseAtletaId ? [] :
-    loadMisure(atletaId)
-  );
+  const [misure, setMisure] = useState(()=> externalMisure!==null ? externalMisure : []);
   const [form, setForm] = useState({
     data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""
   });
@@ -90,7 +82,7 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
       .eq("atleta_id", supabaseAtletaId)
       .order("data")
       .then(({data, error})=>{
-        console.log("[misurazioni load] atleta_id:", supabaseAtletaId, "| rows:", data?.length, "| error:", error);
+        if(error) console.error("[misurazioni load]", error);
         setMisure((data||[]).map(r=>({
           dbId: r.id,
           data: r.data,
@@ -109,7 +101,6 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
     if(!form.peso && !form.vita) return;
     if(supabaseAtletaId){
       const existing = misure.find(m=>m.data===form.data);
-      console.log("[misurazioni save] atleta_id:", supabaseAtletaId, "| pt_id:", ptId, "| data:", form.data, "| existing:", existing?.dbId||null);
       const payload = {
         peso_kg: form.peso ? parseFloat(form.peso) : null,
         vita_cm: form.vita ? parseFloat(form.vita) : null,
@@ -131,12 +122,6 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
           setMisure(prev=>[...prev.filter(m=>m.data!==form.data),newEntry].sort((a,b)=>a.data.localeCompare(b.data)));
         }
       }
-    } else {
-      const newEntry = {...form};
-      const updated = [...misure.filter(m=>m.data!==form.data), newEntry]
-        .sort((a,b)=>a.data.localeCompare(b.data));
-      setMisure(updated);
-      saveMisure(atletaId, updated);
     }
     setForm({data:todayStr, peso:"", vita:"", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:""});
     setShowAvanzati(false);
@@ -150,10 +135,6 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
         if(error){ console.error("[misurazioni delete]",error); setDeleteConfirm(null); return; }
       }
       setMisure(prev=>prev.filter((_,i)=>i!==idx));
-    } else {
-      const updated = misure.filter((_,i)=>i!==idx);
-      setMisure(updated);
-      saveMisure(atletaId, updated);
     }
     setDeleteConfirm(null);
   };
@@ -326,12 +307,11 @@ function AtletaExCard({ex, peso, onPesoChange}) {
             <div className="ex-peso-wrap">
               <input
                 className="ex-peso-input"
-                type="number"
-                min={0}
-                max={999}
-                placeholder="0"
+                type="text"
+                inputMode="decimal"
+                placeholder="—"
                 value={peso||""}
-                onChange={e=>onPesoChange(e.target.value)}
+                onChange={e=>onPesoChange(e.target.value.replace(/[^0-9.,]/g,""))}
               />
               <span className="ex-peso-unit">kg</span>
             </div>
@@ -355,12 +335,11 @@ function AtletaExCard({ex, peso, onPesoChange}) {
 }
 
 // ── Progressi section (PT modal) ──────────────────────────────────────────────
-export function ProgressiSectionPT({atleta, user}) {
+export function ProgressiSectionPT({atleta}) {
   const [selIds,setSelIds]=useState(null);
   const [supaSessions,setSupaSessions]=useState(null); // null = loading
 
   useEffect(()=>{
-    if(!user?.isSupabase) return;
     setSupaSessions(null);
     supabase.from("sessioni")
       .select("data, sessione_serie(nome_esercizio, peso)")
@@ -370,38 +349,21 @@ export function ProgressiSectionPT({atleta, user}) {
         if(error){ console.error("[progressi PT]",error); setSupaSessions([]); return; }
         setSupaSessions(data||[]);
       });
-  },[atleta.id, user?.isSupabase]);
+  },[atleta.id]);
 
-  if(user?.isSupabase && supaSessions===null)
+  if(supaSessions===null)
     return <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>Caricamento sessioni…</div>;
 
-  if(!user?.isSupabase && (atleta.id===2||atleta.id===4)) {
-    return (
-      <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0",lineHeight:1.6}}>
-        Dati insufficienti — servono almeno 3 sessioni per visualizzare i progressi.
-      </div>
-    );
-  }
-
-  let sessions, exercises;
-  if(user?.isSupabase) {
-    sessions=(supaSessions||[]).map(s=>({
-      date:s.data,
-      weights:Object.fromEntries(
-        (s.sessione_serie||[])
-          .map(sr=>{ const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio); return ex?[ex.id,String(sr.peso||0)]:null; })
-          .filter(Boolean)
-      )
-    }));
-    const exIds=[...new Set(sessions.flatMap(s=>Object.keys(s.weights).map(Number)))];
-    exercises=exIds.map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean);
-  } else {
-    sessions=atleta.isDemoAtleta?loadSessions():(FAKE_SESSIONS[atleta.id]||[]);
-    exercises=atleta.isDemoAtleta
-      ?[...new Set(sessions.flatMap(s=>Object.keys(s.weights||{}).map(Number)))]
-          .map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean)
-      :getFakeExercises(atleta.id);
-  }
+  const sessions=(supaSessions||[]).map(s=>({
+    date:s.data,
+    weights:Object.fromEntries(
+      (s.sessione_serie||[])
+        .map(sr=>{ const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio); return ex&&+sr.peso>0?[ex.id,String(sr.peso)]:null; })
+        .filter(Boolean)
+    )
+  }));
+  const exIds=[...new Set(sessions.flatMap(s=>Object.keys(s.weights).map(Number)))];
+  const exercises=exIds.map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean);
 
   if(!sessions.length||!exercises.length) {
     return <div style={{color:"var(--muted)",fontSize:13}}>Nessuna sessione registrata ancora.</div>;
@@ -583,7 +545,7 @@ function AtletaProgressi({scheda, user, sessions, misurazioni}) {
 
       <div className="prog-section" style={{marginTop:8}}>
         <div className="prog-section-head">📏 Le mie misurazioni</div>
-        <MisureSection atletaId={user?.isSupabase ? user.id : 0} readOnly={true} externalMisure={user?.isSupabase ? (misurazioni||[]) : null}/>
+        <MisureSection atletaId={user.id} readOnly={true} externalMisure={misurazioni||[]}/>
       </div>
     </div>
   );
@@ -632,12 +594,13 @@ function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDat
           const isToday=dateStr===todayStr;
           const isSelected=dateStr===selectedDate;
           const firstLabel=sessions[0]?.dayLabel||"";
+          const isFuture=dateStr>todayStr;
           const extra=sessions.length>1?sessions.length-1:0;
 
           return (
             <div
               key={idx}
-              onClick={()=>onDaySelect(dateStr,sessions[0]?.giornoKey)}
+              onClick={()=>{ if(!isFuture) onDaySelect(dateStr,sessions[0]?.giornoKey); }}
               style={{
                 position:"relative",
                 minHeight:54,
@@ -646,7 +609,8 @@ function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDat
                 background:isSelected?"var(--card2)":"var(--card)",
                 outline:isToday?"2px solid var(--accent)":isSelected?"2px solid var(--accent2)":"2px solid transparent",
                 outlineOffset:"-2px",
-                cursor:"pointer",
+                cursor:isFuture?"default":"pointer",
+                opacity:isFuture?.35:1,
                 overflow:"hidden",
                 display:"flex",
                 flexDirection:"column",
@@ -686,21 +650,24 @@ function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDat
 }
 
 // ── AtletaView ────────────────────────────────────────────────────────────────
+// Dati via token di sessione atleta (src/api/atleta.js). Se il token non è più
+// valido (atleta archiviato, PT disattivato, token scaduto) si torna al login.
 export default function AtletaView({user, onLogout}) {
   const todayStr = fmtDate(new Date());
 
   const [atlView, setAtlView] = useState("scheda");
   const [scheda, setScheda] = useState(null);
+  const [schedaCaricata, setSchedaCaricata] = useState(false);
   const [activeDay, setActiveDay] = useState(null);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const isToday = selectedDate === todayStr;
   const [pesi, setPesi] = useState({});
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
-  const [statsVer, setStatsVer] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState(null);
+  const [loadErr, setLoadErr] = useState(null);
   const [pdfStateAtleta, setPdfStateAtleta] = useState(null);
-  const [showReset, setShowReset] = useState(false);
-  const logoClickRef = useRef(0);
   const [calEvents, setCalEvents] = useState([]);
   const [apptExpanded, setApptExpanded] = useState(false);
   const [supaSessions, setSupaSessions] = useState(null);
@@ -708,139 +675,103 @@ export default function AtletaView({user, onLogout}) {
   const [supaMisurazioni, setSupaMisurazioni] = useState(null);
   const [calMonth, setCalMonth] = useState(()=>{ const n=new Date(); return {year:n.getFullYear(),month:n.getMonth()}; });
 
-  const handleLogoClick = () => {
-    const now = Date.now();
-    if(now - logoClickRef.current <= 400) setShowReset(true);
-    logoClickRef.current = now;
+  // Errore di caricamento: sessione scaduta → logout, altrimenti messaggio
+  const gestisciErrore = (e) => {
+    if(e instanceof api.SessioneScaduta){ onLogout(); return; }
+    console.error("[atleta]", e);
+    setLoadErr("Non riesco a caricare i dati. Controlla la connessione e riapri l'app.");
   };
 
   useEffect(()=>{
-    if(user.isSupabase){
-      supabase.rpc("get_scheda_atleta",{p_atleta_id:user.id}).then(async ({data})=>{
-        if(!data) return;
-        const giorni={}, dayNames={}, giornoIds={}, esercizioDbIds={};
-        const sortedG=[...(data.scheda_giorni||[])].sort((a,b)=>a.ordine-b.ordine);
-        sortedG.forEach(g=>{
-          const key=g.giorno_key||`G${g.ordine}`;
-          dayNames[key]=g.nome||`Giorno ${key}`;
-          giornoIds[key]=g.id;
-          giorni[key]=(g.scheda_esercizi||[]).sort((a,b)=>a.ordine-b.ordine).map(ex=>{
-            const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int);
-            if(ex.esercizio_id_int) esercizioDbIds[ex.esercizio_id_int]=ex.id;
-            const exKey=ex.esercizio_id_int!=null?String(ex.esercizio_id_int):`c:${ex.id}`;
-            return {id:ex.esercizio_id_int||0, exKey, exDbId:ex.id, name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10", rest:ex.rest_sec||90, cat:exFull?.cat||""};
-          });
+    api.getScheda().then(data=>{
+      setSchedaCaricata(true);
+      if(!data) return;
+      const giorni={}, dayNames={}, giornoIds={};
+      const sortedG=[...(data.scheda_giorni||[])].sort((a,b)=>a.ordine-b.ordine);
+      sortedG.forEach(g=>{
+        const key=g.giorno_key||`G${g.ordine}`;
+        dayNames[key]=g.nome||`Giorno ${key}`;
+        giornoIds[key]=g.id;
+        giorni[key]=(g.scheda_esercizi||[]).sort((a,b)=>a.ordine-b.ordine).map(ex=>{
+          const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int);
+          return {
+            id:ex.esercizio_id_int||0, exKey:ex.id, exDbId:ex.id,
+            name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10",
+            rest:ex.rest_sec||90, cat:exFull?.cat||"",
+          };
         });
-        let ptName = "";
-        const ptId = data.pt_id || user.pt_id;
-        if(ptId){
-          const {data: ptProfile} = await supabase.rpc("get_pt_name", {p_pt_id: ptId});
-          if(ptProfile) ptName = (`${ptProfile.nome||""} ${ptProfile.cognome||""}`).trim();
-        }
-        setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:ptName, obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
-        setSchedaMeta({id:data.id, giornoIds, esercizioDbIds});
-        if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
       });
-    } else {
-      try{const raw=localStorage.getItem("pt_scheda_0");if(raw){const s=JSON.parse(raw);setScheda(s);setActiveDay(Object.keys(s.giorni)[0]);}}catch{}
-    }
+      setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:user.ptNome||"", obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
+      setSchedaMeta({id:data.id, giornoIds});
+      if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
+    }).catch(e=>{ setSchedaCaricata(true); gestisciErrore(e); });
+
+    api.getAppuntamenti().then(data=>{
+      setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:(r.ora_inizio||"00:00").slice(0,5),clientName:user.name,type:r.tipo||"Allenamento"})));
+    }).catch(gestisciErrore);
+
+    api.getSessioni().then(data=>setSupaSessions(data||[])).catch(e=>{ setSupaSessions([]); gestisciErrore(e); });
+
+    api.getMisurazioni().then(data=>{
+      setSupaMisurazioni((data||[]).map(r=>({
+        data:r.data, peso:r.peso_kg?String(r.peso_kg):"", vita:r.vita_cm?String(r.vita_cm):"",
+        fianchi:r.fianchi_cm?String(r.fianchi_cm):"", petto:r.petto_cm?String(r.petto_cm):"",
+        braccio:r.braccio_cm?String(r.braccio_cm):"",
+        grassoPerc:r.grasso_percent?String(r.grasso_percent):"",
+        fcRiposo:r.fc_riposo?String(r.fc_riposo):"",
+      })));
+    }).catch(gestisciErrore);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user.id]);
 
+  // Pesi della sessione salvata per data + giorno selezionati
   useEffect(()=>{
-    if(user.isSupabase){
-      supabase.rpc("get_appuntamenti_atleta",{p_atleta_id:user.id}).then(({data})=>{
-        if(data) setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:r.ora_inizio||"00:00",clientName:user.name,type:r.tipo||"Allenamento"})));
+    if(!activeDay||!supaSessions||!schedaMeta||!scheda) return;
+    const gid=schedaMeta.giornoIds[activeDay];
+    const sess=supaSessions.find(s=>s.data===selectedDate&&s.giorno_id===gid);
+    if(sess){
+      const dayExercises=scheda.giorni[activeDay]||[];
+      const w={};
+      (sess.sessione_serie||[]).forEach(sr=>{
+        const ex=dayExercises.find(e=>sr.esercizio_id?e.exDbId===sr.esercizio_id:e.name===sr.nome_esercizio);
+        if(ex && sr.peso!=null && +sr.peso>0 && w[ex.exKey]===undefined) w[ex.exKey]=String(sr.peso);
       });
-    } else {
-      try{const raw=localStorage.getItem("pt_calendar_shared");if(raw)setCalEvents(JSON.parse(raw));}catch{}
-    }
-  },[user.id]);
-
-  useEffect(()=>{
-    if(!user.isSupabase) return;
-    supabase.rpc("get_sessioni_atleta",{p_atleta_id:user.id})
-      .then(({data,error})=>{ setSupaSessions(error?[]:(data||[])); });
-    supabase.rpc("get_misurazioni_atleta",{p_atleta_id:user.id})
-      .then(({data})=>{
-        setSupaMisurazioni((data||[]).map(r=>({
-          data:r.data, peso:r.peso_kg?String(r.peso_kg):"", vita:r.vita_cm?String(r.vita_cm):"",
-          fianchi:r.fianchi_cm?String(r.fianchi_cm):"", petto:r.petto_cm?String(r.petto_cm):"",
-          braccio:r.braccio_cm?String(r.braccio_cm):"",
-          grassoPerc:r.grasso_percent?String(r.grasso_percent):"",
-          fcRiposo:r.fc_riposo?String(r.fc_riposo):"",
-        })));
-      });
-  },[user.id]);
-
-  useEffect(()=>{
-    if(!activeDay) return;
-    if(user.isSupabase){
-      if(!supaSessions||!schedaMeta||!scheda) return;
-      const gid=schedaMeta.giornoIds[activeDay];
-      const sess=supaSessions.find(s=>s.data===selectedDate&&s.giorno_id===gid);
-      if(sess){
-        const dayExercises=scheda.giorni[activeDay]||[];
-        const w=(sess.sessione_serie||[]).reduce((acc,sr)=>{
-          const ex=dayExercises.find(e=>e.name===sr.nome_esercizio);
-          if(ex) acc[ex.exKey]=String(sr.peso||0);
-          return acc;
-        },{});
-        setPesi(w); setSaved(true);
-      } else { setPesi({}); setSaved(false); }
-      setJustSaved(false);
-    } else {
-      const sessions=loadSessions();
-      const sess=sessions.find(s=>s.date===selectedDate&&s.day===activeDay);
-      setPesi(sess?sess.weights:{}); setSaved(!!sess); setJustSaved(false);
-    }
+      setPesi(w); setSaved(true);
+    } else { setPesi({}); setSaved(false); }
   },[activeDay, selectedDate, supaSessions, schedaMeta, scheda]);
 
-  const prevDate = ()=>{
-    const d = new Date(selectedDate+"T12:00");
-    d.setDate(d.getDate()-1);
-    setSelectedDate(fmtDate(d));
-  };
-  const nextDate = ()=>{
-    if(isToday) return;
-    const d = new Date(selectedDate+"T12:00");
-    d.setDate(d.getDate()+1);
-    setSelectedDate(fmtDate(d));
-  };
+  // Cambio giorno/data: via i messaggi del salvataggio precedente
+  useEffect(()=>{ setJustSaved(false); setSaveErr(null); },[activeDay, selectedDate]);
 
   const handleSave = async ()=>{
-    console.log("[handleSave] isSupabase:", user.isSupabase, "| schedaMeta:", schedaMeta, "| activeDay:", activeDay, "| pt_id:", user.pt_id);
-    if(user.isSupabase){
-      const gid=schedaMeta?.giornoIds[activeDay];
-      const esercizi=scheda?.giorni[activeDay]||[];
-      const serieRows=[];
-      esercizi.forEach(ex=>{
-        const peso=parseFloat(pesi[ex.exKey]||0);
-        if(peso>0){
-          for(let i=0;i<(ex.sets||3);i++){
-            serieRows.push({nome_esercizio:ex.name,serie_numero:i+1,reps:parseInt(ex.reps||10),peso});
-          }
-        }
-      });
-      console.log("[handleSave] → Supabase RPC | gid:", gid, "| serieRows:", serieRows);
-      const {error}=await supabase.rpc("save_sessione_atleta",{
-        p_atleta_id:user.id, p_pt_id:user.pt_id,
-        p_scheda_id:schedaMeta?.id||null, p_giorno_id:gid||null,
-        p_data:selectedDate, p_serie:serieRows,
-      });
-      console.log("[handleSave] save_sessione_atleta error:", error);
-      if(!error){
-        const {data:newSess}=await supabase.rpc("get_sessioni_atleta",{p_atleta_id:user.id});
-        setSupaSessions(newSess||[]);
+    if(saving) return;
+    setSaveErr(null);
+    if(selectedDate>todayStr){ setSaveErr("Non puoi registrare un allenamento in una data futura."); return; }
+    const gid=schedaMeta?.giornoIds[activeDay];
+    const esercizi=scheda?.giorni[activeDay]||[];
+    // Tutti gli esercizi del giorno vengono salvati, anche a corpo libero (peso vuoto)
+    const serie=[];
+    esercizi.forEach(ex=>{
+      const peso=parseNum(pesi[ex.exKey]);
+      for(let i=0;i<(ex.sets||3);i++){
+        serie.push({scheda_esercizio_id:ex.exDbId, nome_esercizio:ex.name, serie_numero:i+1, reps:null, peso:peso&&peso>0?peso:null});
       }
-    } else {
-      console.log("[handleSave] → localStorage path");
-      const sessions=loadSessions().filter(s=>!(s.date===selectedDate&&s.day===activeDay));
-      sessions.push({date:selectedDate,day:activeDay,weights:pesi});
-      saveSessions(sessions);
+    });
+    setSaving(true);
+    try {
+      await api.saveSessione(gid, selectedDate, serie);
+      const nuove=await api.getSessioni();
+      setSupaSessions(nuove||[]);
+      setSaved(true); setJustSaved(true);
+      window.scrollTo({top:0,behavior:"smooth"});
+      setTimeout(()=>setJustSaved(false),2500);
+    } catch(e){
+      if(e instanceof api.SessioneScaduta){ onLogout(); return; }
+      console.error("[salva sessione]", e);
+      setSaveErr("⚠️ Sessione NON salvata: problema di connessione. I pesi inseriti restano qui, riprova tra poco.");
+    } finally {
+      setSaving(false);
     }
-    setSaved(true); setJustSaved(true); setStatsVer(v=>v+1);
-    window.scrollTo({top:0,behavior:"smooth"});
-    setTimeout(()=>setJustSaved(false),2500);
   };
 
   const handlePDFAtleta = async () => {
@@ -848,10 +779,8 @@ export default function AtletaView({user, onLogout}) {
     setPdfStateAtleta({progress:0,label:"Preparazione…"});
     try {
       await buildPDF({
-        nome: scheda.nome||"",
-        cognome: scheda.cognome||"",
-        obiettivo: scheda.obiettivo||"",
-        livello: scheda.livello||"",
+        nome: scheda.nome||"", cognome: scheda.cognome||"",
+        obiettivo: scheda.obiettivo||"", livello: scheda.livello||"",
         giorni: scheda.giorni,
         onProgress:(p,l)=>setPdfStateAtleta({progress:p,label:l})
       });
@@ -859,47 +788,38 @@ export default function AtletaView({user, onLogout}) {
     finally{setPdfStateAtleta(null);}
   };
 
-  const _rawSupa = user.isSupabase ? (supaSessions||[]) : null;
-  const _allSessions = user.isSupabase
-    ? _rawSupa.map(s=>({date:s.data}))
-    : loadSessions();
-  const sessionTotal = _allSessions.length;
-  const latestSessionDate = _allSessions.length > 0
-    ? [..._allSessions].sort((a,b)=>b.date.localeCompare(a.date))[0].date
+  const _rawSupa = supaSessions||[];
+  const sessionTotal = _rawSupa.length;
+  const latestSessionDate = sessionTotal > 0
+    ? [..._rawSupa].sort((a,b)=>b.data.localeCompare(a.data))[0].data
     : null;
-  const _sessionDates = new Set(_allSessions.map(s=>s.date));
+  const _sessionDates = new Set(_rawSupa.map(s=>s.data));
   let sessionStreak = 0;
   if(_sessionDates.has(todayStr)) {
     const _sd = new Date(todayStr+"T12:00");
     while(_sessionDates.has(fmtDate(_sd))){ sessionStreak++; _sd.setDate(_sd.getDate()-1); }
   }
-  // Sessioni in formato locale {date, weights:{exId:peso}} per i grafici progressi
-  const chartSessions = user.isSupabase
-    ? _rawSupa.map(s=>({
-        date:s.data,
-        weights:(s.sessione_serie||[]).reduce((acc,sr)=>{
-          const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio);
-          if(!ex) return acc;
-          const prev=parseFloat(acc[ex.id]||0), val=parseFloat(sr.peso||0);
-          if(val>prev) acc[ex.id]=String(val);
-          return acc;
-        },{})
-      }))
-    : loadSessions();
+  // Sessioni in formato {date, weights:{exId:peso}} per i grafici progressi
+  const chartSessions = _rawSupa.map(s=>({
+    date:s.data,
+    weights:(s.sessione_serie||[]).reduce((acc,sr)=>{
+      const ex=EXERCISES.find(e=>e.name===sr.nome_esercizio);
+      if(!ex) return acc;
+      const prev=parseFloat(acc[ex.id]||0), val=parseFloat(sr.peso||0);
+      if(val>prev) acc[ex.id]=String(val);
+      return acc;
+    },{})
+  }));
 
-  const userNameLower = (user.name||"").toLowerCase();
   const futureAppts = calEvents
-    .filter(e=>e.date>=todayStr && (e.clientName||"").toLowerCase().includes(userNameLower))
+    .filter(e=>e.date>=todayStr)
     .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
   const visibleAppts = apptExpanded ? futureAppts : futureAppts.slice(0,3);
 
-  const logo = ["PT","Studio"];
-
-  if(!scheda) return (
-    <div style={{minHeight:"100vh",background:"var(--bg)"}}>
-      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
+  const header = (
+    <>
       <div className="cliente-header">
-        <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}} onClick={handleLogoClick}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
+        <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}}>PT<span style={{color:"var(--text)"}}>Studio</span></div>
         <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
         <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
       </div>
@@ -912,34 +832,42 @@ export default function AtletaView({user, onLogout}) {
         <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 Scheda</button>
         <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
       </div>
+      {loadErr&&<div className="cliente-body" style={{paddingBottom:0}}><div className="session-saved-banner" style={{background:"rgba(255,71,87,.08)",borderColor:"rgba(255,71,87,.3)",color:"var(--danger)"}}>{loadErr}</div></div>}
+    </>
+  );
+
+  const appuntamenti = futureAppts.length>0 && (
+    <div className="appt-section">
+      <div className="appt-section-title">📅 Prossimi appuntamenti</div>
+      {visibleAppts.map((ev,i)=>(
+        <div className="appt-card" key={ev.id||i}>
+          <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
+          <div className="appt-time">{ev.time}</div>
+          <div className="appt-name">{ev.clientName}</div>
+          <div className="appt-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
+        </div>
+      ))}
+      {futureAppts.length>3&&(
+        <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
+          {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
+        </button>
+      )}
+    </div>
+  );
+
+  if(!scheda) return (
+    <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+      {header}
       <div className="cliente-body" style={{paddingTop:20}}>
-        <div className="appt-section" style={{marginBottom:20}}>
-          <div className="appt-section-title">📅 Prossimi appuntamenti</div>
-          {futureAppts.length===0 ? (
-            <div style={{fontSize:13,color:"var(--muted)",padding:"4px 0"}}>Nessun appuntamento programmato</div>
-          ) : (
-            <>
-              {visibleAppts.map((ev,i)=>(
-                <div className="appt-card" key={ev.id||i}>
-                  <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
-                  <div className="appt-time">{ev.time}</div>
-                  <div className="appt-name">{ev.clientName}</div>
-                  <div className="appt-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
-                </div>
-              ))}
-              {futureAppts.length>3&&(
-                <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
-                  {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-        <div style={{textAlign:"center",paddingTop:28}}>
-          <div style={{fontSize:48,marginBottom:16}}>📋</div>
-          <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
-          <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT deve creare e assegnare una scheda dal Builder.</div>
-        </div>
+        {appuntamenti}
+        {schedaCaricata&&(
+          <div style={{textAlign:"center",paddingTop:28}}>
+            <div style={{fontSize:48,marginBottom:16}}>📋</div>
+            <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
+            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT non ti ha ancora assegnato una scheda.</div>
+          </div>
+        )}
+        {!schedaCaricata&&<div style={{textAlign:"center",color:"var(--muted)",paddingTop:28}}>Caricamento…</div>}
       </div>
     </div>
   );
@@ -949,86 +877,38 @@ export default function AtletaView({user, onLogout}) {
   const dayNamesScheda = scheda.dayNames||{};
   const activeDayLabel = dayNamesScheda[activeDay] || `Giorno ${activeDay}`;
 
-  // Build session-by-date map for the calendar.
-  // Inverts schedaMeta.giornoIds (key→id) to id→key for Supabase sessions.
+  // Mappa data → sessioni per il calendario (giorno_id → lettera del giorno)
   const _giornoIdToKey = schedaMeta
     ? Object.fromEntries(Object.entries(schedaMeta.giornoIds).map(([k,v])=>[v,k]))
     : {};
-  const sessionsByDate = (()=>{
-    const map = {};
-    const add = (dateStr, giornoKey) => {
-      if(!giornoKey) return;
-      const dayLabel = scheda?.dayNames?.[giornoKey] || `Giorno ${giornoKey}`;
-      (map[dateStr] = map[dateStr] || []).push({giornoKey, dayLabel});
-    };
-    if(user.isSupabase){
-      (supaSessions||[]).forEach(s=>add(s.data, _giornoIdToKey[s.giorno_id]));
-    } else {
-      loadSessions().forEach(s=>add(s.date, s.day));
-    }
-    return map;
-  })();
+  const sessionsByDate = {};
+  _rawSupa.forEach(s=>{
+    const giornoKey=_giornoIdToKey[s.giorno_id];
+    if(!giornoKey) return;
+    const dayLabel = scheda?.dayNames?.[giornoKey] || `Giorno ${giornoKey}`;
+    (sessionsByDate[s.data] = sessionsByDate[s.data] || []).push({giornoKey, dayLabel});
+  });
 
-  const saveBtnLabel = isToday
+  const saveBtnLabel = saving ? "Salvataggio…" : isToday
     ? (saved ? `Aggiorna sessione — ${activeDayLabel}` : `Salva sessione — ${activeDayLabel}`)
-    : `Aggiorna sessione del ${fmtDateShort(selectedDate)} — ${activeDayLabel}`;
+    : `${saved?"Aggiorna":"Salva"} sessione del ${fmtDateShort(selectedDate)} — ${activeDayLabel}`;
 
   return (
     <div style={{minHeight:"100vh",background:"var(--bg)"}}>
-      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
-      <div className="cliente-header">
-        <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}} onClick={handleLogoClick}>{logo[0]}<span style={{color:"var(--text)"}}>{logo[1]}</span></div>
-        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
-        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
-      </div>
-
-      <div className="atleta-stats-bar">
-        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> sessioni completate</span>
-        <span className="atleta-stats-item">📅 Ultima: <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
-        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> giorni consecutivi</span>
-      </div>
-
-      <div className="atleta-tab-nav">
-        <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 Scheda</button>
-        <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
-      </div>
+      {header}
 
       {atlView==="progressi"&&<AtletaProgressi scheda={scheda} user={user} sessions={chartSessions} misurazioni={supaMisurazioni}/>}
 
       {atlView==="scheda"&&<div className="cliente-body">
-        <div className="appt-section">
-          <div className="appt-section-title">📅 Prossimi appuntamenti</div>
-          {futureAppts.length===0 ? (
-            <div style={{fontSize:13,color:"var(--muted)",padding:"4px 0"}}>Nessun appuntamento programmato</div>
-          ) : (
-            <>
-              {visibleAppts.map((ev,i)=>(
-                <div className="appt-card" key={ev.id||i}>
-                  <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
-                  <div className="appt-time">{ev.time}</div>
-                  <div className="appt-name">{ev.clientName}</div>
-                  <div
-                    className="appt-type-badge"
-                    style={{background:typeBg(ev.type),color:typeColor(ev.type)}}
-                  >{ev.type}</div>
-                </div>
-              ))}
-              {futureAppts.length>3&&(
-                <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
-                  {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
-                </button>
-              )}
-            </>
-          )}
-        </div>
+        {appuntamenti}
 
         <div className="scheda-info-card">
-          <div className="scheda-info-title">{scheda.nome||`Scheda ${scheda.cognome||""}`}</div>
+          <div className="scheda-info-title">{scheda.nome||"La tua scheda"}</div>
           <div className="scheda-info-meta">
-            <span>👤 PT: <strong style={{color:"var(--text)"}}>{scheda.pt||"Personal Trainer Demo"}</strong></span>
+            {scheda.pt&&<span>👤 PT: <strong style={{color:"var(--text)"}}>{scheda.pt}</strong></span>}
             {scheda.obiettivo&&<span>🎯 {scheda.obiettivo}</span>}
             {scheda.livello&&<span>📊 {scheda.livello}</span>}
-            <span>📅 Assegnata il {scheda.assegnataIl||"—"}</span>
+            <span>📅 Assegnata il {scheda.assegnataIl?fmtDateShort(scheda.assegnataIl):"—"}</span>
           </div>
         </div>
 
@@ -1073,7 +953,12 @@ export default function AtletaView({user, onLogout}) {
             ✓ Sessione salvata con successo!
           </div>
         )}
-        {!justSaved&&saved&&(
+        {saveErr&&(
+          <div className="session-saved-banner" style={{background:"rgba(255,71,87,.1)",borderColor:"rgba(255,71,87,.4)",color:"var(--danger)",fontWeight:700}}>
+            {saveErr}
+          </div>
+        )}
+        {!justSaved&&!saveErr&&saved&&(
           <div className="session-saved-banner">
             {isToday
               ? "↩ Sessione di oggi già salvata — puoi aggiornare i pesi e risalvare"
@@ -1091,7 +976,7 @@ export default function AtletaView({user, onLogout}) {
           />
         ))}
 
-        <button className="save-session-btn" onClick={handleSave}>
+        <button className="save-session-btn" onClick={handleSave} disabled={saving} style={saving?{opacity:.6}:undefined}>
           {saveBtnLabel}
         </button>
       </div>}

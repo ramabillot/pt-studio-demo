@@ -1,5 +1,4 @@
-import React, { useState, useRef } from "react";
-import ResetDemoDialog from "./ResetDemoDialog.jsx";
+import React from "react";
 
 const NAV_TRAINER = [
   { id:"dashboard", icon:"⚡", label:"Dashboard" },
@@ -13,27 +12,16 @@ const NAV_ADMIN = [
   { id:"dashboard",      icon:"⚡",  label:"Dashboard"    },
   { id:"admin-stats",    icon:"📊",  label:"Statistiche"  },
   { id:"admin-pt",       icon:"👥",  label:"I miei PT"    },
-  { id:"admin-calendar", icon:"📅",  label:"Calendario"   },
 ];
 
 const NAV_ACCOUNT = { id:"account", icon:"⚙", label:"Account" };
 
 export function Sidebar({user,view,setView,onLogout}) {
-  const [showReset, setShowReset] = useState(false);
-  const logoLastClick = useRef(0);
-
-  const handleLogoClick = () => {
-    const now = Date.now();
-    if(now - logoLastClick.current <= 400) setShowReset(true);
-    logoLastClick.current = now;
-  };
-
   const baseItems = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
-  const items = user.isSupabase ? [...baseItems, NAV_ACCOUNT] : baseItems;
-  const logo = user.theme?.logo || ["PT","Studio"];
+  const items = [...baseItems, NAV_ACCOUNT];
   return (
     <div className="sidebar">
-      <div className="sidebar-logo" onClick={handleLogoClick} style={{cursor:"default",userSelect:"none"}}>{logo[0]}<span>{logo[1]}</span></div>
+      <div className="sidebar-logo" style={{cursor:"default",userSelect:"none"}}>PT<span>Studio</span></div>
       <div className="sidebar-user">
         <div className="sidebar-username">{user.name}</div>
         <div className="sidebar-role">{user.role==="admin"?"Amministratore":"Personal Trainer"}</div>
@@ -46,21 +34,20 @@ export function Sidebar({user,view,setView,onLogout}) {
         ))}
       </nav>
       <button className="sidebar-logout" onClick={onLogout}>
-        <span className="sidebar-icon">↩</span>{user.isSupabase ? "Logout" : "Esci"}
+        <span className="sidebar-icon">↩</span>Esci
       </button>
-      {showReset&&<ResetDemoDialog onClose={()=>setShowReset(false)}/>}
     </div>
   );
 }
 
 export function MobileNav({user,view,setView,onLogout}) {
   const baseItems = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
-  const items = user.isSupabase ? [...baseItems, NAV_ACCOUNT] : baseItems;
+  const items = [...baseItems, NAV_ACCOUNT];
   return (
     <nav className="mobile-nav">
       <div className="mobile-nav-logout-bar">
         <button className="mobile-nav-logout-btn" onClick={onLogout}>
-          ↩ {user.isSupabase ? "Logout" : "Esci"}
+          ↩ Esci
         </button>
       </div>
       <div className="mobile-nav-inner">

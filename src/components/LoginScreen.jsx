@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ACCOUNTS } from "../data.js";
 import { supabase } from "../supabase.js";
+import { loginAtleta } from "../api/atleta.js";
 
 function buildUserObj(supaUser, profile) {
   return {
@@ -17,24 +17,6 @@ function buildUserObj(supaUser, profile) {
     piano: profile?.piano ?? "base",
     max_atleti: profile?.max_atleti ?? 5,
     isSupabase: true,
-    theme: { accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] },
-  };
-}
-
-function buildAtletaObj(row) {
-  return {
-    id: row.id,
-    pt_id: row.pt_id,
-    supabaseId: row.id,
-    name: (`${row.nome || ""} ${row.cognome || ""}`).trim() || row.username,
-    nome: row.nome || "",
-    cognome: row.cognome || "",
-    username: row.username,
-    role: "atleta",
-    isSupabase: true,
-    is_approved: true,
-    color: row.color || "#e8ff47",
-    theme: { accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] },
   };
 }
 
@@ -103,32 +85,31 @@ export default function LoginScreen({onLogin}) {
   // ── Handlers ──────────────────────────────────────────────────────────────
   const submit = async () => {
     setErr("");
-    const u = user.toLowerCase().trim();
-    const acc = ACCOUNTS[u];
-    // Demo auth (unchanged)
-    if (acc && acc.password === pass) {
-      onLogin({ username: u, ...acc });
-      return;
-    }
-    if (!user.trim() || !pass) { setErr("Inserisci utente e password o PIN"); return; }
+    const u = user.trim();
+    if (!u || !pass) { setErr("Inserisci utente e password o PIN"); return; }
     setLoading(true);
-
-    // Prova sempre login atleta prima (gli username possono contenere "@")
-    const { data: atletaData, error: atletaErr } = await supabase.rpc("login_atleta", { p_username: user.trim(), p_pin: pass });
-    if (!atletaErr && atletaData) {
-      onLogin(buildAtletaObj(atletaData));
+    try {
+      // 1) Atleta: username + PIN (gli username possono contenere "@")
+      const r = await loginAtleta(u, pass);
+      if (r.ok) { onLogin(r.atleta); return; }
+      if (r.errore === "bloccato") {
+        const ora = r.fino ? new Date(r.fino).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "";
+        setErr(`Troppi tentativi sbagliati. Riprova${ora ? ` dopo le ${ora}` : " tra qualche minuto"}.`);
+        return;
+      }
+      // 2) PT / admin: email + password
+      if (!u.includes("@")) { setErr("Username o PIN non corretti"); return; }
+      const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: pass });
+      if (error) { setErr("Credenziali non corrette"); return; }
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+      if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); return; }
+      onLogin(buildUserObj(data.user, profile));
+    } catch {
+      setErr("Connessione non riuscita. Controlla la rete e riprova.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Fallback: login PT / admin via email + password Supabase Auth
-    const { data, error } = await supabase.auth.signInWithPassword({ email: user.trim(), password: pass });
-    if (error) { setErr("Email o password non corretti"); setLoading(false); return; }
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
-    if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); setLoading(false); return; }
-    onLogin(buildUserObj(data.user, profile));
-    setLoading(false);
   };
 
   const register = async () => {
@@ -159,16 +140,6 @@ export default function LoginScreen({onLogin}) {
       <canvas ref={canvasRef} className="login-canvas"/>
       <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:12,padding:"0 16px"}}>
 
-        {/* Demo info banner — only on login */}
-        {mode==="login"&&(
-          <div style={{background:"rgba(15,15,24,.75)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 18px",backdropFilter:"blur(10px)",animation:"boxIn .6s cubic-bezier(.16,1,.3,1)"}}>
-            <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"var(--accent)",marginBottom:5}}>Demo — PT Studio</div>
-            <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.6}}>
-              Una piattaforma per personal trainer — gestisci atleti, crea schede di allenamento personalizzate ed esportale in PDF. Accedi con le credenziali demo per esplorare tutte le funzionalità.
-            </div>
-          </div>
-        )}
-
         <div className="login-box" style={{margin:0}}>
           <div className="login-logo"><span>PT</span>Studio</div>
 
@@ -196,42 +167,6 @@ export default function LoginScreen({onLogin}) {
               {linkBtn(()=>setShowForgotModal(true),"Password dimenticata?")}
             </div>
 
-            {/* Demo hints (invariato) */}
-            <div className="login-hint">
-              <div className="login-hint-block">
-                <div className="login-hint-label">💪 Per accedere alla Demo 1, inserisci:</div>
-                <div className="login-hint-creds">
-                  <span className="login-hint-key">Utente:</span><span className="hint-badge">pt</span>
-                  <span className="login-hint-key" style={{marginLeft:8}}>Password:</span><span className="hint-badge">pt</span>
-                </div>
-              </div>
-              <details className="login-details">
-                <summary>Altri accessi demo ▾</summary>
-                <div className="login-details-inner">
-                  <div className="login-hint-block" style={{borderColor:"rgba(164,127,254,.25)"}}>
-                    <div className="login-hint-label" style={{color:"#a47ffe"}}>🟣 Demo 2 (FitPro)</div>
-                    <div className="login-hint-creds">
-                      <span className="login-hint-key">Utente:</span><span className="hint-badge">pt_pro</span>
-                      <span className="login-hint-key" style={{marginLeft:8}}>Password:</span><span className="hint-badge">pt_pro</span>
-                    </div>
-                  </div>
-                  <div className="login-hint-block">
-                    <div className="login-hint-label">🛡️ Admin</div>
-                    <div className="login-hint-creds">
-                      <span className="login-hint-key">Utente:</span><span className="hint-badge">admin</span>
-                      <span className="login-hint-key" style={{marginLeft:8}}>Password:</span><span className="hint-badge">admin</span>
-                    </div>
-                  </div>
-                  <div className="login-hint-block" style={{borderColor:"rgba(71,255,232,.25)"}}>
-                    <div className="login-hint-label" style={{color:"var(--accent2)"}}>👤 Atleta Demo</div>
-                    <div className="login-hint-creds">
-                      <span className="login-hint-key">Utente:</span><span className="hint-badge">atleta</span>
-                      <span className="login-hint-key" style={{marginLeft:8}}>Password:</span><span className="hint-badge">atleta</span>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </div>
           </>}
 
           {/* ── REGISTER ── */}

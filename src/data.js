@@ -1,43 +1,9 @@
 // ── Static constants and data (no runtime computation) ────────────────────────
 
-export const ACCOUNTS = {
-  "pt":       { password:"pt",       name:"Personal Trainer Demo",         role:"trainer",
-                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-  "pt_pro":   { password:"pt_pro",   name:"FitExpress — Personal Trainer", role:"trainer",
-                 theme:{
-                   accent:"#FFD600", accentFg:"#0a0a00", logo:["FitExpress","Pro"],
-                   bg:"#080800", surface:"#0f0f00", card:"#141400", card2:"#1a1a00",
-                   border:"#2a2a00", accent2:"#ff9900", accent3:"#ff4400",
-                 } },
-  "admin":    { password:"admin",    name:"Admin",                         role:"admin",
-                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-  "atleta":   { password:"atleta",   name:"Atleta Demo",                   role:"atleta",
-                 theme:{ accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] } },
-};
-
-export const THEME_DEFAULTS = {
-  "--accent":   "#e8ff47",
-  "--accent-fg":"#07070d",
-  "--bg":       "#07070d",
-  "--surface":  "#0f0f18",
-  "--card":     "#13131e",
-  "--card2":    "#1a1a28",
-  "--border":   "#22223a",
-  "--accent2":  "#47ffe8",
-  "--accent3":  "#ff47a3",
-};
-
-export const THEME_MAP = {
-  accent:"--accent", accentFg:"--accent-fg",
-  bg:"--bg", surface:"--surface", card:"--card", card2:"--card2",
-  border:"--border", accent2:"--accent2", accent3:"--accent3",
-};
-
 export const CAT_COLORS     = { Braccia:"#e8ff47", Spalle:"#47ffe8", Schiena:"#ff9f47", Gambe:"#ff47a3", Core:"#a47ffe", Petto:"#47a3ff", Glutei:"#ff6b81" };
 export const LINE_COLORS    = ["#e8ff47","#47ffe8","#ff47a3","#ff9f47","#a47ffe","#47a3ff","#ff4757","#2ecc71"];
 export const CAT_COLORS_PDF = { Braccia:[130,160,0], Spalle:[0,140,120], Schiena:[170,95,0], Gambe:[170,0,95], Core:[164,127,254], Petto:[40,110,200], Glutei:[200,60,85] };
 export const CATEGORIES     = ["Tutte","Petto","Schiena","Spalle","Braccia","Gambe","Glutei","Core"];
-export const DAYS           = ["A","B","C"];
 export const OBIETTIVI      = ["Ipertrofia","Dimagrimento","Forza","Resistenza","Tonificazione"];
 export const LIVELLI        = ["Principiante","Intermedio","Avanzato"];
 export const SESSION_TYPES  = ["Allenamento","Valutazione","Recupero"];
@@ -129,30 +95,6 @@ export const EXERCISES = [
   { id:82, cat:"Glutei",  name:"Kickback alla macchina",     muscles:"Gluteo grande (lavoro monopodalico)" },
 ];
 
-export const DEMO_ATLETI = [
-  { id:0, nome:"Atleta", cognome:"Demo",    obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"oggi",        schede:1, color:"#47ffe8", isDemoAtleta:true, hasAccount:true },
-  { id:1, nome:"Luca",   cognome:"Ferrari",  obiettivo:"Ipertrofia",   livello:"Intermedio",   lastSeen:"3 giorni fa", schede:2, color:"#e8ff47" },
-  { id:2, nome:"Sofia",  cognome:"Martini",  obiettivo:"Dimagrimento", livello:"Principiante", lastSeen:"ieri",        schede:1, color:"#47ffe8" },
-  { id:3, nome:"Marco",  cognome:"Bianchi",  obiettivo:"Forza",        livello:"Avanzato",     lastSeen:"oggi",        schede:3, color:"#ff9f47" },
-  { id:4, nome:"Chiara", cognome:"Esposito", obiettivo:"Tonificazione",livello:"Intermedio",   lastSeen:"5 giorni fa", schede:1, color:"#ff47a3" },
-];
-
-export const FAKE_EX_IDS = {
-  1: [1, 3, 7, 16, 12],
-  3: [11, 16, 13, 6],
-  2: [20, 7, 17],
-  4: [19, 7, 2],
-};
-
-export const ADMIN_PT = [
-  { name:"Andrea Rossi",    lastLogin:"Oggi, 09:14",     clients:4, schede:7  },
-  { name:"Giulia Moretti",  lastLogin:"Ieri, 18:30",     clients:6, schede:12 },
-  { name:"Paolo Crespi",    lastLogin:"3 giorni fa",     clients:2, schede:3  },
-  { name:"Marta Savi",      lastLogin:"Oggi, 11:02",     clients:8, schede:15 },
-  { name:"Lorenzo De Luca", lastLogin:"Una settimana fa",clients:1, schede:2  },
-];
-
-export const ADMIN_SESSION_TYPES = ["Riunione","Call","Visita","Onboarding"];
 
 export const MONTHS_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 export const DAYS_IT   = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
@@ -178,7 +120,3 @@ export const MISURE_FIELDS = [
   { key:"grassoPerc",label:"Grasso",    emoji:"🔬", unit:"%"   },
   { key:"fcRiposo",  label:"FC Riposo", emoji:"❤️", unit:"bpm" },
 ];
-
-export const LS_ATLETI     = "pt_atleti_demo";
-export const LS_CAL_SHARED = "pt_calendar_shared";
-export const LS_KEY        = "pt_sessions_demo_atleta";

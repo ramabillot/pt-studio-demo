@@ -25,7 +25,7 @@ Frontend:     React + Vite
 Styling:      CSS-in-JS inline + CSS variables
 PDF:          jsPDF
 Hosting:      Vercel
-Backend:      Supabase (Postgres + Auth + Storage)   ← in migrazione da localStorage (Fase 1)
+Backend:      Supabase (Postgres + Auth + Storage)
 AI:           Anthropic API — SOLO da backend, MAI da frontend (chiave esposta + costo non controllabile)
 Repo:         github.com/ramabillot/pt-studio-demo
 ```
@@ -64,28 +64,29 @@ pt-studio-demo/
     ├── App.css
     ├── index.css
     ├── assets/            ← hero.png, react.svg, vite.svg
-    ├── data.js            ← costanti statiche: EXERCISES, ACCOUNTS, THEME_MAP, CAT_COLORS, ecc.
-    ├── utils.js           ← helper: date, PDF (buildPDF), storage, DEMO_EVENTS, FAKE_SESSIONS, ecc.
+    ├── data.js            ← costanti statiche: EXERCISES (82, id stabili), CATEGORIES, CAT_COLORS, ecc.
+    ├── utils.js           ← helper: date, numeri, localStorage sicuro, PDF (buildPDF, jsPDF caricato on-demand)
+    ├── api/atleta.js      ← client RPC atleta (token di sessione)
     └── components/        ← 12 componenti
         ├── LoginScreen.jsx
         ├── WelcomeScreen.jsx
-        ├── ResetDemoDialog.jsx    ← usa ReactDOM.createPortal; doppio click logo
         ├── Sidebar.jsx            ← esporta: Sidebar, MobileNav, BackBtn
         ├── Dashboard.jsx
         ├── Library.jsx            ← esporta: VideoModal (usato da AtletaView)
-        ├── Builder.jsx            ← esporta: AtletaSearchField, SchedaDemoSection
+        ├── Builder.jsx            ← esporta: AtletaSearchField
         ├── Atleti.jsx
-        ├── Calendar.jsx           ← esporta: typeColor, typeBg, CalendarView, AdminCalendar
+        ├── Calendar.jsx           ← esporta: typeColor, typeBg, CalendarView
         ├── AtletaView.jsx         ← esporta: MisureSection, ProgressiSectionPT
         ├── AdminStats.jsx
-        └── AdminPT.jsx
+        ├── AdminPanel.jsx
+        └── AccountSettings.jsx
 ```
 
 ---
 
 ## Modello dati
 
-> In migrazione da localStorage → Supabase (Postgres). Entità principali:
+> Supabase (Postgres). Entità principali:
 
 | Entità | Note |
 |---|---|
@@ -94,36 +95,29 @@ pt-studio-demo/
 | **schede** | giorni con nomi personalizzabili (Push, Gambe, Pull…). Default `Giorno A/B/C`. Payload include i nomi giorno. |
 | **sessioni** | log allenamenti. Pesi esercizi: ogni entry ha una data, si accumula nel tempo. |
 | **misurazioni** | tracker temporale: peso, vita + avanzati (fianchi, petto, braccio, grasso %, FC). Ogni entry datata. |
-| **appuntamenti** | calendario. Condiviso PT→Atleta (`pt_calendar_shared`). L'atleta vede solo i propri (filtro per nome). |
+| **appuntamenti** | calendario del PT, collegati all'atleta (`atleta_id`). L'atleta vede solo i propri. |
 
 **Convenzione fondamentale:** si dice **"Atleta"**, mai "Cliente". Ovunque — UI, variabili, commenti.
 
-**Credenziali demo** (in-memory, niente dati reali):
-```
-pt/pt          pt_pro/pt_pro       atleta/atleta       admin/admin
-```
-> Vecchie credenziali deprecate: demo/demo, fitpro/fitpro, demo_cliente/demo_cliente.
-> ⚠️ Decisione aperta: quali di questi account restano in-memory dopo la migrazione Supabase (sub-task 1.5). Confermare in DECISIONS.md.
+**Modalità demo rimossa (2026-10):** salvata nel tag git `demo-v1`. Il codice usa solo dati reali Supabase.
 
 ---
 
-## Sistema temi (per-account)
+## Accesso atleta (token di sessione)
 
-Temi completi per-account via CSS variables, senza toccare il CSS base:
-- `THEME_MAP` — mappa account → tema
-- `THEME_DEFAULTS` — valori di default delle CSS variables
-
-Tema attivo: **FitExpress** per l'account `pt_pro` → giallo `#FFD600` su nero, logo "FitExpress Pro" (palestre franchise, potenziale cliente).
-
-Per aggiungere un tema: estendere `THEME_MAP`, NON duplicare CSS.
+- Login atleta: RPC `atleta_login(username, pin)` → token casuale salvato in `localStorage` (`ptstudio_atleta_token`); nel DB solo l'hash (`atleta_sessioni`). Valido 180 giorni, rinnovato con l'uso.
+- Tutte le funzioni atleta prendono il token: `atleta_me`, `atleta_get_scheda/sessioni/misurazioni/appuntamenti`, `atleta_save_sessione`, `atleta_logout`. Client in `src/api/atleta.js`.
+- Blocco 15 minuti dopo 5 PIN sbagliati. Helper SQL nello schema `private` (non esposto).
+- Le vecchie RPC con ID (`login_atleta`, `get_*_atleta`, `save_sessione_atleta`, `get_pt_name`) sono dismesse (migration 015).
 
 ---
 
 ## Convenzioni & pattern noti
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
-- **Reset demo:** doppio click sul logo (lato PT e lato Atleta) → dialog via `createPortal`. Nascosto di proposito per evitare click accidentali. Serve prima delle presentazioni.
-- **Builder:** "Modifica nel Builder" deve **pre-compilare** il builder con la scheda esistente, non ripartire da zero.
+- **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
+- **Ripetizioni:** `reps` è testo (accetta intervalli "8-10").
+- **Sessioni:** si salvano tutti gli esercizi del giorno (anche corpo libero, peso null), una riga per serie, con `esercizio_id` = id `scheda_esercizi`.
 - **PIN atleta:** `inputMode="numeric"` per tastiera numerica automatica su mobile. Reset PIN dal pannello PT.
 - **Mobile:** layout già fixati a 2x2 (dashboard PT, sezione "VAI A"). Testare sempre su viewport stretto.
 
@@ -149,5 +143,5 @@ Per aggiungere un tema: estendere `THEME_MAP`, NON duplicare CSS.
 
 ## Stato attuale
 
-- **Fase 1** — Backend reale (Supabase). Migrazione da localStorage in corso.
-- Per lo stato preciso e i sub-task → `STATUS.md` nel project knowledge.
+- Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
+- Migration fino alla 015 in `supabase/migrations/`.

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ADMIN_PT, EXERCISES } from "../data.js";
+import { EXERCISES } from "../data.js";
+import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";
 
 export default function Dashboard({user,setView}) {
@@ -8,7 +9,7 @@ export default function Dashboard({user,setView}) {
   const [trainerStats,setTrainerStats]=useState(null);
 
   useEffect(()=>{
-    if(user.role!=="admin"||!user.isSupabase) return;
+    if(user.role!=="admin") return;
     supabase.from("profiles").select("id,is_approved,created_at").eq("is_admin",false)
       .then(({data:pts})=>{
         if(!pts) return;
@@ -23,14 +24,14 @@ export default function Dashboard({user,setView}) {
   },[user]);
 
   useEffect(()=>{
-    if(user.role==="admin"||!user.isSupabase) return;
+    if(user.role==="admin") return;
     const uid=user.supabaseId;
     Promise.all([
       supabase.from("atleti").select("id",{count:"exact",head:true}).eq("pt_id",uid),
       supabase.from("schede").select("id",{count:"exact",head:true}).eq("pt_id",uid),
       supabase.from("appuntamenti").select("data,ora_inizio")
         .eq("pt_id",uid)
-        .gte("data",new Date().toISOString().slice(0,10))
+        .gte("data",fmtDate(new Date()))
         .order("data").order("ora_inizio").limit(1),
     ]).then(([atlRes,schedRes,apptRes])=>{
       const nextAppt=apptRes.data?.[0];
@@ -46,16 +47,11 @@ export default function Dashboard({user,setView}) {
   },[user]);
 
   if(user.role==="admin" || user.is_admin) {
-    const adminStats = user.isSupabase && ptStats ? [
+    const adminStats = ptStats ? [
       {icon:"👥",val:String(ptStats.total),    label:"PT registrati"},
       {icon:"✅",val:String(ptStats.approved), label:"PT approvati"},
       {icon:"⏳",val:String(ptStats.pending),  label:"In attesa"},
       {icon:"✨",val:String(ptStats.newMonth), label:"Nuovi questo mese"},
-    ] : !user.isSupabase ? [
-      {icon:"👥",val:String(ADMIN_PT.length),label:"PT attivi"},
-      {icon:"📋",val:"39",                   label:"Schede totali create"},
-      {icon:"🟢",val:"99.8%",                label:"Uptime sistema"},
-      {icon:"✨",val:"2",                    label:"Nuovi PT questo mese"},
     ] : [];
     const adminNav=[
       {id:"admin-stats",    icon:"📊",label:"Statistiche",  desc:"Grafici e metriche"},
@@ -91,16 +87,11 @@ export default function Dashboard({user,setView}) {
     );
   }
 
-  const stats = user.isSupabase ? [
+  const stats = [
     {icon:"👥",val:trainerStats?String(trainerStats.atleti):"…",label:"Atleti attivi"},
     {icon:"📋",val:trainerStats?String(trainerStats.schede):"…",label:"Schede create"},
     {icon:"📅",val:trainerStats?trainerStats.appt:"…",          label:"Prossimo appuntamento"},
     {icon:"💪",val:String(EXERCISES.length),                      label:"Esercizi in libreria"},
-  ] : [
-    {icon:"👥",val:"4",         label:"Atleti attivi"},
-    {icon:"📋",val:"6",         label:"Schede create"},
-    {icon:"📅",val:"Oggi 10:00",label:"Prossimo appuntamento"},
-    {icon:"💪",val:String(EXERCISES.length),label:"Esercizi in libreria"},
   ];
   const quickNav=[
     {id:"library", icon:"📚",label:"Libreria",  desc:`Sfoglia ${EXERCISES.length} esercizi`},
@@ -111,7 +102,7 @@ export default function Dashboard({user,setView}) {
   return (
     <div>
       <div className="page-head">
-        <div className="page-title">Ciao, {user.nome || (user.isSupabase ? user.email.split("@")[0] : user.name.split(" ")[0])} 👋</div>
+        <div className="page-title">Ciao, {user.nome || user.email.split("@")[0]} 👋</div>
         <div className="page-sub" style={{textTransform:"capitalize"}}>{oggi}</div>
       </div>
       <div className="stats-grid">

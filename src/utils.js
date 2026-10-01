@@ -1,21 +1,10 @@
-// ── Utility functions, computed data, storage helpers, PDF generation ─────────
-import jsPDF from "jspdf";
-import {
-  DEMO_ATLETI, LS_ATLETI, LS_KEY, LS_CAL_SHARED,
-  FAKE_EX_IDS, EXERCISES, CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS,
-  THEME_MAP, THEME_DEFAULTS,
-} from "./data.js";
+// ── Utility functions, storage helpers, PDF generation ────────────────────────
+import { EXERCISES, CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 export function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-
-export function addDays(base, n) {
-  const d = new Date(base); d.setDate(d.getDate()+n); return d;
-}
-
-export const today = new Date();
 
 export function fmtDateShort(dateStr) {
   return new Date(dateStr+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
@@ -32,67 +21,15 @@ export function calcEta(dataNascita) {
   return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 }
 
-// ── Computed initial data (depend on fmtDate/addDays) ─────────────────────────
-export const DEMO_EVENTS = [
-  { id:1, clientId:1, clientName:"Luca Ferrari",    date:fmtDate(addDays(today, 0)), time:"10:00", type:"Allenamento" },
-  { id:2, clientId:3, clientName:"Marco Bianchi",   date:fmtDate(addDays(today, 2)), time:"09:00", type:"Valutazione" },
-  { id:3, clientId:2, clientName:"Sofia Martini",   date:fmtDate(addDays(today, 4)), time:"11:30", type:"Allenamento" },
-  { id:4, clientId:4, clientName:"Chiara Esposito", date:fmtDate(addDays(today,-2)), time:"17:00", type:"Recupero"    },
-];
-
-export const FAKE_SESSIONS = {
-  1: [
-    { date:fmtDate(addDays(today,-28)), day:"A", weights:{"1":"30","3":"20","7":"8", "16":"60","12":"0" } },
-    { date:fmtDate(addDays(today,-21)), day:"A", weights:{"1":"32","3":"22","7":"9", "16":"65","12":"0" } },
-    { date:fmtDate(addDays(today,-14)), day:"A", weights:{"1":"34","3":"24","7":"10","16":"70","12":"0" } },
-    { date:fmtDate(addDays(today,-7)),  day:"A", weights:{"1":"36","3":"25","7":"10","16":"72","12":"5" } },
-    { date:fmtDate(addDays(today,-2)),  day:"A", weights:{"1":"38","3":"27","7":"12","16":"75","12":"8" } },
-  ],
-  3: [
-    { date:fmtDate(addDays(today,-27)), day:"A", weights:{"11":"80", "16":"100","13":"50","6":"40"} },
-    { date:fmtDate(addDays(today,-20)), day:"A", weights:{"11":"90", "16":"110","13":"55","6":"45"} },
-    { date:fmtDate(addDays(today,-13)), day:"A", weights:{"11":"100","16":"120","13":"60","6":"50"} },
-    { date:fmtDate(addDays(today,-6)),  day:"A", weights:{"11":"110","16":"130","13":"65","6":"55"} },
-    { date:fmtDate(addDays(today,-1)),  day:"A", weights:{"11":"120","16":"140","13":"70","6":"60"} },
-  ],
-  2: [
-    { date:fmtDate(addDays(today,-20)), day:"A", weights:{"20":"0","7":"5","17":"40"} },
-    { date:fmtDate(addDays(today,-8)),  day:"A", weights:{"20":"0","7":"6","17":"45"} },
-  ],
-  4: [
-    { date:fmtDate(addDays(today,-18)), day:"A", weights:{"19":"20","7":"6","2":"8"} },
-    { date:fmtDate(addDays(today,-5)),  day:"A", weights:{"19":"22","7":"7","2":"9"} },
-  ],
-};
-
-export const ADMIN_EVENTS = [
-  { id:1, clientName:"Call con Andrea Rossi",     date:fmtDate(addDays(today, 0)), time:"10:00", type:"Call"       },
-  { id:2, clientName:"Onboarding Giulia Moretti", date:fmtDate(addDays(today, 3)), time:"14:00", type:"Onboarding" },
-  { id:3, clientName:"Visita Paolo Crespi",        date:fmtDate(addDays(today, 7)), time:"11:00", type:"Visita"     },
-  { id:4, clientName:"Riunione Marta Savi",        date:fmtDate(addDays(today,-1)), time:"16:00", type:"Riunione"   },
-];
-
-export const DEMO_MISURE_0 = [
-  { data:fmtDate(addDays(today,-56)), peso:"82",   vita:"92", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"72" },
-  { data:fmtDate(addDays(today,-42)), peso:"80",   vita:"90", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"70" },
-  { data:fmtDate(addDays(today,-28)), peso:"78.5", vita:"88", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"68" },
-  { data:fmtDate(addDays(today,-14)), peso:"77",   vita:"86", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"67" },
-  { data:fmtDate(addDays(today,-3)),  peso:"75.5", vita:"84", fianchi:"", petto:"", braccio:"", grassoPerc:"", fcRiposo:"65" },
-];
-
 // ── General utilities ─────────────────────────────────────────────────────────
 export function calcSummary(rows) {
   const totalSets = rows.reduce((s,r)=>s+r.sets,0);
   const estMin    = Math.round(rows.reduce((s,r)=>s+r.sets*(r.rest+40),0)/60);
-  const cats      = [...new Set(rows.map(r=>r.cat))];
+  const cats      = [...new Set(rows.map(r=>r.cat).filter(Boolean))];
   return { totalSets, estMin, cats, count:rows.length };
 }
 
 export function getInitials(nome,cognome) { return `${nome?.[0]||""}${cognome?.[0]||""}`.toUpperCase(); }
-
-export function getFakeExercises(atletaId) {
-  return (FAKE_EX_IDS[atletaId]||[]).map(id=>EXERCISES.find(e=>e.id===id)).filter(Boolean);
-}
 
 export function countSessionsPerEx(sessions) {
   const counts = {};
@@ -104,56 +41,25 @@ export function countSessionsPerEx(sessions) {
   return counts;
 }
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
-export function applyTheme(theme) {
-  Object.entries(THEME_MAP).forEach(([key, cssVar])=>{
-    if(theme[key]) document.documentElement.style.setProperty(cssVar, theme[key]);
-  });
+// Trova l'esercizio di catalogo corrispondente a una serie salvata (per i grafici progressi)
+export function catalogIdFromNome(nome) {
+  return EXERCISES.find(e=>e.name===nome)?.id ?? null;
 }
 
-export function resetTheme() {
-  Object.entries(THEME_DEFAULTS).forEach(([cssVar, val])=>{
-    document.documentElement.style.setProperty(cssVar, val);
-  });
+// Numero con virgola o punto ("17,5" → 17.5). Stringa vuota/non valida → null
+export function parseNum(v) {
+  if(v===null||v===undefined) return null;
+  const n = parseFloat(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
 }
 
-// ── Storage helpers ───────────────────────────────────────────────────────────
-export function loadAtleti() {
-  try {
-    const raw = localStorage.getItem(LS_ATLETI);
-    if(raw) return JSON.parse(raw);
-  } catch {}
-  localStorage.setItem(LS_ATLETI, JSON.stringify(DEMO_ATLETI));
-  return DEMO_ATLETI;
-}
-
-export function persistAtleti(arr) {
-  localStorage.setItem(LS_ATLETI, JSON.stringify(arr));
-}
-
-export function loadSessions() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)||"[]"); } catch { return []; }
-}
-
-export function saveSessions(arr) {
-  localStorage.setItem(LS_KEY, JSON.stringify(arr));
-}
-
-export function loadMisure(atletaId) {
-  try { return JSON.parse(localStorage.getItem(`pt_misure_${atletaId}`)||"[]"); } catch { return []; }
-}
-
-export function saveMisure(atletaId, arr) {
-  try { localStorage.setItem(`pt_misure_${atletaId}`, JSON.stringify(arr)); } catch {}
-}
-
-export function loadSharedCal() {
-  try { const r=localStorage.getItem(LS_CAL_SHARED); return r?JSON.parse(r):null; } catch { return null; }
-}
-
-export function saveSharedCal(events) {
-  try { localStorage.setItem(LS_CAL_SHARED, JSON.stringify(events)); } catch {}
-}
+// localStorage sicuro (può fallire in navigazione privata)
+export const store = {
+  get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch { /* ignora */ } },
+  del(k){ try { localStorage.removeItem(k); } catch { /* ignora */ } },
+};
+export const LS_ATLETA_TOKEN = "ptstudio_atleta_token";
 
 // ── PDF generation ────────────────────────────────────────────────────────────
 function drawPH(doc,x,y,w,h) {
@@ -183,6 +89,8 @@ function getImgDims(b64) {
 }
 
 export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
+  // jsPDF caricato solo quando serve (alleggerisce il primo caricamento dell'app)
+  const { default: jsPDF } = await import("jspdf");
   const doc=new jsPDF({unit:"mm",format:"a4"});
   const PW=210,PH=297,M=14,CW=PW-M*2;
   let y=M;

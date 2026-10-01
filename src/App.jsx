@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
-import { applyTheme, resetTheme } from "./utils.js";
 import { supabase } from "./supabase.js";
+import { riprendiSessioneAtleta, logoutAtleta } from "./api/atleta.js";
 import LoginScreen from "./components/LoginScreen.jsx";
 import WelcomeScreen from "./components/WelcomeScreen.jsx";
 import PendingApproval from "./components/PendingApproval.jsx";
@@ -9,9 +9,8 @@ import Dashboard from "./components/Dashboard.jsx";
 import Library from "./components/Library.jsx";
 import Builder from "./components/Builder.jsx";
 import Atleti from "./components/Atleti.jsx";
-import { CalendarView, AdminCalendar } from "./components/Calendar.jsx";
+import { CalendarView } from "./components/Calendar.jsx";
 import AdminStats from "./components/AdminStats.jsx";
-import AdminPT from "./components/AdminPT.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
 import AtletaView from "./components/AtletaView.jsx";
 import AccountSettings from "./components/AccountSettings.jsx";
@@ -456,7 +455,7 @@ const CSS = `
     overflow:hidden; margin-bottom:12px; transition:border-color .2s;
   }
   .ex-atleta-card:hover { border-color:rgba(232,255,71,.2); }
-  .ex-atleta-thumb { width:100%; height:160px; object-fit:cover; object-position:center top; display:block; }
+  .ex-atleta-thumb { width:100%; height:180px; object-fit:contain; object-position:center; background:#fff; display:block; }
   .ex-atleta-thumb-ph { width:100%; height:80px; background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:32px; color:var(--muted); }
   .ex-atleta-body { padding:14px 16px; }
   .ex-atleta-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:8px; }
@@ -603,28 +602,26 @@ export default function App() {
   const [view,setView]=useState("dashboard");
   const [builderPreload,setBuilderPreload]=useState(null);
 
-  // Session restore + auth listener.
-  // INITIAL_SESSION fires after the auth token is fully set — queries here are authenticated.
-  // getSession() inside .then() is NOT reliable for this because the JWT may not yet be
-  // propagated to the query client at the time the callback runs, causing RLS to deny the
-  // profiles query and silently returning null (is_approved defaults to false → "pending").
+  // Ripristino sessione all'apertura:
+  //  · PT/admin → sessione Supabase Auth (evento INITIAL_SESSION, JWT già propagato)
+  //  · atleta   → token salvato sul telefono (atleta_me); così non deve rifare il login
   useEffect(()=>{
     const { data:{ subscription } } = supabase.auth.onAuthStateChange(async (event, session)=>{
       if(event==="INITIAL_SESSION"){
         if(session?.user){
           const { data:profile, error:profileErr } = await supabase
             .from("profiles").select("*").eq("id",session.user.id).maybeSingle();
-          console.log("[profile restore] user.id:", session.user.id, "| profile:", profile, "| error:", profileErr);
           if(profileErr || !profile){ setPhase("login"); return; }
           const acc = buildUserObjApp(session.user, profile);
-          if(acc.theme) applyTheme(acc.theme);
           setUser(acc);
           setPhase(acc.is_approved ? "app" : "pending");
-        } else {
-          setPhase("login");
+          return;
         }
+        const atleta = await riprendiSessioneAtleta();
+        if(atleta){ setUser(atleta); setPhase("app"); return; }
+        setPhase("login");
       } else if(event==="SIGNED_OUT"){
-        resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
+        setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
       }
     });
     return ()=>subscription.unsubscribe();
@@ -633,17 +630,16 @@ export default function App() {
   useEffect(()=>{ if(window.location.pathname==="/admin"&&user?.role==="admin") setView("admin"); },[user]);
 
   const handleLogin=(acc)=>{
-    if(acc.theme) applyTheme(acc.theme);
     setUser(acc);
-    if(acc.isSupabase && !acc.is_approved){ setPhase("pending"); return; }
+    if(acc.role!=="atleta" && !acc.is_approved){ setPhase("pending"); return; }
     setPhase("welcome");
     if(acc.role==="admin") setView("dashboard");
   };
   const handleWelcomeDone=()=>{ setPhase("app"); };
   const handleLogout=async()=>{
-    // Gli atleti Supabase non hanno sessione Auth — signOut non necessario
-    if(user?.isSupabase && user?.role !== "atleta") await supabase.auth.signOut();
-    resetTheme(); setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
+    if(user?.role==="atleta") await logoutAtleta();
+    else await supabase.auth.signOut();
+    setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
   };
 
   // Fallback: is_admin flag è l'autorità, role="admin" è il percorso normale.
@@ -671,9 +667,8 @@ export default function App() {
             {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
             {view==="calendar"&&!isAdmin&&<CalendarView setView={setView} user={user}/>}
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
-            {view==="admin-pt"&&isAdmin&&(user?.isSupabase?<AdminPanel setView={setView}/>:<AdminPT setView={setView}/>)}
-            {view==="admin-calendar"&&isAdmin&&<AdminCalendar setView={setView}/>}
-            {view==="account"&&user?.isSupabase&&<AccountSettings setView={setView} user={user}/>}
+            {view==="admin-pt"&&isAdmin&&<AdminPanel setView={setView}/>}
+            {view==="account"&&<AccountSettings setView={setView} user={user}/>}
           </div>
           <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
         </div>
@@ -695,6 +690,5 @@ function buildUserObjApp(supaUser, profile) {
     piano: profile?.piano ?? "base",
     max_atleti: profile?.max_atleti ?? 5,
     isSupabase: true,
-    theme: { accent:"#e8ff47", accentFg:"#07070d", logo:["PT","Studio"] },
   };
 }

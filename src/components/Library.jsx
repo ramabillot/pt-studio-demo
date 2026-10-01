@@ -31,7 +31,7 @@ function ExCard({ex,onVideo,onDelete}) {
     <div className="ex-card">
       {imgOk&&slug
         ?<img className="ex-thumb" src={`/exercises-custom/${slug}.jpg`} alt={ex.name}
-            style={{objectFit:"cover",objectPosition:"center top"}}
+            style={{objectFit:"contain",objectPosition:"center",background:"#fff"}}
             onError={()=>setImgOk(false)}/>
         :<div className="ex-thumb-ph">💪</div>
       }
@@ -77,7 +77,6 @@ export default function Library({setView,user}) {
   const [saving,setSaving]=useState(false);
 
   const loadCustom=async()=>{
-    if(!user?.isSupabase) return;
     const {data}=await supabase.from("esercizi_custom").select("*").order("created_at",{ascending:false});
     setCustomExercises(data||[]);
   };
@@ -124,14 +123,14 @@ export default function Library({setView,user}) {
         </div>
         <div className="filters">
           {CATEGORIES.map(c=><button key={c} className={`filter-btn${filter===c?" active":""}`} onClick={()=>setFilter(c)}>{c}</button>)}
-          {user?.isSupabase&&(
+          {(
             <button onClick={()=>setShowForm(p=>!p)} style={{background:showForm?"rgba(232,255,71,.12)":"var(--card2)",border:"1px solid var(--border)",color:"var(--accent)",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
               {showForm?"✕ Chiudi":"+ Nuovo"}
             </button>
           )}
         </div>
       </div>
-      {showForm&&user?.isSupabase&&(
+      {showForm&&(
         <form onSubmit={handleCreate} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:"16px 18px",marginBottom:16}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
             <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:11,fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)"}}>
