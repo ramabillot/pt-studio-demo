@@ -1,19 +1,21 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "./supabase.js";
 import { riprendiSessioneAtleta, logoutAtleta } from "./api/atleta.js";
 import LoginScreen from "./components/LoginScreen.jsx";
 import WelcomeScreen from "./components/WelcomeScreen.jsx";
 import PendingApproval from "./components/PendingApproval.jsx";
 import { Sidebar, MobileNav } from "./components/Sidebar.jsx";
-import Dashboard from "./components/Dashboard.jsx";
-import Library from "./components/Library.jsx";
-import Builder from "./components/Builder.jsx";
-import Atleti from "./components/Atleti.jsx";
-import { CalendarView } from "./components/Calendar.jsx";
-import AdminStats from "./components/AdminStats.jsx";
-import AdminPanel from "./components/AdminPanel.jsx";
-import AtletaView from "./components/AtletaView.jsx";
-import AccountSettings from "./components/AccountSettings.jsx";
+
+// Viste caricate solo quando servono: l'atleta non scarica il codice del PT e viceversa
+const Dashboard       = lazy(()=>import("./components/Dashboard.jsx"));
+const Library         = lazy(()=>import("./components/Library.jsx"));
+const Builder         = lazy(()=>import("./components/Builder.jsx"));
+const Atleti          = lazy(()=>import("./components/Atleti.jsx"));
+const CalendarView    = lazy(()=>import("./components/Calendar.jsx").then(m=>({default:m.CalendarView})));
+const AdminStats      = lazy(()=>import("./components/AdminStats.jsx"));
+const AdminPanel      = lazy(()=>import("./components/AdminPanel.jsx"));
+const AtletaView      = lazy(()=>import("./components/AtletaView.jsx"));
+const AccountSettings = lazy(()=>import("./components/AccountSettings.jsx"));
 
 import "./styles/app.css";
 
@@ -76,12 +78,12 @@ export default function App() {
       {phase==="welcome"&&<WelcomeScreen user={user} onDone={handleWelcomeDone}/>}
       {phase==="pending"&&<PendingApproval user={user} onLogout={handleLogout}/>}
       {phase==="app"&&user?.role==="atleta"&&(
-        <AtletaView user={user} onLogout={handleLogout}/>
+        <Suspense fallback={null}><AtletaView user={user} onLogout={handleLogout}/></Suspense>
       )}
       {phase==="app"&&user?.role!=="atleta"&&(
         <div className="app-wrap">
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
-          <div className="content">
+          <div className="content"><Suspense fallback={null}>
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
             {view==="library"&&!isAdmin&&<Library setView={setView} user={user}/>}
             {view==="builder"&&!isAdmin&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload} user={user}/>}
@@ -90,7 +92,7 @@ export default function App() {
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&isAdmin&&<AdminPanel setView={setView}/>}
             {view==="account"&&<AccountSettings setView={setView} user={user}/>}
-          </div>
+          </Suspense></div>
           <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
         </div>
       )}
