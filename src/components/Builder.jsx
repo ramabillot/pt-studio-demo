@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { EXERCISES, CATEGORIES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from "../data.js";
 import { buildPDF, calcSummary, fmtDate, getInitials } from "../utils.js";
 import { supabase } from "../supabase.js";

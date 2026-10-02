@@ -17,5 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Regola nuova e molto severa: segnala i caricamenti dati e la
+      // sincronizzazione props→stato negli useEffect. Funzionano; si
+      // sistemano piano piano quando si tocca il componente.
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])

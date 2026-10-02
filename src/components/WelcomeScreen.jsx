@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function WelcomeScreen({user,onDone}) {
   const [leaving,setLeaving]=useState(false);

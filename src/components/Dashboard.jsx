@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { EXERCISES } from "../data.js";
 import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";

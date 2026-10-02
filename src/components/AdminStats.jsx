@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
 import { MONTHS_IT } from "../data.js";
 import { BackBtn } from "./Sidebar.jsx";
@@ -69,7 +69,6 @@ export default function AdminStats({setView, user}) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
-  useEffect(() => { fetchStats(); }, [user]);
 
 
   const fetchStats = async () => {
@@ -105,6 +104,8 @@ export default function AdminStats({setView, user}) {
     setData({ total, approved, pending, lineData, pianoData });
     setLoading(false);
   };
+
+  useEffect(() => { fetchStats(); }, [user]);
 
   const sysCards = data ? [
     { label:"PT totali",    val:String(data.total),    icon:"👥", sub:"registrati sulla piattaforma" },

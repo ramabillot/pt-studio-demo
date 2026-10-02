@@ -1,4 +1,3 @@
-import React from "react";
 
 const NAV_TRAINER = [
   { id:"dashboard", icon:"⚡", label:"Dashboard" },

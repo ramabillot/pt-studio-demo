@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 
@@ -14,7 +14,6 @@ export default function AdminPanel({ setView }) {
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState("");
 
-  useEffect(() => { fetchPTs(); }, []);
 
   const fetchPTs = async () => {
     setLoading(true); setErr(null);
@@ -27,6 +26,8 @@ export default function AdminPanel({ setView }) {
     else setPts(data || []);
     setLoading(false);
   };
+
+  useEffect(() => { fetchPTs(); }, []);
 
   const save = async (id, changes) => {
     setSaving(s => ({ ...s, [id]: true }));

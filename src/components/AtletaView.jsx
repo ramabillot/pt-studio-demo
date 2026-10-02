@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { EXERCISES, LINE_COLORS, MISURE_FIELDS } from "../data.js";
 import { fmtDate, fmtDateShort, fmtDateLong, buildPDF } from "../utils.js";
 import { ultimaVolta, righeEsercizio, statoIniziale, righeDaStato } from "../lib/allenamento.js";
@@ -6,10 +6,10 @@ import ProgressiEsercizi, { ProgressiMultiChart } from "./ProgressiEsercizi.jsx"
 import EsercizioCard from "./EsercizioCard.jsx";
 import { supabase } from "../supabase.js";
 import * as api from "../api/atleta.js";
-import { typeColor, typeBg } from "./Calendar.jsx";
+import { typeColor, typeBg } from "../lib/appuntamenti.js";
 
 // ── Misure section ────────────────────────────────────────────────────────────
-export function MisureSection({atletaId, readOnly=false, externalMisure=null, ptId=null, supabaseAtletaId=null}) {
+export function MisureSection({readOnly=false, externalMisure=null, ptId=null, supabaseAtletaId=null}) {
   const todayStr = fmtDate(new Date());
   const [misure, setMisure] = useState(()=> externalMisure!==null ? externalMisure : []);
   const [form, setForm] = useState({
@@ -229,7 +229,7 @@ export function MisureSection({atletaId, readOnly=false, externalMisure=null, pt
 }
 
 // ── Progressi screen (atleta view) ────────────────────────────────────────────
-function AtletaProgressi({scheda, user, sessioni, misurazioni}) {
+function AtletaProgressi({scheda, sessioni, misurazioni}) {
   const ordine=scheda?Object.values(scheda.giorni).flat().map(ex=>ex.name):[];
   return (
     <div className="cliente-body">
@@ -239,7 +239,7 @@ function AtletaProgressi({scheda, user, sessioni, misurazioni}) {
       </div>
       <div className="prog-section" style={{marginTop:8}}>
         <div className="prog-section-head">📏 Le mie misurazioni</div>
-        <MisureSection atletaId={user.id} readOnly={true} externalMisure={misurazioni||[]}/>
+        <MisureSection readOnly={true} externalMisure={misurazioni||[]}/>
       </div>
     </div>
   );

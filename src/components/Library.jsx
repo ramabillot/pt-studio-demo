@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { EXERCISES, CATEGORIES, EX_IMAGES, CAT_COLORS, ytSearchUrl } from "../data.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { supabase } from "../supabase.js";

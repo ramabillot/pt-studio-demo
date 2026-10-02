@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { loginAtleta } from "../api/atleta.js";
 import { store } from "../utils.js";

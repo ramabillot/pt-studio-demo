@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
 import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
@@ -477,7 +477,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                   <div style={{marginTop:24}}>
                     <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
                     <MisureSection
-                      atletaId={selected.id}
                       ptId={user?.supabaseId}
                       supabaseAtletaId={selected.id}
                     />

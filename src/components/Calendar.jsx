@@ -4,26 +4,8 @@ import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { AtletaSearchField } from "./Builder.jsx";
+import { typeColor, typeBg } from "../lib/appuntamenti.js";
 
-export function typeColor(type) {
-  const t=(type||"").toLowerCase();
-  if(t==="allenamento"||t==="riunione") return "var(--accent)";
-  if(t==="valutazione"||t==="call")     return "var(--accent2)";
-  if(t==="recupero")                    return "var(--accent3)";
-  if(t==="visita")                      return "#ff9f47";
-  if(t==="onboarding")                  return "#a47ffe";
-  return "var(--accent)";
-}
-
-export function typeBg(type) {
-  const t=(type||"").toLowerCase();
-  if(t==="allenamento"||t==="riunione") return "rgba(232,255,71,.15)";
-  if(t==="valutazione"||t==="call")     return "rgba(71,255,232,.15)";
-  if(t==="recupero")                    return "rgba(255,71,163,.15)";
-  if(t==="visita")                      return "rgba(255,159,71,.15)";
-  if(t==="onboarding")                  return "rgba(164,127,254,.15)";
-  return "rgba(232,255,71,.15)";
-}
 
 function getMonday(d) {
   const date=new Date(d); const day=date.getDay();
@@ -334,7 +316,7 @@ export function CalendarView({setView, user}) {
       .then(({data})=>{ if(data) setAtletiList(data); });
   },[user?.supabaseId]);
 
-  const onAdd = async ({clientName,atletaId,date,time,type})=>{
+  const onAdd = async ({clientName,atletaId,date,time})=>{
     const {data,error}=await supabase.from("appuntamenti").insert({
       pt_id: user.supabaseId,
       atleta_id: atletaId||null,
@@ -353,7 +335,7 @@ export function CalendarView({setView, user}) {
     };
   };
 
-  const onEdit = async (id,{clientName,atletaId,time,type})=>{
+  const onEdit = async (id,{clientName,atletaId,time})=>{
     const {error}=await supabase.from("appuntamenti").update({
       atleta_id: atletaId||null,
       titolo: clientName,
