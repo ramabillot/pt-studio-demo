@@ -1,16 +1,19 @@
-# React + Vite
+# PT Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web app per personal trainer: il PT gestisce atleti, schede, calendario e misurazioni;
+l'atleta registra gli allenamenti dal telefono e vede i suoi progressi.
 
-Currently, two official plugins are available:
+- **Frontend:** React + Vite, deploy su Vercel (push su `main` = pubblicazione)
+- **Backend:** Supabase (Postgres + Auth + RLS). Migration in `supabase/migrations/` (append-only)
+- **Accesso atleta:** username + PIN → token di sessione (`src/api/atleta.js`)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Sviluppo (Windows / PowerShell)
 
-## React Compiler
+```powershell
+npm install
+npm run dev      # http://localhost:5173 — serve .env.local con VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+npm run build
+npm run lint
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Dettagli tecnici e convenzioni: `CLAUDE.md`.
