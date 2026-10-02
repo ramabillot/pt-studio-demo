@@ -466,9 +466,20 @@ const CSS = `
   .ex-cliente-name { font-size:15px; font-weight:600; color:var(--text); margin-bottom:3px; }
   .ex-cliente-meta { font-size:12px; color:var(--muted); }
   .ex-peso-wrap { display:flex; align-items:center; gap:6px; flex-shrink:0; }
-  .ex-peso-input { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; width:70px; padding:8px 10px; border-radius:9px; outline:none; text-align:center; transition:border-color .2s; }
+  .ex-peso-input { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; font-weight:600; width:72px; padding:9px 10px; border-radius:9px; outline:none; text-align:center; transition:border-color .2s; }
   .ex-peso-input:focus { border-color:var(--accent); }
   .ex-peso-unit { font-size:12px; color:var(--muted); font-weight:600; }
+  .ex-atleta-card.saltato { opacity:.45; }
+  .ex-ultima { font-size:13px; color:var(--muted); margin:10px 0 8px; }
+  .ex-ultima strong { color:var(--text); }
+  .ex-input-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .ex-campo { display:flex; flex-direction:row; align-items:center; gap:5px; }
+  .ex-per { color:var(--muted); font-size:14px; }
+  .ex-serie-n { font-size:12px; font-weight:700; color:var(--muted); width:22px; }
+  .ex-serie-list { display:flex; flex-direction:column; gap:2px; }
+  .ex-azioni { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
+  .ex-link { background:none; border:none; padding:4px 0; color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; }
+  .ex-nota { margin-top:10px; width:100%; resize:vertical; font-family:'DM Sans',sans-serif; font-size:14px; }
   .save-session-btn { width:100%; background:var(--accent); border:none; color:var(--accent-fg); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; padding:16px; border-radius:12px; cursor:pointer; transition:opacity .2s; margin-top:8px; }
   .save-session-btn:hover { opacity:.88; }
   .session-saved-banner { background:rgba(71,255,232,.08); border:1px solid rgba(71,255,232,.2); border-radius:10px; padding:12px 16px; font-size:13px; color:var(--accent2); text-align:center; margin-bottom:16px; }

@@ -73,3 +73,7 @@ export const getAppuntamenti = () => rpc("atleta_get_appuntamenti", tok());
 // serie: [{ scheda_esercizio_id, nome_esercizio, serie_numero, reps, peso }]
 export const saveSessione = (giornoId, data, serie, note = null) =>
   rpc("atleta_save_sessione", { ...tok(), p_giorno_id: giornoId, p_data: data, p_serie: serie, p_note: note });
+
+// note: [{ scheda_esercizio_id, nome_esercizio, nota }]
+export const setNote = (sessioneId, note) =>
+  rpc("atleta_set_note", { ...tok(), p_sessione_id: sessioneId, p_note: note });

@@ -3,7 +3,8 @@ import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
 import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
-import { MisureSection, ProgressiSectionPT } from "./AtletaView.jsx";
+import { MisureSection } from "./AtletaView.jsx";
+import AllenamentiAtletaPT from "./AllenamentiAtletaPT.jsx";
 
 const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
 
@@ -482,8 +483,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     />
                   </div>
                   <div style={{marginTop:24}}>
-                    <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Progressi allenamento</div>
-                    <ProgressiSectionPT atleta={selected} user={user}/>
+                    <AllenamentiAtletaPT atletaId={selected.id}/>
                   </div>
                 </>
               )}

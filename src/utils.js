@@ -1,5 +1,5 @@
 // ── Utility functions, storage helpers, PDF generation ────────────────────────
-import { EXERCISES, CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
+import { CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 export function fmtDate(d) {
@@ -30,21 +30,6 @@ export function calcSummary(rows) {
 }
 
 export function getInitials(nome,cognome) { return `${nome?.[0]||""}${cognome?.[0]||""}`.toUpperCase(); }
-
-export function countSessionsPerEx(sessions) {
-  const counts = {};
-  sessions.forEach(s=>{
-    Object.entries(s.weights||{}).forEach(([id,v])=>{
-      if(+v>0) counts[id]=(counts[id]||0)+1;
-    });
-  });
-  return counts;
-}
-
-// Trova l'esercizio di catalogo corrispondente a una serie salvata (per i grafici progressi)
-export function catalogIdFromNome(nome) {
-  return EXERCISES.find(e=>e.name===nome)?.id ?? null;
-}
 
 // Numero con virgola o punto ("17,5" → 17.5). Stringa vuota/non valida → null
 export function parseNum(v) {
