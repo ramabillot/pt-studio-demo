@@ -3,6 +3,7 @@ import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 
 export default function AccountSettings({ setView, user }) {
+  const [curPass, setCurPass]         = useState("");
   const [newPass, setNewPass]         = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [err, setErr]                 = useState("");
@@ -11,14 +12,25 @@ export default function AccountSettings({ setView, user }) {
 
   const submit = async () => {
     setErr(""); setSuccess(false);
+    if (!curPass)                  { setErr("Inserisci la password attuale"); return; }
     if (newPass.length < 6)       { setErr("La password deve essere di almeno 6 caratteri"); return; }
     if (newPass !== confirmPass)   { setErr("Le due password non coincidono"); return; }
+    if (newPass === curPass)       { setErr("La nuova password deve essere diversa da quella attuale"); return; }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPass });
-    setLoading(false);
-    if (error) { setErr(error.message); return; }
-    setSuccess(true);
-    setNewPass(""); setConfirmPass("");
+    try {
+      // Verifica della password attuale: senza, chiunque trovi il PC/telefono
+      // con la sessione aperta potrebbe cambiare la password e prendersi l'account.
+      const { error: authErr } = await supabase.auth.signInWithPassword({ email: user.email, password: curPass });
+      if (authErr) { setErr("La password attuale non è corretta"); return; }
+      const { error } = await supabase.auth.updateUser({ password: newPass });
+      if (error) { setErr(error.message); return; }
+      setSuccess(true);
+      setCurPass(""); setNewPass(""); setConfirmPass("");
+    } catch {
+      setErr("Connessione non riuscita. Riprova.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,6 +48,18 @@ export default function AccountSettings({ setView, user }) {
           </div>
 
           <label className="field-label">
+            Password attuale
+            <input
+              className="field-input"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={curPass}
+              onChange={e=>{ setCurPass(e.target.value); setErr(""); setSuccess(false); }}
+            />
+          </label>
+
+          <label className="field-label" style={{marginTop:12}}>
             Nuova password
             <input
               className="field-input"
@@ -79,7 +103,7 @@ export default function AccountSettings({ setView, user }) {
           </div>
 
           <div style={{marginTop:14,fontSize:12,color:"var(--muted)",lineHeight:1.6,borderTop:"1px solid var(--border)",paddingTop:14}}>
-            Non è necessario conoscere la password attuale. Puoi impostarne una nuova anche se hai effettuato l'accesso tramite link.
+            Per sicurezza serve la password attuale. Se non la ricordi, esci e usa "Password dimenticata?" nella schermata di accesso.
           </div>
         </div>
       </div>
