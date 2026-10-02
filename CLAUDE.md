@@ -22,7 +22,7 @@ Tre ruoli:
 ```
 OS sviluppo:  Windows (PowerShell, NON bash)
 Frontend:     React + Vite
-Styling:      CSS-in-JS inline + CSS variables
+Styling:      src/styles/app.css (token in :root) + stili inline nei componenti
 PDF:          jsPDF
 Hosting:      Vercel
 Backend:      Supabase (Postgres + Auth + Storage)
@@ -50,36 +50,27 @@ npm run lint      # ESLint
 pt-studio-demo/
 ├── CLAUDE.md
 ├── README.md
-├── package.json
-├── vite.config.js
-├── eslint.config.js
-├── index.html
-├── download-images.mjs    ← script one-shot per scaricare le foto esercizi
-├── public/
-│   ├── exercises-custom/  ← 20 foto esercizi .jpg (→ migrare a Supabase Storage, Fase 1)
-│   └── exercises/         ← foto esercizi formato alternativo
+├── index.html             ← font Google (Bebas Neue + DM Sans) caricati qui
+├── public/exercises-custom/ ← 20 foto esercizi .jpg (→ Supabase Storage in futuro)
+├── supabase/migrations/   ← migration numerate, append-only
 └── src/
     ├── main.jsx           ← entry point React
-    ├── App.jsx            ← shell: CSS globale + routing/stato top-level (~640 righe)
-    ├── App.css
-    ├── index.css
-    ├── assets/            ← hero.png, react.svg, vite.svg
-    ├── data.js            ← costanti statiche: EXERCISES (82, id stabili), CATEGORIES, CAT_COLORS, ecc.
-    ├── utils.js           ← helper: date, numeri, localStorage sicuro, PDF (buildPDF, jsPDF caricato on-demand)
+    ├── App.jsx            ← shell: sessione, fasi, routing; viste caricate con React.lazy
+    ├── styles/app.css     ← CSS globale + token colore (:root)
+    ├── index.css          ← CSS template Vite (da rimuovere nel restyling)
+    ├── data.js            ← EXERCISES (82, id stabili), CATEGORIES, CAT_COLORS, ecc.
+    ├── utils.js           ← date, numeri, localStorage sicuro, PDF (jsPDF on-demand)
     ├── api/atleta.js      ← client RPC atleta (token di sessione)
-    └── components/        ← 12 componenti
-        ├── LoginScreen.jsx
-        ├── WelcomeScreen.jsx
-        ├── Sidebar.jsx            ← esporta: Sidebar, MobileNav, BackBtn
-        ├── Dashboard.jsx
-        ├── Library.jsx            ← esporta: VideoModal (usato da AtletaView)
-        ├── Builder.jsx            ← esporta: AtletaSearchField
-        ├── Atleti.jsx
-        ├── Calendar.jsx           ← esporta: typeColor, typeBg, CalendarView
-        ├── AtletaView.jsx         ← esporta: MisureSection, ProgressiSectionPT
-        ├── AdminStats.jsx
-        ├── AdminPanel.jsx
-        └── AccountSettings.jsx
+    ├── lib/allenamento.js ← logica registrazione allenamento (ultima volta, serie, riepiloghi)
+    ├── lib/appuntamenti.js← colori per tipo appuntamento
+    └── components/
+        ├── LoginScreen, WelcomeScreen, PendingApproval, Sidebar (Sidebar, MobileNav, BackBtn)
+        ├── Dashboard, Library (VideoModal), Builder (AtletaSearchField), Atleti, Calendar (CalendarView)
+        ├── AdminStats, AdminPanel, AccountSettings
+        ├── AtletaView         ← vista atleta (scheda, registrazione, calendario)
+        ├── atleta/            ← AtletaProgressi, MonthCalendar
+        ├── MisureSection      ← misurazioni (atleta e PT)
+        ├── EsercizioCard, ProgressiEsercizi (ProgressiMultiChart), AllenamentiAtletaPT
 ```
 
 ---
@@ -144,4 +135,5 @@ pt-studio-demo/
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 015 in `supabase/migrations/`.
+- Migration fino alla 016 in `supabase/migrations/`.
+- Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).
