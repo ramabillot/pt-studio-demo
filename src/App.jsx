@@ -54,6 +54,10 @@ const CSS = `
   .login-logo span { color:var(--accent); }
   .login-sub { color:var(--muted); font-size:14px; margin-bottom:36px; }
   .login-field { display:flex; flex-direction:column; gap:7px; margin-bottom:16px; }
+  .login-role { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin:-12px 0 24px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+  .login-role-btn { background:none; border:none; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; padding:10px 8px; border-radius:9px; cursor:pointer; transition:background .15s,color .15s; }
+  .login-role-btn.active { background:var(--accent); color:var(--accent-fg); }
+  .login-pin { letter-spacing:.5em; text-align:center; font-size:20px; }
   .login-field label { font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); }
   .login-input {
     background:var(--surface); border:1px solid var(--border); color:var(--text);

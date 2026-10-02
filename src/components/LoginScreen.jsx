@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { loginAtleta } from "../api/atleta.js";
+import { store } from "../utils.js";
+
+const LS_RUOLO = "ptstudio_login_ruolo";
 
 function buildUserObj(supaUser, profile) {
   return {
@@ -23,6 +26,9 @@ function buildUserObj(supaUser, profile) {
 export default function LoginScreen({onLogin}) {
   // mode: "login" | "register" | "registered"
   const [mode, setMode] = useState("login");
+  // Chi sta entrando: "atleta" (username + PIN) o "pt" (email + password). Ricordato sul dispositivo.
+  const [ruolo, setRuolo] = useState(()=> store.get(LS_RUOLO)==="pt" ? "pt" : "atleta");
+  const scegliRuolo = (r) => { setRuolo(r); store.set(LS_RUOLO, r); setErr(""); setPass(""); };
   // Login fields
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
@@ -86,21 +92,31 @@ export default function LoginScreen({onLogin}) {
   const submit = async () => {
     setErr("");
     const u = user.trim();
-    if (!u || !pass) { setErr("Inserisci utente e password o PIN"); return; }
+    if (ruolo === "atleta") {
+      if (!u || !pass) { setErr("Inserisci username e PIN"); return; }
+      setLoading(true);
+      try {
+        const r = await loginAtleta(u, pass);
+        if (r.ok) { onLogin(r.atleta); return; }
+        if (r.errore === "bloccato") {
+          const ora = r.fino ? new Date(r.fino).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "";
+          setErr(`Troppi tentativi sbagliati. Riprova${ora ? ` dopo le ${ora}` : " tra qualche minuto"}.`);
+        } else {
+          setErr("Username o PIN non corretti");
+        }
+      } catch {
+        setErr("Connessione non riuscita. Controlla la rete e riprova.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // Personal Trainer / admin: email + password
+    if (!u || !pass) { setErr("Inserisci email e password"); return; }
     setLoading(true);
     try {
-      // 1) Atleta: username + PIN (gli username possono contenere "@")
-      const r = await loginAtleta(u, pass);
-      if (r.ok) { onLogin(r.atleta); return; }
-      if (r.errore === "bloccato") {
-        const ora = r.fino ? new Date(r.fino).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "";
-        setErr(`Troppi tentativi sbagliati. Riprova${ora ? ` dopo le ${ora}` : " tra qualche minuto"}.`);
-        return;
-      }
-      // 2) PT / admin: email + password
-      if (!u.includes("@")) { setErr("Username o PIN non corretti"); return; }
       const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: pass });
-      if (error) { setErr("Credenziali non corrette"); return; }
+      if (error) { setErr("Email o password non corretti"); return; }
       const { data: profile, error: profileErr } = await supabase
         .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
       if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); return; }
@@ -145,27 +161,56 @@ export default function LoginScreen({onLogin}) {
 
           {/* ── LOGIN ── */}
           {mode==="login"&&<>
-            <div className="login-sub">Piattaforma per Personal Trainer</div>
-            <div className="login-field">
-              <label>Utente o email</label>
-              <input className="login-input" type="text" placeholder="nome utente o email" value={user}
-                onChange={e=>{setUser(e.target.value);setErr("");}}
-                onKeyDown={e=>e.key==="Enter"&&submit()}/>
+            <div className="login-sub">{ruolo==="atleta"?"Accedi per vedere la tua scheda":"Area Personal Trainer"}</div>
+            <div className="login-role" role="tablist" aria-label="Tipo di accesso">
+              <button type="button" role="tab" aria-selected={ruolo==="atleta"} className={`login-role-btn${ruolo==="atleta"?" active":""}`} onClick={()=>scegliRuolo("atleta")}>Atleta</button>
+              <button type="button" role="tab" aria-selected={ruolo==="pt"} className={`login-role-btn${ruolo==="pt"?" active":""}`} onClick={()=>scegliRuolo("pt")}>Personal Trainer</button>
             </div>
-            <div className="login-field">
-              <label>Password o PIN</label>
-              <input className="login-input" type="password" placeholder="••••••••" value={pass}
-                onChange={e=>{setPass(e.target.value);setErr("");}}
-                onKeyDown={e=>e.key==="Enter"&&submit()}/>
-            </div>
+            {ruolo==="atleta"?(<>
+              <div className="login-field">
+                <label htmlFor="login-user">Username</label>
+                <input id="login-user" className="login-input" type="text" placeholder="il tuo username" value={user}
+                  autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                  onChange={e=>{setUser(e.target.value);setErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&submit()}/>
+              </div>
+              <div className="login-field">
+                <label htmlFor="login-pin">PIN</label>
+                <input id="login-pin" className="login-input login-pin" type="password" inputMode="numeric" pattern="[0-9]*"
+                  maxLength={4} placeholder="••••" value={pass} autoComplete="current-password"
+                  onChange={e=>{setPass(e.target.value.replace(/\D/g,""));setErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&submit()}/>
+              </div>
+            </>):(<>
+              <div className="login-field">
+                <label htmlFor="login-email">Email</label>
+                <input id="login-email" className="login-input" type="email" placeholder="nome@email.com" value={user}
+                  autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                  onChange={e=>{setUser(e.target.value);setErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&submit()}/>
+              </div>
+              <div className="login-field">
+                <label htmlFor="login-pass">Password</label>
+                <input id="login-pass" className="login-input" type="password" placeholder="••••••••" value={pass}
+                  autoComplete="current-password"
+                  onChange={e=>{setPass(e.target.value);setErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&submit()}/>
+              </div>
+            </>)}
             {err&&<div className="login-err">{err}</div>}
             <button className="login-btn" onClick={submit} disabled={loading}>
               {loading?"Accesso in corso…":"Accedi"}
             </button>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:14,flexWrap:"wrap",gap:8}}>
-              {linkBtn(()=>{setMode("register");reset();},"Registrati →","var(--accent)")}
-              {linkBtn(()=>setShowForgotModal(true),"Password dimenticata?")}
-            </div>
+            {ruolo==="pt"?(
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:14,flexWrap:"wrap",gap:8}}>
+                {linkBtn(()=>{setMode("register");reset();},"Registrati →","var(--accent)")}
+                {linkBtn(()=>setShowForgotModal(true),"Password dimenticata?")}
+              </div>
+            ):(
+              <div style={{textAlign:"center",marginTop:14,fontSize:13,color:"var(--muted)"}}>
+                Username e PIN te li dà il tuo Personal Trainer.
+              </div>
+            )}
 
           </>}
 
