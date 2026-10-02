@@ -3,7 +3,7 @@ import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
 import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
-import { MisureSection } from "./AtletaView.jsx";
+import { MisureSection } from "./MisureSection.jsx";
 import AllenamentiAtletaPT from "./AllenamentiAtletaPT.jsx";
 
 const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
