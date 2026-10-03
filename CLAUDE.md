@@ -103,6 +103,16 @@ pt-studio-demo/
 
 ---
 
+## Segnalazioni beta (bug / idee)
+
+- Bottone flottante 🐞 (`components/SegnalaBug.jsx`) visibile a PT, admin e atleta quando sono dentro l'app.
+- Salva con la RPC `segnala(tipo, testo, contesto, foto_b64, token)` (migration 017) nella tabella `segnalazioni`: PT = `auth.uid()`, atleta = token.
+- Contesto automatico: ruolo, vista, elementi `.active` a schermo, URL, versione (`VITE_APP_VERSION` = commit Vercel), schermo, user agent, ultimi 5 errori JS (`lib/erroriRecenti.js`).
+- Foto opzionale: ridotta a 1280px jpeg nel browser e salvata come `bytea` (niente bucket Storage aperto agli anonimi).
+- Tabella senza policy RLS: si legge solo da Claude (connettore Supabase) o dal SQL Editor. Campi di gestione: `stato` (aperta | in_corso | risolta | scartata), `risposta`, `aggiornata_at`.
+
+---
+
 ## Convenzioni & pattern noti
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
@@ -135,5 +145,5 @@ pt-studio-demo/
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 016 in `supabase/migrations/`.
+- Migration fino alla 017 in `supabase/migrations/`.
 - Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).

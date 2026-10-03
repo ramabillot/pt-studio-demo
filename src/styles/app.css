@@ -591,3 +591,25 @@ input[type="number"] { width:90px; text-align:center; }
 @media(max-width:600px) {
   .welcome-name { font-size:32px; line-height:1.2; }
 }
+
+/* ── SEGNALA BUG (beta) ── */
+.segnala-fab { position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:300; width:44px; height:44px; border-radius:50%; background:var(--card2); border:1px solid var(--border); font-size:20px; line-height:1; cursor:pointer; box-shadow:var(--shadow); opacity:.75; transition:opacity .15s, border-color .15s; display:flex; align-items:center; justify-content:center; }
+.segnala-fab:hover { opacity:1; border-color:var(--accent); }
+.segnala-modal { max-width:460px; }
+.segnala-body { display:flex; flex-direction:column; gap:14px; }
+.segnala-tipo { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+.segnala-testo { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:16px; padding:12px 14px; border-radius:10px; outline:none; resize:vertical; width:100%; min-height:110px; }
+.segnala-testo:focus { border-color:var(--accent); }
+.segnala-add-foto { width:100%; }
+.segnala-add-foto:hover { border-color:var(--accent); color:var(--accent); }
+.segnala-foto { display:flex; align-items:center; gap:12px; }
+.segnala-foto img { width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--border); }
+.segnala-nota { font-size:12px; color:var(--muted); }
+.segnala-ok { padding:40px 24px; text-align:center; font-size:16px; font-weight:600; color:var(--accent); }
+.segnala-body .login-btn { margin-top:0; }
+.segnala-body .login-btn:disabled { opacity:.5; cursor:default; }
+@media(max-width:800px) {
+  .segnala-fab.sopra-nav { bottom:calc(100px + env(safe-area-inset-bottom, 0px)); }
+  .segnala-overlay { align-items:flex-end; padding:0; }
+  .segnala-modal { border-radius:18px 18px 0 0; max-width:none; padding-bottom:env(safe-area-inset-bottom, 0px); }
+}
