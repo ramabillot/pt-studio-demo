@@ -29,4 +29,5 @@ dist-ssr
 .env.*.local
 
 # Claude Code internal
-.claude/
+.claude/tools/vr/base/
+tools/vr/after*/
