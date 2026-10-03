@@ -6,6 +6,7 @@ import WelcomeScreen from "./components/WelcomeScreen.jsx";
 import PendingApproval from "./components/PendingApproval.jsx";
 import { Sidebar, MobileNav } from "./components/Sidebar.jsx";
 import SegnalaBug from "./components/SegnalaBug.jsx";
+import AggiornamentoApp from "./components/AggiornamentoApp.jsx";
 
 // Viste caricate solo quando servono: l'atleta non scarica il codice del PT e viceversa
 const Dashboard       = lazy(()=>import("./components/Dashboard.jsx"));
@@ -98,6 +99,7 @@ export default function App() {
         </div>
       )}
       {phase==="app"&&<SegnalaBug user={user} view={user?.role==="atleta"?null:view}/>}
+      <AggiornamentoApp/>
     </>
   );
 }

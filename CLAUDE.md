@@ -103,6 +103,15 @@ pt-studio-demo/
 
 ---
 
+## App installabile + aggiornamento automatico
+
+- `public/manifest.webmanifest` (nome "PT Studio", standalone, colore `#07070d`) + meta iOS in `index.html` (`apple-touch-icon`, `apple-mobile-web-app-*`).
+- Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO" piccolo sotto, largo esattamente come "PT". Sorgente vettoriale `public/icons/logo.svg`; icone PNG in `public/icons/` (192, 512, maskable 512), `public/apple-touch-icon.png` (180), favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Generate dai glifi del font (testo convertito in tracciati).
+- Versione = commit Vercel (`VITE_APP_VERSION`); il plugin in `vite.config.js` scrive `dist/version.json`. `components/AggiornamentoApp.jsx` lo confronta: all'apertura o al ritorno dopo >30 min ricarica da sola (una volta per versione), al ritorno dopo poco mostra il banner "Aggiorna" (non perdere i pesi in inserimento).
+- Nessun service worker (niente offline) per ora.
+
+---
+
 ## Segnalazioni beta (bug / idee)
 
 - Bottone flottante 🐞 (`components/SegnalaBug.jsx`) visibile a PT, admin e atleta quando sono dentro l'app.
