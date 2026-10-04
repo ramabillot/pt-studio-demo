@@ -225,6 +225,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     `Ciao ${a.nome||""}! Ecco il tuo accesso a PT Studio, dove trovi la tua scheda e registri gli allenamenti.`.replace("Ciao !","Ciao!"),
     ``,
     `👉 ${linkAtleta(a.username)}`,
+    `👤 Username: ${a.username}`,
     `🔑 PIN: ${a.pin}`,
     ``,
     `Apri il link, inserisci il PIN e installa l'app sul telefono (su iPhone apri il link con Safari).`,

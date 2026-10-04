@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { loginAtleta } from "../api/atleta.js";
+import { store, LS_ATLETA_USERNAME } from "../utils.js";
 
 function buildUserObj(supaUser, profile) {
   return {
@@ -25,7 +26,8 @@ export default function LoginScreen({ruolo, onLogin}) {
   // mode: "login" | "register" | "registered"
   const [mode, setMode] = useState("login");
   // Login fields — l'atleta arriva dal link del PT (/atleta/?u=username): username già compilato
-  const [user, setUser] = useState(()=> ruolo==="atleta" ? (new URLSearchParams(window.location.search).get("u") || "") : "");
+  // (o dall'icona sulla Home, che apre /atleta/?u=…); altrimenti l'ultimo username usato qui
+  const [user, setUser] = useState(()=> ruolo==="atleta" ? (new URLSearchParams(window.location.search).get("u") || store.get(LS_ATLETA_USERNAME) || "") : "");
   const [pass, setPass] = useState("");
   // Register fields
   const [rNome, setRNome] = useState("");

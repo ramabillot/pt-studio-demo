@@ -2,7 +2,7 @@
 // L'atleta non è un utente Supabase Auth: al login riceve un token casuale che
 // resta salvato sul telefono. Tutte le funzioni atleta lo usano al posto dell'ID.
 import { supabase } from "../supabase.js";
-import { store, LS_ATLETA_TOKEN } from "../utils.js";
+import { store, LS_ATLETA_TOKEN, LS_ATLETA_USERNAME } from "../utils.js";
 
 export class SessioneScaduta extends Error {
   constructor(){ super("Sessione scaduta"); this.name = "SessioneScaduta"; }
@@ -41,10 +41,28 @@ export function buildAtletaObj(a) {
 export async function loginAtleta(username, pin) {
   const r = await rpc("atleta_login", { p_username: username, p_pin: pin });
   if (r?.ok && r.token) {
-    store.set(LS_ATLETA_TOKEN, r.token);
+    salvaAccesso(r);
     return { ok: true, atleta: buildAtletaObj(r.atleta) };
   }
   return { ok: false, errore: r?.errore || "credenziali", fino: r?.fino };
+}
+
+function salvaAccesso(r) {
+  store.set(LS_ATLETA_TOKEN, r.token);
+  if (r.atleta?.username) store.set(LS_ATLETA_USERNAME, r.atleta.username);
+}
+
+// iPhone: l'icona sulla Home non vede il login fatto in Safari → codice monouso (7 giorni)
+// che va nell'indirizzo di avvio dell'icona (migration 018)
+export const creaCodiceInstalla = () => rpc("atleta_crea_codice_installa", tok());
+
+// Primo avvio dall'icona: codice → token. null se il codice non vale più.
+export async function loginConCodice(codice) {
+  try {
+    const r = await rpc("atleta_login_codice", { p_codice: codice });
+    if (r?.ok && r.token) { salvaAccesso(r); return buildAtletaObj(r.atleta); }
+  } catch { /* rete o codice non valido: si passa al login normale */ }
+  return null;
 }
 
 // Ripristino all'apertura dell'app: null se non c'è un token valido
@@ -52,6 +70,7 @@ export async function riprendiSessioneAtleta() {
   if (!getToken()) return null;
   try {
     const a = await rpc("atleta_me", tok());
+    if (a?.username) store.set(LS_ATLETA_USERNAME, a.username);
     return a ? buildAtletaObj(a) : null;
   } catch (e) {
     if (e instanceof SessioneScaduta) store.del(LS_ATLETA_TOKEN);

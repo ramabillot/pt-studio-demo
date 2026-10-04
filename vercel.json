@@ -98,5 +98,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/atleta/manifest.webmanifest",
+      "destination": "/api/manifest-atleta"
+    }
   ]
 }

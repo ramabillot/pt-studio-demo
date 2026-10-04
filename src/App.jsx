@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "./supabase.js";
-import { riprendiSessioneAtleta, logoutAtleta } from "./api/atleta.js";
+import { riprendiSessioneAtleta, logoutAtleta, loginConCodice, creaCodiceInstalla } from "./api/atleta.js";
+import { isIOSSafari, isStandalone } from "./lib/installa.js";
 import LoginScreen from "./components/LoginScreen.jsx";
 import WelcomeScreen from "./components/WelcomeScreen.jsx";
 import PendingApproval from "./components/PendingApproval.jsx";
@@ -36,24 +37,31 @@ export default function App() {
   useEffect(()=>{
     if(APP==="atleta"){
       let vivo=true;
-      riprendiSessioneAtleta().then(atleta=>{
+      (async()=>{
+        const codice = new URLSearchParams(window.location.search).get("c");
+        let atleta = await riprendiSessioneAtleta();
+        // Primo avvio dall'icona su iPhone: niente token (dati separati da Safari) → codice monouso
+        if(!atleta && codice) atleta = await loginConCodice(codice);
         if(!vivo) return;
+        if(atleta && !codice && await preparaIconaIPhone(atleta)) return;   // la pagina si ricarica
         if(atleta){ setUser(atleta); setPhase("app"); } else setPhase("login");
-      });
+      })();
       return ()=>{ vivo=false; };
     }
-    const { data:{ subscription } } = supabase.auth.onAuthStateChange(async (event, session)=>{
+    // Niente chiamate a Supabase DENTRO il callback: supabase-js le esegue mentre tiene il
+    // blocco della sessione → login successivi possono restare appesi. Si rimandano fuori.
+    const caricaProfilo = async (session)=>{
+      const { data:profile, error:profileErr } = await supabase
+        .from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+      if(profileErr || !profile){ setPhase("login"); return; }
+      const acc = buildUserObjApp(session.user, profile);
+      setUser(acc);
+      setPhase(acc.is_approved ? "app" : "pending");
+    };
+    const { data:{ subscription } } = supabase.auth.onAuthStateChange((event, session)=>{
       if(event==="INITIAL_SESSION"){
-        if(session?.user){
-          const { data:profile, error:profileErr } = await supabase
-            .from("profiles").select("*").eq("id",session.user.id).maybeSingle();
-          if(profileErr || !profile){ setPhase("login"); return; }
-          const acc = buildUserObjApp(session.user, profile);
-          setUser(acc);
-          setPhase(acc.is_approved ? "app" : "pending");
-          return;
-        }
-        setPhase("login");
+        if(session?.user) setTimeout(()=>caricaProfilo(session),0);
+        else setPhase("login");
       } else if(event==="SIGNED_OUT"){
         setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
       }
@@ -61,7 +69,8 @@ export default function App() {
     return ()=>subscription.unsubscribe();
   },[]);
 
-  const handleLogin=(acc)=>{
+  const handleLogin=async(acc)=>{
+    if(acc.role==="atleta" && await preparaIconaIPhone(acc)) return;   // la pagina si ricarica
     setUser(acc);
     if(acc.role!=="atleta" && !acc.is_approved){ setPhase("pending"); return; }
     setPhase("welcome");
@@ -110,6 +119,20 @@ export default function App() {
       <AggiornamentoApp/>
     </>
   );
+}
+
+// iPhone, Safari, app non ancora installata: l'icona sulla Home non vedrà il login fatto qui.
+// Si crea un codice monouso e si ricarica la pagina con ?u=…&c=… : l'inline script di
+// atleta/index.html lo mette nel manifest → start_url dell'icona → primo avvio già dentro.
+// true = ricarica avviata.
+async function preparaIconaIPhone(atleta){
+  if(!isIOSSafari() || isStandalone()) return false;
+  try {
+    const codice = await creaCodiceInstalla();
+    if(!codice) return false;
+    window.location.replace(`/atleta/?u=${encodeURIComponent(atleta.username)}&c=${codice}`);
+    return true;
+  } catch { return false; }
 }
 
 function buildUserObjApp(supaUser, profile) {

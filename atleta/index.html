@@ -9,7 +9,21 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <!-- App installabile: manifest proprio (id e scope separati dall'altra app) -->
-    <link rel="manifest" href="/atleta/manifest.webmanifest" />
+    <!-- Manifest con indirizzo di avvio personalizzato (?u=username, su iPhone anche ?c=codice):
+         l'icona sulla Home apre l'app con lo username già scritto o, con il codice, già dentro.
+         Scritto qui, prima che il browser legga la pagina, perché alcuni browser leggono il manifest subito. -->
+    <script>
+      (function () {
+        var p = new URLSearchParams(), q = new URLSearchParams(location.search), u = q.get("u"), c = q.get("c");
+        try { u = u || localStorage.getItem("ptstudio_atleta_username"); } catch (e) {}
+        if (u) p.set("u", u);
+        if (c) p.set("c", c);
+        var l = document.createElement("link");
+        l.rel = "manifest";
+        l.href = "/atleta/manifest.webmanifest" + (p.toString() ? "?" + p : "");
+        document.head.appendChild(l);
+      })();
+    </script>
     <!-- iPhone: icona e apertura a schermo intero dalla schermata Home -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

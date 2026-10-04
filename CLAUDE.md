@@ -111,13 +111,14 @@ pt-studio-demo/
 ## Tre indirizzi, due app installabili (2026-10-04)
 
 - **`/`** = Home (`index.html` → `src/home.jsx` → `components/Home.jsx`): cos'è + "Accedi come Atleta / PT". **Nessun manifest** → non installabile. Non carica Supabase.
-- **`/atleta/`** = app atleta "PT Studio": `public/atleta/manifest.webmanifest` (`id`/`start_url`/`scope` = `/atleta/`), icone `public/icons/`, `apple-touch-icon.png`.
+- **`/atleta/`** = app atleta "PT Studio": manifest **dinamico** dalla funzione Vercel `api/manifest-atleta.js` (rewrite di `/atleta/manifest.webmanifest`); `id`/`scope` = `/atleta/`, `start_url` = `/atleta/?u=<username>[&c=<codice>]`. Il `<link rel=manifest>` lo scrive l'inline script in `atleta/index.html` (da `?u`/`?c` dell'URL o dall'ultimo username salvato `ptstudio_atleta_username`). Icone `public/icons/`, `apple-touch-icon.png`.
+- **iPhone senza secondo login** (migration 018): su iPhone l'icona sulla Home non condivide i dati con Safari. In Safari (non installata), dopo il login o all'apertura, `preparaIconaIPhone` in `App.jsx` crea un codice monouso (`atleta_crea_codice_installa`, 7 giorni) e ricarica su `/atleta/?u=…&c=…` → finisce nello `start_url` dell'icona → al primo avvio senza token `atleta_login_codice` lo scambia con un token. Codice già usato/scaduto → login con username precompilato.
 - **`/pt/`** = app PT/admin "PT Studio Coach" (short name "PT Coach"): `public/pt/manifest.webmanifest` (`/pt/`), icone `public/icons/coach/` (logo con "COACH" al posto di "STUDIO", sorgente `public/icons/coach/logo.svg`).
 - Vite multi-pagina (`build.rollupOptions.input` in `vite.config.js`); stesso `main.jsx`/`App.jsx` per le due app, `APP` (da `lib/app.js`) decide quale.
 - **Sessioni indipendenti** (Android: stesso storage per le due app): app atleta = solo token `ptstudio_atleta_token`, client Supabase con `persistSession:false` (non legge la sessione del PT); app PT = solo Supabase Auth. Il logout esce solo dall'app aperta.
 - Login senza selettore: il ruolo viene dall'indirizzo. `/atleta/?u=<username>` precompila lo username (link del messaggio WhatsApp generato in `Atleti.jsx`, con PIN).
 - `InvitoInstalla`: dopo il login, solo su telefono e se non già installata → Android bottone "Installa" (`beforeinstallprompt`), iPhone istruzioni Safari. Chiuso una volta, non ricompare (`ptstudio_invito_installa_<app>`).
-- `vercel.json`: redirect `/atleta`→`/atleta/`, `/pt`→`/pt/`, `/admin`→`/pt/`; no-cache su HTML, manifest e `version.json`.
+- `vercel.json`: rewrite `/atleta/manifest.webmanifest` → `/api/manifest-atleta`; redirect `/atleta`→`/atleta/`, `/pt`→`/pt/`, `/admin`→`/pt/`; no-cache su HTML, manifest e `version.json`.
 - CSS: `home.jsx` importa `index.css` prima di `app.css` come le app, così il CSS condiviso resta in un solo file nello stesso ordine (altrimenti il template Vite sovrascrive i token).
 - Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO"/"COACH" piccolo sotto, largo esattamente come "PT". Favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Icone generate dai glifi del font (testo convertito in tracciati).
 - Versione = commit Vercel (`VITE_APP_VERSION`); il plugin in `vite.config.js` scrive `dist/version.json`. `components/AggiornamentoApp.jsx` lo confronta: all'apertura o al ritorno dopo >30 min ricarica da sola (una volta per versione), al ritorno dopo poco mostra il banner "Aggiorna" (non perdere i pesi in inserimento).
@@ -143,6 +144,8 @@ pt-studio-demo/
 ---
 
 ## Convenzioni & pattern noti
+
+- **supabase-js ≥ 2.117** (senza lock di sessione): con la 2.106 un login dopo il logout restava appeso. In `onAuthStateChange` mai `await` di chiamate Supabase: rimandarle con `setTimeout`.
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
 - **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
@@ -174,5 +177,5 @@ pt-studio-demo/
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 017 in `supabase/migrations/`.
+- Migration fino alla 018 in `supabase/migrations/`.
 - Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).

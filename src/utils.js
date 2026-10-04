@@ -45,6 +45,7 @@ export const store = {
   del(k){ try { localStorage.removeItem(k); } catch { /* ignora */ } },
 };
 export const LS_ATLETA_TOKEN = "ptstudio_atleta_token";
+export const LS_ATLETA_USERNAME = "ptstudio_atleta_username";   // per precompilare login e icona
 
 // ── PDF generation ────────────────────────────────────────────────────────────
 function drawPH(doc,x,y,w,h) {
