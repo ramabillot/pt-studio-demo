@@ -164,6 +164,17 @@ pt-studio-demo/
 
 ---
 
+## ⚠️ MUST: mai far reinstallare l'app
+
+Nessuna modifica deve richiedere agli utenti di cancellare e reinstallare l'app (icona sulla Home). Tutto deve arrivare con l'aggiornamento automatico (`AggiornamentoApp`). In pratica **non cambiare mai**:
+- gli indirizzi `/atleta/` e `/pt/` (e `/` come Home);
+- `id` e `scope` dei manifest (`api/manifest-atleta.js`, `public/pt/manifest.webmanifest`);
+- le chiavi salvate sul telefono (`ptstudio_atleta_token`, `ptstudio_atleta_username`, sessione Supabase): se servono nuove chiavi, leggere anche le vecchie e migrare.
+
+Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'alternativa e, solo se è davvero l'unica strada, spiegarlo a Ramiro prima di farla. (Decisione 2026-10-04 in DECISIONS.md; durante la beta è stata fatta un'eccezione per la separazione /atleta/ /pt/.)
+
+---
+
 ## Regole di lavoro per Claude Code
 
 1. **Output:** file completo pronto da sostituire, non patch parziali (se non richiesto diversamente).
