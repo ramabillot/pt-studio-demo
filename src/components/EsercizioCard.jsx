@@ -1,9 +1,11 @@
 // ── Card esercizio lato atleta: peso/ripetizioni precompilati, serie diverse, nota, salta ──
 import { useState } from "react";
-import { EXERCISES, CAT_COLORS, EX_IMAGES, ytSearchUrl } from "../data.js";
+import { EXERCISES, CAT_COLORS, EX_IMAGES } from "../data.js";
 import { VideoModal } from "./Library.jsx";
 import { riassuntoSerie } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
+import { useTranslation } from "react-i18next";
+import { nomeEsercizio, valore, ytCerca } from "../i18n/index.js";
 
 const soloNum = v => v.replace(/[^0-9.,]/g, "");
 const soloInt = v => v.replace(/\D/g, "").slice(0, 3);
@@ -20,6 +22,8 @@ function Campo({value, onChange, unita, decimale=true, label}) {
 }
 
 export default function EsercizioCard({ex, stato, onChange, ultima}) {
+  const { t } = useTranslation();
+  const nome = nomeEsercizio(ex.name, ex.id);   // nel DB resta il nome italiano
   const [imgOk, setImgOk] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
   const [notaAperta, setNotaAperta] = useState(!!stato.nota);
@@ -40,46 +44,46 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
     <>
       <div className={`ex-atleta-card${stato.salta?" saltato":""}`}>
         {!stato.salta&&(imgOk && slug
-          ? <img className="ex-atleta-thumb" src={`/exercises-custom/${slug}.jpg`} alt={ex.name} onError={()=>setImgOk(false)}/>
+          ? <img className="ex-atleta-thumb" src={`/exercises-custom/${slug}.jpg`} alt={nome} onError={()=>setImgOk(false)}/>
           : <div className="ex-atleta-thumb-ph">💪</div>)}
         <div className="ex-atleta-body">
           <div className="ex-atleta-top">
-            {ex.cat?<span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{ex.cat}</span>:<span/>}
-            <button className="ex-link" onClick={()=>set({salta:!stato.salta})}>{stato.salta?"↩ Lo faccio":"Salta"}</button>
+            {ex.cat?<span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{valore("categoria",ex.cat)}</span>:<span/>}
+            <button className="ex-link" onClick={()=>set({salta:!stato.salta})}>{stato.salta?`↩ ${t("card.loFaccio")}`:t("card.salta")}</button>
           </div>
-          <div className="ex-cliente-name">{ex.name}</div>
+          <div className="ex-cliente-name">{nome}</div>
           <div className="ex-cliente-meta">
-            {ex.sets} serie × {secTempo?`${secTempo}s`:`${ex.reps} rip`} ·{" "}
+            {t("card.serie",{count:ex.sets})} × {secTempo?`${secTempo}s`:`${ex.reps} ${t("allenamento.rip")}`} ·{" "}
             {stato.salta
-              ? <>recupero {ex.rest}s</>
+              ? <>{t("card.recupero")} {ex.rest}s</>
               : <>
-                  {secTempo>0&&<button className="crono-chip" onClick={()=>avviaTempo(ex.name, secTempo, ex.rest)} aria-label={`Avvia ${secTempo} secondi`}>▶ {secTempo}s</button>}
-                  {ex.rest>0&&<button className="crono-chip" onClick={()=>avviaRecupero(ex.name, ex.rest)} aria-label={`Avvia recupero ${fmtMMSS(ex.rest)}`}>⏱ {fmtMMSS(ex.rest)}</button>}
+                  {secTempo>0&&<button className="crono-chip" onClick={()=>avviaTempo(nome, secTempo, ex.rest)} aria-label={t("card.ariaTempo",{s:secTempo})}>▶ {secTempo}s</button>}
+                  {ex.rest>0&&<button className="crono-chip" onClick={()=>avviaRecupero(nome, ex.rest)} aria-label={t("card.ariaRecupero",{t:fmtMMSS(ex.rest)})}>⏱ {fmtMMSS(ex.rest)}</button>}
                 </>}
           </div>
 
           {!stato.salta&&<>
             {ultima&&(
               <div className="ex-ultima">
-                Ultima volta: <strong>{riassuntoSerie(ultima.serie)}</strong>
+                {t("card.ultimaVolta")} <strong>{riassuntoSerie(ultima.serie)}</strong>
               </div>
             )}
 
             {stato.modo==="fisso"?(
               <div className="ex-input-row">
-                <Campo label="Peso" value={stato.peso} onChange={v=>set({peso:v})} unita="kg"/>
+                <Campo label={t("card.peso")} value={stato.peso} onChange={v=>set({peso:v})} unita="kg"/>
                 <span className="ex-per">×</span>
-                <Campo label="Ripetizioni" value={stato.reps} onChange={v=>set({reps:v})} unita={secTempo?"s":"rip"} decimale={false}/>
-                <span className="ex-per" style={{fontSize:12}}>per serie</span>
+                <Campo label={t("card.ripetizioni")} value={stato.reps} onChange={v=>set({reps:v})} unita={secTempo?"s":t("allenamento.rip")} decimale={false}/>
+                <span className="ex-per" style={{fontSize:12}}>{t("card.perSerie")}</span>
               </div>
             ):(
               <div className="ex-serie-list">
                 {stato.serie.map((s,i)=>(
                   <div className="ex-input-row" key={i}>
                     <span className="ex-serie-n">S{i+1}</span>
-                    <Campo label={`Peso serie ${i+1}`} value={s.peso} onChange={v=>setSerie(i,{peso:v})} unita="kg"/>
+                    <Campo label={t("card.pesoSerie",{n:i+1})} value={s.peso} onChange={v=>setSerie(i,{peso:v})} unita="kg"/>
                     <span className="ex-per">×</span>
-                    <Campo label={`Ripetizioni serie ${i+1}`} value={s.reps} onChange={v=>setSerie(i,{reps:v})} unita={secTempo?"s":"rip"} decimale={false}/>
+                    <Campo label={t("card.ripSerie",{n:i+1})} value={s.reps} onChange={v=>setSerie(i,{reps:v})} unita={secTempo?"s":t("allenamento.rip")} decimale={false}/>
                   </div>
                 ))}
               </div>
@@ -87,16 +91,16 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
 
             <div className="ex-azioni">
               {stato.modo==="fisso"
-                ? <button className="ex-link" onClick={dividi}>Serie diverse</button>
-                : <button className="ex-link" onClick={unisci}>Stesso peso per tutte</button>}
-              {!notaAperta&&<button className="ex-link" onClick={()=>setNotaAperta(true)}>＋ Nota</button>}
+                ? <button className="ex-link" onClick={dividi}>{t("card.serieDiverse")}</button>
+                : <button className="ex-link" onClick={unisci}>{t("card.stessoPeso")}</button>}
+              {!notaAperta&&<button className="ex-link" onClick={()=>setNotaAperta(true)}>＋ {t("card.nota")}</button>}
               {exFull?.yt
                 ? <button className="ex-link" onClick={()=>setShowVideo(true)}>▶ Video</button>
-                : <a className="ex-link" href={ytSearchUrl(ex.name)} target="_blank" rel="noopener noreferrer">▶ Cerca video</a>}
+                : <a className="ex-link" href={ytCerca(nome)} target="_blank" rel="noopener noreferrer">▶ {t("card.cercaVideo")}</a>}
             </div>
 
             {notaAperta&&(
-              <textarea className="field-input ex-nota" rows={2} placeholder="Es. non ho chiuso l'ultima serie, inizio 10 kg finisco 15…"
+              <textarea className="field-input ex-nota" rows={2} placeholder={t("card.phNota")}
                 value={stato.nota} onChange={e=>set({nota:e.target.value})}/>
             )}
           </>}

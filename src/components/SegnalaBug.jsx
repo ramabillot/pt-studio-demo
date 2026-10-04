@@ -5,6 +5,8 @@ import { useState, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { getToken } from "../api/atleta.js";
 import { erroriRecenti } from "../lib/erroriRecenti.js";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n/index.js";
 
 const MAX_LATO = 1280;   // px: la foto viene ridotta e compressa prima dell'invio
 
@@ -22,7 +24,7 @@ function comprimiFoto(file) {
       URL.revokeObjectURL(url);
       resolve(c.toDataURL("image/jpeg", 0.75));
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Foto non leggibile")); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(i18n.t("segnala.fotoNonLeggibile"))); };
     img.src = url;
   });
 }
@@ -38,6 +40,7 @@ function raccogliContesto(user, view) {
     attivi: [...new Set(attivi)].slice(0, 8),
     url: window.location.href,
     versione: import.meta.env.VITE_APP_VERSION || "dev",
+    lingua: i18n.language,
     schermo: `${window.innerWidth}x${window.innerHeight}`,
     dispositivo: navigator.userAgent,
     ora_locale: new Date().toString(),
@@ -46,6 +49,7 @@ function raccogliContesto(user, view) {
 }
 
 export default function SegnalaBug({ user, view }) {
+  const { t } = useTranslation();
   const [aperto, setAperto] = useState(false);
   const [tipo, setTipo] = useState("bug");
   const [testo, setTesto] = useState("");
@@ -70,7 +74,7 @@ export default function SegnalaBug({ user, view }) {
   };
 
   const invia = async () => {
-    if (!testo.trim()) { setErrore("Scrivi due parole su cosa è successo."); return; }
+    if (!testo.trim()) { setErrore(t("segnala.errVuoto")); return; }
     setStato("invio"); setErrore("");
     const { error } = await supabase.rpc("segnala", {
       p_tipo: tipo,
@@ -81,7 +85,7 @@ export default function SegnalaBug({ user, view }) {
     });
     if (error) {
       setStato("idle");
-      setErrore("Invio non riuscito. Riprova tra poco (il testo resta qui).");
+      setErrore(t("segnala.errInvio"));
       return;
     }
     setStato("ok");
@@ -94,18 +98,18 @@ export default function SegnalaBug({ user, view }) {
   return (
     <>
       <button className={`segnala-fab${sopraNav ? " sopra-nav" : ""}`} onClick={apri}
-        aria-label="Segnala un bug o un'idea" title="Segnala un bug o un'idea">🐞</button>
+        aria-label={t("segnala.aria")} title={t("segnala.aria")}>🐞</button>
 
       {aperto && (
         <div className="overlay segnala-overlay" onClick={chiudi}>
           <div className="modal segnala-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">Segnala</div>
-              <button className="modal-close" onClick={chiudi} aria-label="Chiudi">✕</button>
+              <div className="modal-title">{t("segnala.titolo")}</div>
+              <button className="modal-close" onClick={chiudi} aria-label={t("comune.chiudi")}>✕</button>
             </div>
 
             {stato === "ok" ? (
-              <div className="segnala-ok">✓ Grazie! Segnalazione inviata.</div>
+              <div className="segnala-ok">✓ {t("segnala.ok")}</div>
             ) : (
               <div className="modal-body segnala-body">
                 <div className="segnala-tipo">
@@ -116,24 +120,24 @@ export default function SegnalaBug({ user, view }) {
                 <textarea className="segnala-testo" rows={5} maxLength={4000} autoFocus
                   value={testo} onChange={e => setTesto(e.target.value)}
                   placeholder={tipo === "bug"
-                    ? "Cosa è successo? Cosa ti aspettavi invece?"
-                    : "Cosa ti piacerebbe avere o cambiare?"} />
+                    ? t("segnala.phBug")
+                    : t("segnala.phIdea")} />
 
                 <input ref={fileRef} type="file" accept="image/*" hidden onChange={scegliFoto} />
                 {foto ? (
                   <div className="segnala-foto">
-                    <img src={foto} alt="Foto allegata" />
-                    <button className="btn-ghost" onClick={() => setFoto(null)}>Togli foto</button>
+                    <img src={foto} alt={t("segnala.fotoAllegata")} />
+                    <button className="btn-ghost" onClick={() => setFoto(null)}>{t("segnala.togliFoto")}</button>
                   </div>
                 ) : (
-                  <button className="btn-ghost segnala-add-foto" onClick={() => fileRef.current?.click()}>📷 Aggiungi foto / screenshot</button>
+                  <button className="btn-ghost segnala-add-foto" onClick={() => fileRef.current?.click()}>📷 {t("segnala.aggiungiFoto")}</button>
                 )}
 
-                <div className="segnala-nota">Inviamo in automatico anche schermata, dispositivo e versione dell'app.</div>
+                <div className="segnala-nota">{t("segnala.nota")}</div>
                 {errore && <div className="login-err" style={{ textAlign: "left" }}>{errore}</div>}
 
                 <button className="login-btn" onClick={invia} disabled={stato === "invio"}>
-                  {stato === "invio" ? "Invio…" : "Invia"}
+                  {stato === "invio" ? t("segnala.invio") : t("segnala.invia")}
                 </button>
               </div>
             )}

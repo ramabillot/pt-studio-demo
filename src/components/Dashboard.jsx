@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { EXERCISES } from "../data.js";
 import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";
+import { useTranslation } from "react-i18next";
+import { locale, maiuscola } from "../i18n/index.js";
 
 export default function Dashboard({user,setView}) {
-  const oggi=new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
+  const { t } = useTranslation();
+  const oggi=maiuscola(new Date().toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"}));
   const [ptStats,setPtStats]=useState(null);
   const [trainerStats,setTrainerStats]=useState(null);
 
@@ -35,12 +38,11 @@ export default function Dashboard({user,setView}) {
         .order("data").order("ora_inizio").limit(1),
     ]).then(([atlRes,schedRes,apptRes])=>{
       const nextAppt=apptRes.data?.[0];
-      let apptLabel="—";
+      let apptLabel=null;   // {oggi, ora} — il testo lo fa il render (segue la lingua)
       if(nextAppt){
         const d=new Date(nextAppt.data+"T12:00");
         const today=new Date(); today.setHours(0,0,0,0);
-        const isToday=d.toDateString()===today.toDateString();
-        apptLabel=(isToday?"Oggi ":"")+(nextAppt.ora_inizio?.slice(0,5)||"");
+        apptLabel={oggi:d.toDateString()===today.toDateString(), ora:nextAppt.ora_inizio?.slice(0,5)||""};
       }
       setTrainerStats({atleti:atlRes.count??0, schede:schedRes.count??0, appt:apptLabel});
     });
@@ -48,20 +50,20 @@ export default function Dashboard({user,setView}) {
 
   if(user.role==="admin" || user.is_admin) {
     const adminStats = ptStats ? [
-      {icon:"👥",val:String(ptStats.total),    label:"PT registrati"},
-      {icon:"✅",val:String(ptStats.approved), label:"PT approvati"},
-      {icon:"⏳",val:String(ptStats.pending),  label:"In attesa"},
-      {icon:"✨",val:String(ptStats.newMonth), label:"Nuovi questo mese"},
+      {icon:"👥",val:String(ptStats.total),    label:t("dash.ptRegistrati")},
+      {icon:"✅",val:String(ptStats.approved), label:t("dash.ptApprovati")},
+      {icon:"⏳",val:String(ptStats.pending),  label:t("dash.inAttesa")},
+      {icon:"✨",val:String(ptStats.newMonth), label:t("dash.nuoviMese")},
     ] : [];
     const adminNav=[
-      {id:"admin-stats",    icon:"📊",label:"Statistiche",  desc:"Grafici e metriche"},
-      {id:"admin-pt",       icon:"👥",label:"I miei PT",    desc:"Gestisci i PT registrati"},
+      {id:"admin-stats",    icon:"📊",label:t("nav.statistiche"),  desc:t("dash.descStatistiche")},
+      {id:"admin-pt",       icon:"👥",label:t("nav.mieiPT"),    desc:t("dash.descMieiPT")},
     ];
     return (
       <div>
         <div className="page-head">
-          <div className="page-title">Pannello di Controllo 🛡️</div>
-          <div className="page-sub" style={{textTransform:"capitalize"}}>{oggi}</div>
+          <div className="page-title">{t("dash.pannello")} 🛡️</div>
+          <div className="page-sub">{oggi}</div>
         </div>
         <div className="stats-grid">
           {adminStats.map((s,i)=>(
@@ -73,7 +75,7 @@ export default function Dashboard({user,setView}) {
             </div>
           ))}
         </div>
-        <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>Vai a</div></div>
+        <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
         <div className="quick-nav" style={{gridTemplateColumns:"1fr 1fr"}}>
           {adminNav.map((q,i)=>(
             <div className="quick-card" key={q.id} onClick={()=>setView(q.id)} style={{animationDelay:`${i*.07+.2}s`}}>
@@ -88,22 +90,22 @@ export default function Dashboard({user,setView}) {
   }
 
   const stats = [
-    {icon:"👥",val:trainerStats?String(trainerStats.atleti):"…",label:"Atleti attivi"},
-    {icon:"📋",val:trainerStats?String(trainerStats.schede):"…",label:"Schede create"},
-    {icon:"📅",val:trainerStats?trainerStats.appt:"…",          label:"Prossimo appuntamento"},
-    {icon:"💪",val:String(EXERCISES.length),                      label:"Esercizi in libreria"},
+    {icon:"👥",val:trainerStats?String(trainerStats.atleti):"…",label:t("dash.atletiAttivi")},
+    {icon:"📋",val:trainerStats?String(trainerStats.schede):"…",label:t("dash.schedeCreate")},
+    {icon:"📅",val:!trainerStats?"…":trainerStats.appt?`${trainerStats.appt.oggi?t("comune.oggi")+" ":""}${trainerStats.appt.ora}`:"—", label:t("dash.prossimoAppuntamento")},
+    {icon:"💪",val:String(EXERCISES.length),                      label:t("dash.eserciziLibreria")},
   ];
   const quickNav=[
-    {id:"library", icon:"📚",label:"Libreria",  desc:`Sfoglia ${EXERCISES.length} esercizi`},
-    {id:"builder", icon:"📋",label:"Builder",   desc:"Crea schede"},
-    {id:"atleti",  icon:"👥",label:"Atleti",    desc:"Gestisci i tuoi atleti"},
-    {id:"calendar",icon:"📅",label:"Calendario",desc:"Organizza gli appuntamenti"},
+    {id:"library", icon:"📚",label:t("nav.libreria"),  desc:t("dash.descLibreria",{n:EXERCISES.length})},
+    {id:"builder", icon:"📋",label:t("nav.builder"),   desc:t("dash.descBuilder")},
+    {id:"atleti",  icon:"👥",label:t("nav.atleti"),    desc:t("dash.descAtleti")},
+    {id:"calendar",icon:"📅",label:t("nav.calendario"),desc:t("dash.descCalendario")},
   ];
   return (
     <div>
       <div className="page-head">
-        <div className="page-title">Ciao, {user.nome || user.email.split("@")[0]} 👋</div>
-        <div className="page-sub" style={{textTransform:"capitalize"}}>{oggi}</div>
+        <div className="page-title">{t("dash.ciao",{nome:user.nome || user.email.split("@")[0]})} 👋</div>
+        <div className="page-sub">{oggi}</div>
       </div>
       <div className="stats-grid">
         {stats.map((s,i)=>(
@@ -115,7 +117,7 @@ export default function Dashboard({user,setView}) {
           </div>
         ))}
       </div>
-      <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>Vai a</div></div>
+      <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
       <div className="quick-nav">
         {quickNav.map((q,i)=>(
           <div className="quick-card" key={q.id} onClick={()=>setView(q.id)} style={{animationDelay:`${i*.07+.2}s`}}>

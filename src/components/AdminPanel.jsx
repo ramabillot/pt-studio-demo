@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
+import { useTranslation, Trans } from "react-i18next";
+import { locale } from "../i18n/index.js";
 
 const PIANI = ["base","medio","pro"];
 
 export default function AdminPanel({ setView }) {
+  const { t } = useTranslation();
   const [pts, setPts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
@@ -64,18 +67,18 @@ export default function AdminPanel({ setView }) {
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head">
-        <div className="page-title">PT Registrati</div>
-        <div className="page-sub">{pts.length} personal trainer sulla piattaforma</div>
+        <div className="page-title">{t("admin.ptRegistrati")}</div>
+        <div className="page-sub">{t("admin.nPT",{n:pts.length})}</div>
       </div>
 
       {loading&&(
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>Caricamento…</div>
+        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
       )}
       {!loading&&err&&(
-        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>Errore: {err}</div>
+        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
       )}
       {!loading&&!err&&pts.length===0&&(
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>Nessun PT registrato ancora.</div>
+        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.nessunPT")}</div>
       )}
 
       {!loading&&!err&&pts.map(pt=>(
@@ -99,7 +102,7 @@ export default function AdminPanel({ setView }) {
               </div>
             </div>
             <div style={{fontSize:11,color:"var(--muted)"}}>
-              Registrato il {new Date(pt.created_at).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"})}
+              {t("admin.registratoIl",{data:new Date(pt.created_at).toLocaleDateString(locale(),{day:"numeric",month:"long",year:"numeric"})})}
             </div>
           </div>
 
@@ -116,7 +119,7 @@ export default function AdminPanel({ setView }) {
 
             {/* Max atleti */}
             <div style={{display:"flex",alignItems:"center",gap:6,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:8,padding:"5px 12px"}}>
-              <span style={{fontSize:11,color:"var(--muted)",fontWeight:600,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>Max atleti</span>
+              <span style={{fontSize:11,color:"var(--muted)",fontWeight:600,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>{t("admin.maxAtleti")}</span>
               <input
                 type="number" min={1} max={500}
                 value={pt.max_atleti}
@@ -138,7 +141,7 @@ export default function AdminPanel({ setView }) {
                 opacity:saving[pt.id]?.5:1,transition:"opacity .15s",
               }}
             >
-              {saving[pt.id]?"…":pt.is_approved?"🔒 Blocca":"✓ Approva"}
+              {saving[pt.id]?"…":pt.is_approved?`🔒 ${t("admin.blocca")}`:`✓ ${t("admin.approva")}`}
             </button>
 
             {/* Badge stato */}
@@ -148,7 +151,7 @@ export default function AdminPanel({ setView }) {
               background:pt.is_approved?"rgba(46,204,113,.12)":"rgba(255,159,71,.12)",
               color:pt.is_approved?"#2ecc71":"#ff9f47",
             }}>
-              {pt.is_approved?"Approvato":"In attesa"}
+              {pt.is_approved?t("admin.approvato"):t("dash.inAttesa")}
             </span>
 
             {/* Rifiuta (pending) / Elimina PT (approvato) */}
@@ -164,7 +167,7 @@ export default function AdminPanel({ setView }) {
               onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,71,87,.08)";e.currentTarget.style.color="var(--danger)";}}
               onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="rgba(255,71,87,.7)";}}
             >
-              {pt.is_approved?"🗑 Elimina PT":"✗ Rifiuta"}
+              {pt.is_approved?`🗑 ${t("admin.eliminaPT")}`:`✗ ${t("admin.rifiuta")}`}
             </button>
           </div>
         </div>
@@ -179,16 +182,16 @@ export default function AdminPanel({ setView }) {
             animation:"slideUp .2s ease",
           }} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:17,fontWeight:700,color:"var(--text)",marginBottom:10}}>
-              {deleteModal.isPending?"Rifiuta richiesta":"Elimina PT"}
+              {deleteModal.isPending?t("admin.rifiutaRichiesta"):t("admin.eliminaPT")}
             </div>
             <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.65,marginBottom:18}}>
               {deleteModal.isPending
-                ? <>Stai <strong style={{color:"var(--text)"}}>rifiutando</strong> la richiesta di <strong style={{color:"var(--text)"}}>{ptLabel(deleteModal)}</strong>. Il loro account verrà eliminato definitivamente.</>
-                : <>Questa azione elimina <strong style={{color:"var(--text)"}}>{ptLabel(deleteModal)}</strong>, tutti i suoi atleti e l'intero storico (schede, sessioni, misurazioni, appuntamenti). <strong style={{color:"var(--danger)"}}>Non è reversibile.</strong></>
+                ? <Trans i18nKey="admin.rifiutaTesto" values={{nome:ptLabel(deleteModal)}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
+                : <Trans i18nKey="admin.eliminaTesto" values={{nome:ptLabel(deleteModal)}} components={{b:<strong style={{color:"var(--text)"}}/>, r:<strong style={{color:"var(--danger)"}}/>}}/>
               }
             </div>
             <div style={{fontSize:12,color:"var(--muted)",marginBottom:7}}>
-              Digita <strong style={{color:"var(--text)"}}>{deleteModal.email}</strong> per confermare:
+              <Trans i18nKey="atleti.digita" values={{nome:deleteModal.email}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
             </div>
             <input
               className="field-input"
@@ -206,7 +209,7 @@ export default function AdminPanel({ setView }) {
                 style={{fontSize:13,padding:"7px 16px"}}
                 disabled={deleting}
                 onClick={()=>{ setDeleteModal(null); setDeleteTyped(""); setDeleteErr(""); }}
-              >Annulla</button>
+              >{t("comune.annulla")}</button>
               <button
                 className="btn-danger"
                 style={{
@@ -217,7 +220,7 @@ export default function AdminPanel({ setView }) {
                 disabled={deleteTyped!==deleteModal.email||deleting}
                 onClick={confirmDelete}
               >
-                {deleting?"…":deleteModal.isPending?"Rifiuta":"Elimina PT"}
+                {deleting?"…":deleteModal.isPending?t("admin.rifiuta"):t("admin.eliminaPT")}
               </button>
             </div>
           </div>

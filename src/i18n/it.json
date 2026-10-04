@@ -1,0 +1,794 @@
+{
+  "esercizi": {
+    "1": {
+      "nome": "Curl con bilanciere",
+      "muscoli": "Bicipite brachiale, brachiale"
+    },
+    "2": {
+      "nome": "Curl con manubri alternati",
+      "muscoli": "Bicipite brachiale, brachioradiale"
+    },
+    "3": {
+      "nome": "Tricep pushdown al cavo",
+      "muscoli": "Capo lungo e laterale del tricipite"
+    },
+    "4": {
+      "nome": "Skull crushers",
+      "muscoli": "Tricipite brachiale (capo lungo)"
+    },
+    "5": {
+      "nome": "Hammer curl",
+      "muscoli": "Brachioradiale, bicipite brachiale"
+    },
+    "6": {
+      "nome": "Lento avanti con bilanciere",
+      "muscoli": "Deltoide anteriore, tricipite"
+    },
+    "7": {
+      "nome": "Alzate laterali",
+      "muscoli": "Deltoide mediale"
+    },
+    "8": {
+      "nome": "Facepull al cavo",
+      "muscoli": "Deltoide posteriore, romboidi, trapezio"
+    },
+    "9": {
+      "nome": "Arnold press",
+      "muscoli": "Deltoide anteriore, mediale, tricipite"
+    },
+    "10": {
+      "nome": "Alzate frontali",
+      "muscoli": "Deltoide anteriore, pettorale clavicolare"
+    },
+    "11": {
+      "nome": "Stacco da terra",
+      "muscoli": "Erettori spinali, glutei, femorali, trapezio"
+    },
+    "12": {
+      "nome": "Trazioni alla sbarra",
+      "muscoli": "Gran dorsale, bicipite, romboidi"
+    },
+    "13": {
+      "nome": "Rematore con bilanciere",
+      "muscoli": "Gran dorsale, romboidi, bicipite"
+    },
+    "14": {
+      "nome": "Lat machine presa larga",
+      "muscoli": "Gran dorsale, bicipite brachiale"
+    },
+    "15": {
+      "nome": "Seated cable row",
+      "muscoli": "Romboidi, trapezio medio, gran dorsale"
+    },
+    "16": {
+      "nome": "Squat con bilanciere",
+      "muscoli": "Quadricipiti, glutei, femorali"
+    },
+    "17": {
+      "nome": "Leg press 45°",
+      "muscoli": "Quadricipiti, glutei, bicipiti femorali"
+    },
+    "18": {
+      "nome": "Romanian deadlift",
+      "muscoli": "Bicipiti femorali, gluteo grande, erettori"
+    },
+    "19": {
+      "nome": "Leg curl sdraiato",
+      "muscoli": "Bicipiti femorali, gastrocnemio"
+    },
+    "20": {
+      "nome": "Calf raises in piedi",
+      "muscoli": "Gastrocnemio, soleo"
+    },
+    "21": {
+      "nome": "Panca piana con bilanciere",
+      "muscoli": "Gran pettorale, deltoide anteriore, tricipite"
+    },
+    "22": {
+      "nome": "Panca inclinata con bilanciere",
+      "muscoli": "Pettorale clavicolare, deltoide anteriore, tricipite"
+    },
+    "23": {
+      "nome": "Panca piana con manubri",
+      "muscoli": "Gran pettorale, deltoide anteriore, tricipite"
+    },
+    "24": {
+      "nome": "Panca inclinata con manubri",
+      "muscoli": "Pettorale clavicolare, deltoide anteriore"
+    },
+    "25": {
+      "nome": "Croci con manubri",
+      "muscoli": "Gran pettorale"
+    },
+    "26": {
+      "nome": "Croci ai cavi",
+      "muscoli": "Gran pettorale, deltoide anteriore"
+    },
+    "27": {
+      "nome": "Chest press alla macchina",
+      "muscoli": "Gran pettorale, tricipite, deltoide anteriore"
+    },
+    "28": {
+      "nome": "Pectoral machine",
+      "muscoli": "Gran pettorale"
+    },
+    "29": {
+      "nome": "Piegamenti sulle braccia",
+      "muscoli": "Gran pettorale, tricipite, core"
+    },
+    "30": {
+      "nome": "Dip alle parallele",
+      "muscoli": "Pettorale inferiore, tricipite, deltoide anteriore"
+    },
+    "31": {
+      "nome": "Hip thrust con bilanciere",
+      "muscoli": "Gluteo grande, bicipiti femorali"
+    },
+    "32": {
+      "nome": "Glute bridge",
+      "muscoli": "Gluteo grande, bicipiti femorali"
+    },
+    "33": {
+      "nome": "Abductor machine",
+      "muscoli": "Gluteo medio e piccolo"
+    },
+    "34": {
+      "nome": "Kickback ai cavi",
+      "muscoli": "Gluteo grande"
+    },
+    "35": {
+      "nome": "Affondi bulgari",
+      "muscoli": "Glutei, quadricipiti"
+    },
+    "36": {
+      "nome": "Step-up con manubri",
+      "muscoli": "Glutei, quadricipiti"
+    },
+    "37": {
+      "nome": "Stacco sumo",
+      "muscoli": "Glutei, adduttori, bicipiti femorali, erettori"
+    },
+    "38": {
+      "nome": "Good morning",
+      "muscoli": "Bicipiti femorali, glutei, erettori spinali"
+    },
+    "39": {
+      "nome": "Front squat",
+      "muscoli": "Quadricipiti, glutei, core"
+    },
+    "40": {
+      "nome": "Hack squat",
+      "muscoli": "Quadricipiti, glutei"
+    },
+    "41": {
+      "nome": "Affondi con manubri",
+      "muscoli": "Quadricipiti, glutei, bicipiti femorali"
+    },
+    "42": {
+      "nome": "Leg extension",
+      "muscoli": "Quadricipiti"
+    },
+    "43": {
+      "nome": "Leg curl seduto",
+      "muscoli": "Bicipiti femorali"
+    },
+    "44": {
+      "nome": "Goblet squat",
+      "muscoli": "Quadricipiti, glutei, core"
+    },
+    "45": {
+      "nome": "Adductor machine",
+      "muscoli": "Adduttori"
+    },
+    "46": {
+      "nome": "Calf raises seduto",
+      "muscoli": "Soleo, gastrocnemio"
+    },
+    "47": {
+      "nome": "Squat al multipower",
+      "muscoli": "Quadricipiti, glutei"
+    },
+    "48": {
+      "nome": "Rematore con manubrio",
+      "muscoli": "Gran dorsale, romboidi, deltoide posteriore"
+    },
+    "49": {
+      "nome": "Lat machine presa stretta",
+      "muscoli": "Gran dorsale, bicipite"
+    },
+    "50": {
+      "nome": "Pullover ai cavi",
+      "muscoli": "Gran dorsale, grande rotondo"
+    },
+    "51": {
+      "nome": "T-bar row",
+      "muscoli": "Gran dorsale, romboidi, trapezio"
+    },
+    "52": {
+      "nome": "Rematore alla macchina",
+      "muscoli": "Gran dorsale, romboidi, trapezio medio"
+    },
+    "53": {
+      "nome": "Hyperextension",
+      "muscoli": "Erettori spinali, glutei, bicipiti femorali"
+    },
+    "54": {
+      "nome": "Trazioni assistite",
+      "muscoli": "Gran dorsale, bicipite, romboidi"
+    },
+    "55": {
+      "nome": "Lento avanti con manubri",
+      "muscoli": "Deltoide anteriore e mediale, tricipite"
+    },
+    "56": {
+      "nome": "Shoulder press alla macchina",
+      "muscoli": "Deltoide anteriore e mediale, tricipite"
+    },
+    "57": {
+      "nome": "Alzate laterali ai cavi",
+      "muscoli": "Deltoide mediale"
+    },
+    "58": {
+      "nome": "Alzate posteriori con manubri",
+      "muscoli": "Deltoide posteriore, romboidi"
+    },
+    "59": {
+      "nome": "Tirate al mento",
+      "muscoli": "Deltoide mediale, trapezio"
+    },
+    "60": {
+      "nome": "Scrollate con manubri",
+      "muscoli": "Trapezio superiore"
+    },
+    "61": {
+      "nome": "Curl ai cavi",
+      "muscoli": "Bicipite brachiale"
+    },
+    "62": {
+      "nome": "Curl su panca Scott",
+      "muscoli": "Bicipite brachiale, brachiale"
+    },
+    "63": {
+      "nome": "Curl concentrato",
+      "muscoli": "Bicipite brachiale"
+    },
+    "64": {
+      "nome": "French press con manubrio",
+      "muscoli": "Tricipite (capo lungo)"
+    },
+    "65": {
+      "nome": "Tricep kickback",
+      "muscoli": "Tricipite brachiale"
+    },
+    "66": {
+      "nome": "Dip tra panche",
+      "muscoli": "Tricipite, deltoide anteriore"
+    },
+    "67": {
+      "nome": "Panca presa stretta",
+      "muscoli": "Tricipite, gran pettorale"
+    },
+    "68": {
+      "nome": "Tricep pushdown con corda",
+      "muscoli": "Tricipite (capo laterale e mediale)"
+    },
+    "69": {
+      "nome": "Plank",
+      "muscoli": "Retto e trasverso dell'addome, core"
+    },
+    "70": {
+      "nome": "Crunch",
+      "muscoli": "Retto dell'addome"
+    },
+    "71": {
+      "nome": "Crunch ai cavi",
+      "muscoli": "Retto dell'addome"
+    },
+    "72": {
+      "nome": "Leg raises alla sbarra",
+      "muscoli": "Retto dell'addome, flessori dell'anca"
+    },
+    "73": {
+      "nome": "Russian twist",
+      "muscoli": "Obliqui, retto dell'addome"
+    },
+    "74": {
+      "nome": "Ab wheel rollout",
+      "muscoli": "Retto dell'addome, core, gran dorsale"
+    },
+    "75": {
+      "nome": "Side plank",
+      "muscoli": "Obliqui, gluteo medio"
+    },
+    "76": {
+      "nome": "Dead bug",
+      "muscoli": "Trasverso dell'addome, retto dell'addome"
+    },
+    "77": {
+      "nome": "Pallof press",
+      "muscoli": "Obliqui, core anti-rotazione"
+    },
+    "78": {
+      "nome": "Mountain climbers",
+      "muscoli": "Core, flessori dell'anca"
+    },
+    "79": {
+      "nome": "Sit-up declinato",
+      "muscoli": "Retto dell'addome, flessori dell'anca"
+    },
+    "80": {
+      "nome": "Bird dog",
+      "muscoli": "Erettori spinali, glutei, core"
+    },
+    "81": {
+      "nome": "Hip thrust alla macchina",
+      "muscoli": "Gluteo grande, bicipiti femorali"
+    },
+    "82": {
+      "nome": "Kickback alla macchina",
+      "muscoli": "Gluteo grande (lavoro monopodalico)"
+    }
+  },
+  "comune": {
+    "errRete": "Connessione non riuscita. Controlla la rete e riprova.",
+    "password": "Password",
+    "nome": "Nome",
+    "cognome": "Cognome",
+    "hoCapito": "Ho capito",
+    "ok": "Ok",
+    "esci": "Esci",
+    "giornoN": "Giorno {{g}}",
+    "mostraMeno": "Mostra meno",
+    "vediTutti": "Vedi tutti ({{n}})",
+    "caricamento": "Caricamento…",
+    "salvataggio": "Salvataggio…",
+    "oggi": "Oggi",
+    "ytParola": "esecuzione",
+    "data": "Data",
+    "annulla": "Annulla",
+    "elimina": "Elimina",
+    "vediTutte": "Vedi tutte ({{n}})",
+    "chiudi": "Chiudi",
+    "categoria": "Categoria",
+    "seleziona": "seleziona",
+    "modifica": "Modifica",
+    "salva": "Salva",
+    "salvaModifiche": "Salva modifiche",
+    "atleta": "Atleta",
+    "obiettivo": "Obiettivo",
+    "livello": "Livello"
+  },
+  "lingua": {
+    "aria": "Lingua"
+  },
+  "login": {
+    "errUsernamePin": "Inserisci username e PIN",
+    "bloccatoFino": "Troppi tentativi sbagliati. Riprova dopo le {{ora}}.",
+    "bloccato": "Troppi tentativi sbagliati. Riprova tra qualche minuto.",
+    "errCredAtleta": "Username o PIN non corretti",
+    "errEmailPass": "Inserisci email e password",
+    "errCredPT": "Email o password non corretti",
+    "errProfilo": "Errore nel caricamento del profilo. Riprova.",
+    "errCampi": "Compila tutti i campi",
+    "errPassDiverse": "Le password non coincidono",
+    "errPassCorta": "Password minimo 6 caratteri",
+    "subAtleta": "Accedi per vedere la tua scheda",
+    "subPT": "Area Personal Trainer",
+    "phUsername": "il tuo username",
+    "phEmail": "nome@email.com",
+    "accesso": "Accesso in corso…",
+    "accedi": "Accedi",
+    "registrati": "Registrati →",
+    "dimenticata": "Password dimenticata?",
+    "notaAtleta": "Username e PIN te li dà il tuo Personal Trainer.",
+    "creaAccountPT": "Crea il tuo account PT",
+    "phNome": "Marco",
+    "phCognome": "Rossi",
+    "phEmailReg": "marco@email.com",
+    "phMin6": "min. 6 caratteri",
+    "confermaPass": "Conferma password",
+    "creazione": "Creazione account…",
+    "creaAccount": "Crea account",
+    "tornaLogin": "← Torna al login",
+    "accountCreato": "Account creato!",
+    "inAttesa1": "Il tuo account è in attesa di approvazione.",
+    "inAttesa2": "Un amministratore ti darà accesso a breve.",
+    "resetTitolo": "Reset password",
+    "resetTesto": "Per reimpostare la password contatta l'amministratore all'indirizzo",
+    "resetTesto2": "Provvederà a ripristinare il tuo accesso.",
+    "username": "Username"
+  },
+  "welcome": {
+    "bentornato": "Bentornato"
+  },
+  "pending": {
+    "titolo": "In attesa di approvazione",
+    "testo1": "Il tuo account è stato registrato con successo.",
+    "testo2": "Un amministratore verificherà le tue credenziali e approverà l'accesso a breve.",
+    "torna": "Torna al login"
+  },
+  "installa": {
+    "aria": "Installa {{nome}}",
+    "titolo": "Installa {{nome}} sul telefono",
+    "android": "Si apre come un'app, a schermo intero.",
+    "iphone": "Tocca <b>Condividi</b> <share>⬆︎</share>, poi <b>“Aggiungi alla schermata Home”</b> e <b>Aggiungi</b>.",
+    "soloSafari": "Apri questo link in <b>Safari</b>: solo da lì l'iPhone può installare l'app.",
+    "installa": "Installa",
+    "nonOra": "Non ora"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "libreria": "Libreria",
+    "builder": "Builder",
+    "atleti": "Atleti",
+    "calendario": "Calendario",
+    "statistiche": "Statistiche",
+    "mieiPT": "I miei PT",
+    "account": "Account",
+    "ruoloAdmin": "Amministratore",
+    "ruoloPT": "Personal Trainer"
+  },
+  "home": {
+    "claim1": "Schede, allenamenti e progressi.",
+    "claim2": "Il personal trainer e i suoi atleti, in un'app sola.",
+    "atleta": "Accedi come Atleta",
+    "pt": "Accedi come Personal Trainer"
+  },
+  "pdf": {
+    "preparazione": "Preparazione…",
+    "scarica": "Scarica PDF",
+    "nessunaImmagine": "nessuna immagine",
+    "schedaPer": "SCHEDA PER",
+    "generato": "Generato con PT Studio",
+    "note": "NOTE",
+    "nomeFile": "scheda"
+  },
+  "atleta": {
+    "errCaricamento": "Non riesco a caricare i dati. Controlla la connessione e riapri l'app.",
+    "errFuturo": "Non puoi registrare un allenamento in una data futura.",
+    "errTuttiSaltati": "Hai segnato tutti gli esercizi come saltati: niente da salvare.",
+    "errNonSalvata": "⚠️ Sessione NON salvata: problema di connessione. I dati inseriti restano qui, riprova tra poco.",
+    "sessioniCompletate_one": "sessione completata",
+    "sessioniCompletate_other": "sessioni completate",
+    "ultima": "Ultima:",
+    "giorniConsecutivi_one": "giorno consecutivo",
+    "giorniConsecutivi_other": "giorni consecutivi",
+    "tabScheda": "Scheda",
+    "tabProgressi": "Progressi",
+    "prossimiAppuntamenti": "Prossimi appuntamenti",
+    "nessunaScheda": "Nessuna scheda assegnata",
+    "nessunaSchedaTesto": "Il tuo PT non ti ha ancora assegnato una scheda.",
+    "salvaSessione": "Salva sessione — {{giorno}}",
+    "aggiornaSessione": "Aggiorna sessione — {{giorno}}",
+    "salvaSessioneDel": "Salva sessione del {{data}} — {{giorno}}",
+    "aggiornaSessioneDel": "Aggiorna sessione del {{data}} — {{giorno}}",
+    "laTuaScheda": "La tua scheda",
+    "assegnataIl": "Assegnata il {{data}}",
+    "sessioneSalvata": "Sessione salvata con successo!",
+    "giaSalvatoOggi": "Allenamento di oggi già salvato — puoi modificarlo e risalvare",
+    "giaSalvatoDel": "Allenamento del {{data}} già salvato — puoi modificarlo e risalvare"
+  },
+  "valori": {
+    "categoria": {
+      "Tutte": "Tutte",
+      "Petto": "Petto",
+      "Schiena": "Schiena",
+      "Spalle": "Spalle",
+      "Braccia": "Braccia",
+      "Gambe": "Gambe",
+      "Glutei": "Glutei",
+      "Core": "Core"
+    },
+    "obiettivo": {
+      "Ipertrofia": "Ipertrofia",
+      "Dimagrimento": "Dimagrimento",
+      "Forza": "Forza",
+      "Resistenza": "Resistenza",
+      "Tonificazione": "Tonificazione"
+    },
+    "livello": {
+      "Principiante": "Principiante",
+      "Intermedio": "Intermedio",
+      "Avanzato": "Avanzato"
+    },
+    "tipoAppuntamento": {
+      "Allenamento": "Allenamento",
+      "Valutazione": "Valutazione",
+      "Recupero": "Recupero"
+    },
+    "misura": {
+      "peso": "Peso",
+      "vita": "Vita",
+      "fianchi": "Fianchi",
+      "petto": "Petto",
+      "braccio": "Braccio",
+      "grassoPerc": "Grasso",
+      "fcRiposo": "FC Riposo"
+    },
+    "sesso": {
+      "M": "M",
+      "F": "F",
+      "Altro": "Altro"
+    }
+  },
+  "allenamento": {
+    "corpoLibero": "corpo libero",
+    "rip": "rip",
+    "pesoMassimo": "Peso massimo",
+    "volume": "Volume"
+  },
+  "push": {
+    "recuperoFinisce": "Recupero · finisce alle {{ora}}",
+    "recuperoFinito": "Recupero finito",
+    "siRiparte": "Si riparte: {{nome}}",
+    "nomeFinisce": "{{nome}} · finisce alle {{ora}}",
+    "esercizioATempo": "Esercizio a tempo",
+    "tempoFinito": "Tempo finito",
+    "recuperoFinoAlle": "Recupero fino alle {{ora}}"
+  },
+  "card": {
+    "loFaccio": "Lo faccio",
+    "salta": "Salta",
+    "serie_one": "{{count}} serie",
+    "serie_other": "{{count}} serie",
+    "recupero": "recupero",
+    "ariaTempo": "Avvia {{s}} secondi",
+    "ariaRecupero": "Avvia recupero {{t}}",
+    "ultimaVolta": "Ultima volta:",
+    "peso": "Peso",
+    "ripetizioni": "Ripetizioni",
+    "perSerie": "per serie",
+    "pesoSerie": "Peso serie {{n}}",
+    "ripSerie": "Ripetizioni serie {{n}}",
+    "serieDiverse": "Serie diverse",
+    "stessoPeso": "Stesso peso per tutte",
+    "nota": "Nota",
+    "cercaVideo": "Cerca video",
+    "phNota": "Es. non ho chiuso l'ultima serie, inizio 10 kg finisco 15…"
+  },
+  "progressi": {
+    "esercizi": "Esercizi",
+    "vuotoAtleta": "Registra i tuoi allenamenti per vedere i progressi.",
+    "mieMisurazioni": "Le mie misurazioni",
+    "vuoto": "Nessun allenamento registrato ancora.",
+    "selezionaEsercizio": "Seleziona un esercizio",
+    "ultimoAllenamento": "{{metrica}} ultimo allenamento:",
+    "lineaDalSecondo": "La linea compare dal secondo allenamento con l'esercizio.",
+    "toccaPunto": "Tocca un punto per vedere tutte le serie di quel giorno."
+  },
+  "crono": {
+    "pronti": "Pronti",
+    "fatto": "Fatto",
+    "recuperoFinito": "Recupero finito",
+    "recupero": "Recupero",
+    "chiudi": "Chiudi cronometro"
+  },
+  "misure": {
+    "ultima": "Ultima misurazione:",
+    "nuova": "Nuova misurazione",
+    "nascondiAvanzati": "Nascondi avanzati",
+    "datiAvanzati": "Dati avanzati",
+    "massaGrassa": "% Massa grassa",
+    "salva": "Salva misurazione",
+    "vuotaAtleta": "Il tuo PT non ha ancora registrato misurazioni",
+    "vuota": "Nessuna misurazione registrata ancora.",
+    "eliminareConferma": "Eliminare questa misurazione?",
+    "almeno2": "Aggiungi almeno 2 misurazioni per vedere il grafico",
+    "selezionaMetrica": "Seleziona una metrica per vedere il grafico"
+  },
+  "segnala": {
+    "fotoNonLeggibile": "Foto non leggibile",
+    "errVuoto": "Scrivi due parole su cosa è successo.",
+    "errInvio": "Invio non riuscito. Riprova tra poco (il testo resta qui).",
+    "aria": "Segnala un bug o un'idea",
+    "titolo": "Segnala",
+    "ok": "Grazie! Segnalazione inviata.",
+    "phBug": "Cosa è successo? Cosa ti aspettavi invece?",
+    "phIdea": "Cosa ti piacerebbe avere o cambiare?",
+    "fotoAllegata": "Foto allegata",
+    "togliFoto": "Togli foto",
+    "aggiungiFoto": "Aggiungi foto / screenshot",
+    "nota": "Inviamo in automatico anche schermata, dispositivo e versione dell'app.",
+    "invio": "Invio…",
+    "invia": "Invia"
+  },
+  "aggiorna": {
+    "nuova": "Nuova versione disponibile",
+    "aggiorna": "Aggiorna"
+  },
+  "dash": {
+    "ptRegistrati": "PT registrati",
+    "ptApprovati": "PT approvati",
+    "inAttesa": "In attesa",
+    "nuoviMese": "Nuovi questo mese",
+    "descStatistiche": "Grafici e metriche",
+    "descMieiPT": "Gestisci i PT registrati",
+    "pannello": "Pannello di Controllo",
+    "vaiA": "Vai a",
+    "atletiAttivi": "Atleti attivi",
+    "schedeCreate": "Schede create",
+    "prossimoAppuntamento": "Prossimo appuntamento",
+    "eserciziLibreria": "Esercizi in libreria",
+    "descLibreria": "Sfoglia {{n}} esercizi",
+    "descBuilder": "Crea schede",
+    "descAtleti": "Gestisci i tuoi atleti",
+    "descCalendario": "Organizza gli appuntamenti",
+    "ciao": "Ciao, {{nome}}"
+  },
+  "account": {
+    "errAttuale": "Inserisci la password attuale",
+    "errCorta": "La password deve essere di almeno 6 caratteri",
+    "errDiverse": "Le due password non coincidono",
+    "errUguale": "La nuova password deve essere diversa da quella attuale",
+    "errSbagliata": "La password attuale non è corretta",
+    "lingua": "Lingua",
+    "cambiaPassword": "Cambia password",
+    "attuale": "Password attuale",
+    "nuova": "Nuova password",
+    "conferma": "Conferma nuova password",
+    "aggiornata": "Password aggiornata",
+    "aggiornamento": "Aggiornamento…",
+    "aggiornaPassword": "Aggiorna password",
+    "nota": "Per sicurezza serve la password attuale. Se non la ricordi, esci e usa \"Password dimenticata?\" nella schermata di accesso."
+  },
+  "libreria": {
+    "muscoliCoinvolti": "Muscoli coinvolti:",
+    "muscoli": "Muscoli:",
+    "guardaVideo": "Guarda il video",
+    "titolo": "Libreria Esercizi",
+    "nEsercizi_one": "{{count}} esercizio",
+    "nEsercizi_other": "{{count}} esercizi",
+    "cerca": "Cerca esercizio o muscolo…",
+    "nuovo": "Nuovo",
+    "phNome": "Es. Plank, Hollow hold…",
+    "descrizione": "Descrizione (opzionale)",
+    "phDescrizione": "Muscoli, note tecniche…",
+    "fotoPresto": "Caricamento foto — disponibile a breve",
+    "crea": "Crea esercizio",
+    "nessunRisultato": "Nessun risultato per \"{{q}}\""
+  },
+  "allenamentiPT": {
+    "caricamento": "Caricamento allenamenti…",
+    "errore": "Non riesco a caricare gli allenamenti.",
+    "ultimi": "Ultimi allenamenti"
+  },
+  "cal": {
+    "mese": "Mese",
+    "settimana": "Settimana",
+    "nessuno": "Nessun appuntamento",
+    "eliminareConferma": "Eliminare questo appuntamento?",
+    "aggiungi": "Aggiungi appuntamento",
+    "nuovo": "Nuovo Appuntamento",
+    "phNome": "Nome cognome",
+    "orario": "Orario",
+    "tipo": "Tipo",
+    "modifica": "Modifica Appuntamento"
+  },
+  "builder": {
+    "phCercaONome": "Cerca atleta o inserisci nome…",
+    "confermaRimuovi": "{{giorni}} contiene esercizi. Vuoi rimuoverlo?",
+    "toastAggiornata": "Scheda aggiornata per {{nome}}",
+    "toastAssegnata": "Scheda assegnata a {{nome}}",
+    "errSalvataggio": "Salvataggio non riuscito: {{msg}}. Riprova.",
+    "erroreRete": "errore di rete",
+    "titolo": "Builder Scheda",
+    "eserciziTotali_one": "{{count}} esercizio totale",
+    "eserciziTotali_other": "{{count}} esercizi totali",
+    "datiAtleta": "Dati Atleta",
+    "phCercaAtleta": "Cerca atleta…",
+    "giorni": "Giorni",
+    "nGiorni_one": "{{count}} giorno",
+    "nGiorni_other": "{{count}} giorni",
+    "giornoVuoto": "Giorno vuoto",
+    "phNomeGiorno": "Nome giorno (es. Push, Braccia, Gambe…)",
+    "esercizio": "Esercizio",
+    "serie": "Serie",
+    "rip": "Rip.",
+    "ripTitle": "Ripetizioni (10), intervallo (8-10) o secondi per gli esercizi a tempo (30s)",
+    "rec": "Rec.(s)",
+    "aggiungi": "Aggiungi",
+    "vuoto1": "{{giorno}} vuoto.",
+    "vuoto2": "Aggiungi il primo esercizio!",
+    "serieXRip": "Serie × Rip.",
+    "recupero": "Recupero",
+    "muscoli": "Muscoli",
+    "serieTotali": "Serie totali",
+    "tempoStimato": "Tempo stimato",
+    "minuti": "minuti",
+    "gruppi": "Gruppi",
+    "sovrascrivi": "Questo atleta ha già una scheda: verrà aggiornata con queste modifiche. Lo storico degli allenamenti resta.",
+    "siAggiorna": "Sì, aggiorna",
+    "svuota": "Svuota {{giorno}}",
+    "esportaPDF": "Esporta PDF completo",
+    "salvata": "Salvata!",
+    "assegna": "Assegna all'atleta"
+  },
+  "atleti": {
+    "errUsername": "Username obbligatorio",
+    "errPin": "Il PIN deve essere di 4 cifre numeriche",
+    "errLimite": "Hai raggiunto il limite del tuo piano ({{n}} atleti). Contatta l'amministratore per aumentare il limite.",
+    "errUsernameUsato": "Username già in uso. Scegli un altro username.",
+    "msgCiaoNome": "Ciao {{nome}}! Ecco il tuo accesso a PT Studio, dove trovi la tua scheda e registri gli allenamenti.",
+    "msgCiao": "Ciao! Ecco il tuo accesso a PT Studio, dove trovi la tua scheda e registri gli allenamenti.",
+    "msgIstruzioni": "Apri il link, inserisci il PIN e installa l'app sul telefono (su iPhone apri il link con Safari).",
+    "nAttivi_one": "{{count}} atleta attivo",
+    "nAttivi_other": "{{count}} atleti attivi",
+    "nArchiviati_one": "{{count}} archiviato",
+    "nArchiviati_other": "{{count}} archiviati",
+    "nuovo": "Nuovo atleta",
+    "caricamento": "Caricamento atleti…",
+    "nSchede_one": "{{count}} scheda",
+    "nSchede_other": "{{count}} schede",
+    "archiviati": "Archiviati ({{n}})",
+    "dettagli": "Dettagli",
+    "ripristina": "Ripristina",
+    "archiviato": "Archiviato",
+    "credenziali": "Credenziali accesso",
+    "copiato": "Copiato",
+    "copia": "Copia",
+    "inviaWhatsapp": "Invia accesso su WhatsApp",
+    "messaggioCopiato": "Messaggio copiato",
+    "copiaMessaggio": "Copia messaggio",
+    "cambiaPin": "Cambia PIN",
+    "phNuovoPin": "Nuovo PIN (4 cifre)",
+    "salvaPin": "Salva PIN",
+    "schedaAssegnata": "Scheda assegnata",
+    "caricamentoScheda": "Caricamento scheda…",
+    "modificaBuilder": "Modifica nel Builder",
+    "nessunaScheda": "Nessuna scheda assegnata ancora.",
+    "creaScheda": "Crea scheda",
+    "profilo": "Profilo",
+    "altezza": "Altezza",
+    "dataNascita": "Data di nascita",
+    "sesso": "Sesso",
+    "nonSpecificato": "non specificato",
+    "notePT": "Note PT",
+    "phNote": "Infortuni, note mediche, preferenze…",
+    "telefono": "Telefono",
+    "email": "Email",
+    "eta": "Età",
+    "anni": "{{n}} anni",
+    "contatti": "Contatti",
+    "schede": "Schede:",
+    "misurazioni": "Misurazioni",
+    "ripristinaAtleta": "Ripristina atleta",
+    "eliminaDef": "Elimina definitivamente",
+    "archiviaAtleta": "Archivia atleta",
+    "archiviareConferma": "Archiviare <b>{{nome}}</b>? Non potrà più accedere, ma tutti i dati vengono conservati. Potrai ripristinarlo in qualsiasi momento.",
+    "archivia": "Archivia",
+    "nuovoTitolo": "Nuovo Atleta",
+    "phUsername": "marco_rossi",
+    "pin4": "PIN (4 cifre)",
+    "opzionale": "opzionale",
+    "eliminazioneDef": "Eliminazione definitiva",
+    "eliminaTesto": "Questa azione elimina <b>{{nome}}</b> e tutto il suo storico (schede, sessioni, misurazioni). Non è reversibile.",
+    "digita": "Digita <b>{{nome}}</b> per confermare:"
+  },
+  "admin": {
+    "datiInsufficienti": "Dati insufficienti",
+    "ptTotali": "PT totali",
+    "subTotali": "registrati sulla piattaforma",
+    "approvati": "Approvati",
+    "subApprovati": "accesso attivo",
+    "subInAttesa": "da approvare",
+    "versione": "Versione",
+    "subVersione": "ultimo deploy",
+    "subStatistiche": "Metriche e andamento della piattaforma",
+    "errore": "Errore:",
+    "chartRegistrati": "PT registrati — ultimi 6 mesi",
+    "chartPiano": "PT per piano",
+    "ptRegistrati": "PT Registrati",
+    "nPT": "{{n}} personal trainer sulla piattaforma",
+    "nessunPT": "Nessun PT registrato ancora.",
+    "registratoIl": "Registrato il {{data}}",
+    "maxAtleti": "Max atleti",
+    "blocca": "Blocca",
+    "approva": "Approva",
+    "approvato": "Approvato",
+    "eliminaPT": "Elimina PT",
+    "rifiuta": "Rifiuta",
+    "rifiutaRichiesta": "Rifiuta richiesta",
+    "rifiutaTesto": "Stai <b>rifiutando</b> la richiesta di <b>{{nome}}</b>. Il loro account verrà eliminato definitivamente.",
+    "eliminaTesto": "Questa azione elimina <b>{{nome}}</b>, tutti i suoi atleti e l'intero storico (schede, sessioni, misurazioni, appuntamenti). <r>Non è reversibile.</r>"
+  }
+}

@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { leggi, scrivi, ascolta, bip, vibra, fmtMMSS } from "../../lib/cronometro.js";
 import { appInSecondoPiano, appASchermo } from "../../lib/notifiche.js";
+import { useTranslation } from "react-i18next";
 
 const NASCONDI_DOPO_MS = 10 * 60 * 1000;   // a 10 min dalla fine sparisce da solo
 const APPENA_MS = 2000;                    // suona solo se la fine è "adesso" (non se si torna dopo)
 
 export default function Cronometro() {
+  const { t: tr } = useTranslation();
   const [t, setT] = useState(leggi);
   const [ora, setOra] = useState(() => Date.now());
   const fatto = useRef(new Set());          // suoni già fatti, per non ripeterli
@@ -61,7 +63,7 @@ export default function Cronometro() {
   const totale = Math.max(1, t.fine - t.inizio);
   const quota = prep || finito ? 0 : (t.fine - ora) / totale;
 
-  const etichetta = prep ? "Pronti" : finito ? (t.tipo === "tempo" ? "Fatto" : "Recupero finito") : (t.tipo === "tempo" ? t.nome : "Recupero");
+  const etichetta = prep ? tr("crono.pronti") : finito ? (t.tipo === "tempo" ? tr("crono.fatto") : tr("crono.recuperoFinito")) : (t.tipo === "tempo" ? t.nome : tr("crono.recupero"));
   const tempo = prep ? String(Math.ceil((t.inizio - ora) / 1000))
     : finito ? `+${fmtMMSS((ora - t.fine) / 1000)}`
     : fmtMMSS((t.fine - ora) / 1000);
@@ -71,7 +73,7 @@ export default function Cronometro() {
       <span className="crono-label">{etichetta}</span>
       <span className="crono-tempo">{tempo}</span>
       {!finito && !prep && <button className="crono-btn" onClick={() => scrivi({ ...t, fine: t.fine + 15000 })}>+15</button>}
-      <button className="crono-btn" aria-label="Chiudi cronometro" onClick={() => scrivi(null)}>✕</button>
+      <button className="crono-btn" aria-label={tr("crono.chiudi")} onClick={() => scrivi(null)}>✕</button>
       {!finito && !prep && <span className="crono-bar" style={{ transform: `scaleX(${quota})` }}/>}
     </div>
   );

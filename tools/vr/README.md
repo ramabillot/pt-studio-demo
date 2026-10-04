@@ -14,6 +14,7 @@ PW_CHROMIUM=/opt/pw-browsers/chromium node snap.mjs base    # 28 schermate mobil
 #   ...modifiche + nuova build...
 PW_CHROMIUM=/opt/pw-browsers/chromium node snap.mjs after
 python3 cmp.py base after   # "px>40: 0" = solo rumore; numeri alti = differenza vera
+# lingua del browser simulato (default it): LANG_APP=es node snap.mjs after-es
 ```
 
 - Le cartelle `base/` e `after/` non vanno committate.

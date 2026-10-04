@@ -8,6 +8,7 @@
 import { store } from "../utils.js";
 import { getToken } from "../api/atleta.js";
 import { isIOS, isStandalone } from "./installa.js";
+import { t as tr, locale } from "../i18n/index.js";
 
 const VAPID_PUBLIC = "BFI972uXOycwek6RYUc457YMkwLPccodxkuYmGT7taYR_enIA6va2Mwjx3b3lH6vRyPejICCmdw-qUutnq78oEo";
 const KEY_ISCRITTO = "ptstudio_push_endpoint";
@@ -64,7 +65,7 @@ export async function attivaNotifiche() {
 }
 
 const pronte = () => notificheSupportate() && Notification.permission === "granted" && !!store.get(KEY_ISCRITTO) && !!getToken();
-const ora = (ms) => new Date(ms).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const ora = (ms) => new Date(ms).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 // Avvisi da programmare per il cronometro attivo (t = stato salvato da lib/cronometro.js)
 export function avvisiPer(t, adesso = Date.now()) {
@@ -72,19 +73,19 @@ export function avvisiPer(t, adesso = Date.now()) {
   const tra = (ms) => Math.max(0, Math.round((ms - adesso) / 1000));
   if (t.tipo === "recupero") {
     return [
-      { tra_sec: 0, titolo: `Recupero · finisce alle ${ora(t.fine)}`, corpo: t.nome, silenziosa: true },
-      { tra_sec: tra(t.fine), titolo: "Recupero finito", corpo: `Si riparte: ${t.nome}` },
+      { tra_sec: 0, titolo: tr("push.recuperoFinisce", { ora: ora(t.fine) }), corpo: t.nome, silenziosa: true },
+      { tra_sec: tra(t.fine), titolo: tr("push.recuperoFinito"), corpo: tr("push.siRiparte", { nome: t.nome }) },
     ];
   }
   const fineRec = t.fine + (t.recupero || 0) * 1000;
   const lista = [];
   if (adesso < t.fine) {
-    lista.push({ tra_sec: 0, titolo: `${t.nome} · finisce alle ${ora(t.fine)}`, corpo: "Esercizio a tempo", silenziosa: true });
-    lista.push({ tra_sec: tra(t.fine), titolo: "Tempo finito", corpo: t.recupero ? `Recupero fino alle ${ora(fineRec)}` : t.nome });
+    lista.push({ tra_sec: 0, titolo: tr("push.nomeFinisce", { nome: t.nome, ora: ora(t.fine) }), corpo: tr("push.esercizioATempo"), silenziosa: true });
+    lista.push({ tra_sec: tra(t.fine), titolo: tr("push.tempoFinito"), corpo: t.recupero ? tr("push.recuperoFinoAlle", { ora: ora(fineRec) }) : t.nome });
   } else {
-    lista.push({ tra_sec: 0, titolo: `Recupero · finisce alle ${ora(fineRec)}`, corpo: t.nome, silenziosa: true });
+    lista.push({ tra_sec: 0, titolo: tr("push.recuperoFinisce", { ora: ora(fineRec) }), corpo: t.nome, silenziosa: true });
   }
-  if (t.recupero) lista.push({ tra_sec: tra(fineRec), titolo: "Recupero finito", corpo: `Si riparte: ${t.nome}` });
+  if (t.recupero) lista.push({ tra_sec: tra(fineRec), titolo: tr("push.recuperoFinito"), corpo: tr("push.siRiparte", { nome: t.nome }) });
   return lista;
 }
 

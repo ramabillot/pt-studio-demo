@@ -69,6 +69,7 @@ pt-studio-demo/
     ├── api/atleta.js      ← client RPC atleta (token di sessione)
     ├── lib/allenamento.js ← logica registrazione allenamento (ultima volta, serie, riepiloghi)
     ├── lib/appuntamenti.js← colori per tipo appuntamento
+    ├── i18n/              ← multilingua: index.js (setup, helper) + it.json / es.json / en.json
     └── components/
         ├── Home, LoginScreen, WelcomeScreen, PendingApproval, Sidebar (Sidebar, MobileNav, BackBtn), InvitoInstalla
         ├── Dashboard, Library (VideoModal), Builder (AtletaSearchField), Atleti, Calendar (CalendarView)
@@ -152,6 +153,18 @@ pt-studio-demo/
 - Suona/vibra solo se la fine avviene con l'app visibile (audio sbloccato dal tocco sul chip; iPhone non vibra). Niente notifiche (servirebbe il service worker).
 
 ---
+
+## Multilingua IT / ES / EN (2026-10-04)
+
+- **Regola: ogni testo nuovo a schermo → chiave in `src/i18n/it.json` + `es.json` + `en.json`** (stessa chiave nei tre file). Mai testo scritto direttamente nel JSX. Spagnolo rioplatense (vos: "ingresá", "probá"), rivisto da Ramiro.
+- Componenti: `const { t } = useTranslation();` → `t("sezione.chiave", {var})`. Plurali: chiavi `_one` / `_other` + `{count}`. Testo con grassetto: `<Trans i18nKey=… components={{b:<strong/>}}/>`. Fuori dai componenti: `t` da `src/i18n/index.js`.
+- **Controllo automatico:** `npm run check-i18n` (gira anche da solo prima di ogni `npm run build`, quindi anche su Vercel): chiavi uguali nei 3 file, niente testi vuoti, ogni `t("…")` del codice esiste. Se fallisce la build si ferma.
+- Lingua: scelta salvata per app (`ptstudio_lingua_home|atleta|pt`) → altrimenti quella scelta nella Home → altrimenti lingua del telefono/PC → italiano. Selettore `SelettoreLingua` (Home, login, intestazione atleta) e card "Lingua" in Account (PT).
+- **Nel database resta tutto in italiano** (nomi esercizi del catalogo, categorie, obiettivo, livello, tipo appuntamento, "Giorno A"): si traduce solo a schermo con gli helper di `i18n/index.js` → `nomeEsercizio(nome, id)`, `muscoliEsercizio(ex)`, `valore(gruppo, v)`, `nomeGiorno(nome, key)`. Storico e grafici continuano a raggruppare per nome italiano.
+- Esercizi del catalogo: `esercizi.<id>.nome/muscoli` nei JSON. Esercizio nuovo in `data.js` → aggiungere anche le 3 traduzioni (termini da palestra, meglio l'inglese diffuso che una traduzione forzata).
+- Date, mesi, giorni: `locale()` (it-IT, es-AR, en-GB), `nomeMese()`, `inizialiGiorni()`, `maiuscola()`. Decimali: `fmtNum()` (62,5 / 62.5); nei campi si accettano virgola e punto (`parseNum`).
+- Non si traducono i contenuti scritti dalle persone (note, nomi schede e giorni scelti dal PT, esercizi custom, segnalazioni). Messaggio WhatsApp e PDF: lingua di chi li genera. Testi delle push: lingua dell'app atleta al momento del cronometro.
+- `tools/vr/snap.mjs` accetta `LANG_APP=it|es|en` per le foto nelle tre lingue.
 
 ## Convenzioni & pattern noti
 

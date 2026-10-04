@@ -3,9 +3,13 @@ import { LINE_COLORS, MISURE_FIELDS } from "../data.js";
 import { fmtDate, fmtDateShort } from "../utils.js";
 import { ProgressiMultiChart } from "./ProgressiEsercizi.jsx";
 import { supabase } from "../supabase.js";
+import { useTranslation } from "react-i18next";
+import { valore, locale, fmtNum } from "../i18n/index.js";
 
 // ── Misure section ────────────────────────────────────────────────────────────
 export function MisureSection({readOnly=false, externalMisure=null, ptId=null, supabaseAtletaId=null}) {
+  const { t } = useTranslation();
+  const etichetta = f => valore("misura", f.key);
   const todayStr = fmtDate(new Date());
   const [misure, setMisure] = useState(()=> externalMisure!==null ? externalMisure : []);
   const [form, setForm] = useState({
@@ -93,7 +97,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
   const chartLines = MISURE_FIELDS
     .filter(f=>selMisure.includes(f.key)&&activeMisureKeys.includes(f.key))
     .map((f,i)=>({
-      id:f.key, name:`${f.emoji} ${f.label}`,
+      id:f.key, name:`${f.emoji} ${etichetta(f)}`,
       color:LINE_COLORS[i%LINE_COLORS.length],
       points:misure
         .filter(m=>m[f.key]&&+m[f.key]>0)
@@ -106,44 +110,44 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
     <div>
       {lastMisura&&(
         <div style={{fontSize:12,color:"var(--muted)",marginBottom:12}}>
-          Ultima misurazione: <strong style={{color:"var(--text)"}}>
-            {new Date(lastMisura.data+"T12:00").toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"})}
+          {t("misure.ultima")} <strong style={{color:"var(--text)"}}>
+            {new Date(lastMisura.data+"T12:00").toLocaleDateString(locale(),{day:"numeric",month:"short",year:"numeric"})}
           </strong>
         </div>
       )}
       {!readOnly&&(
         <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Nuova misurazione</div>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>{t("misure.nuova")}</div>
           <div className="form-row" style={{marginBottom:10}}>
-            <label className="field-label">Data<input className="field-input" type="date" value={form.data} onChange={e=>setForm(p=>({...p,data:e.target.value}))}/></label>
+            <label className="field-label">{t("comune.data")}<input className="field-input" type="date" value={form.data} onChange={e=>setForm(p=>({...p,data:e.target.value}))}/></label>
           </div>
           <div className="form-row" style={{marginBottom:10}}>
-            <label className="field-label">Peso (kg)<input className="field-input" type="number" min={0} max={300} step={0.1} placeholder="78.5" value={form.peso} onChange={e=>setForm(p=>({...p,peso:e.target.value}))}/></label>
-            <label className="field-label">Vita (cm)<input className="field-input" type="number" min={0} max={200} placeholder="82" value={form.vita} onChange={e=>setForm(p=>({...p,vita:e.target.value}))}/></label>
+            <label className="field-label">{etichetta({key:"peso"})} (kg)<input className="field-input" type="number" min={0} max={300} step={0.1} placeholder="78.5" value={form.peso} onChange={e=>setForm(p=>({...p,peso:e.target.value}))}/></label>
+            <label className="field-label">{etichetta({key:"vita"})} (cm)<input className="field-input" type="number" min={0} max={200} placeholder="82" value={form.vita} onChange={e=>setForm(p=>({...p,vita:e.target.value}))}/></label>
           </div>
           <button className="btn-ghost" style={{fontSize:11,padding:"5px 12px",marginBottom:showAvanzati?8:0}} onClick={()=>setShowAvanzati(v=>!v)}>
-            {showAvanzati?"▲ Nascondi avanzati":"➕ Dati avanzati"}
+            {showAvanzati?`▲ ${t("misure.nascondiAvanzati")}`:`➕ ${t("misure.datiAvanzati")}`}
           </button>
           {showAvanzati&&(
             <div className="misure-avanzati">
               <div className="form-row">
-                <label className="field-label">Fianchi (cm)<input className="field-input" type="number" min={0} max={200} placeholder="96" value={form.fianchi} onChange={e=>setForm(p=>({...p,fianchi:e.target.value}))}/></label>
-                <label className="field-label">Petto (cm)<input className="field-input" type="number" min={0} max={200} placeholder="100" value={form.petto} onChange={e=>setForm(p=>({...p,petto:e.target.value}))}/></label>
+                <label className="field-label">{etichetta({key:"fianchi"})} (cm)<input className="field-input" type="number" min={0} max={200} placeholder="96" value={form.fianchi} onChange={e=>setForm(p=>({...p,fianchi:e.target.value}))}/></label>
+                <label className="field-label">{etichetta({key:"petto"})} (cm)<input className="field-input" type="number" min={0} max={200} placeholder="100" value={form.petto} onChange={e=>setForm(p=>({...p,petto:e.target.value}))}/></label>
               </div>
               <div className="form-row">
-                <label className="field-label">Braccio (cm)<input className="field-input" type="number" min={0} max={100} placeholder="36" value={form.braccio} onChange={e=>setForm(p=>({...p,braccio:e.target.value}))}/></label>
-                <label className="field-label">FC Riposo (bpm)<input className="field-input" type="number" min={30} max={200} placeholder="65" value={form.fcRiposo} onChange={e=>setForm(p=>({...p,fcRiposo:e.target.value}))}/></label>
+                <label className="field-label">{etichetta({key:"braccio"})} (cm)<input className="field-input" type="number" min={0} max={100} placeholder="36" value={form.braccio} onChange={e=>setForm(p=>({...p,braccio:e.target.value}))}/></label>
+                <label className="field-label">{etichetta({key:"fcRiposo"})} (bpm)<input className="field-input" type="number" min={30} max={200} placeholder="65" value={form.fcRiposo} onChange={e=>setForm(p=>({...p,fcRiposo:e.target.value}))}/></label>
               </div>
-              <label className="field-label">% Massa grassa<input className="field-input" type="number" min={0} max={70} step={0.1} placeholder="18.5" value={form.grassoPerc} onChange={e=>setForm(p=>({...p,grassoPerc:e.target.value}))}/></label>
+              <label className="field-label">{t("misure.massaGrassa")}<input className="field-input" type="number" min={0} max={70} step={0.1} placeholder="18.5" value={form.grassoPerc} onChange={e=>setForm(p=>({...p,grassoPerc:e.target.value}))}/></label>
             </div>
           )}
-          <button className="btn-primary" style={{marginTop:10,width:"100%"}} onClick={handleSave}>Salva misurazione</button>
+          <button className="btn-primary" style={{marginTop:10,width:"100%"}} onClick={handleSave}>{t("misure.salva")}</button>
         </div>
       )}
 
       {misure.length===0?(
         <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>
-          {readOnly?"Il tuo PT non ha ancora registrato misurazioni":"Nessuna misurazione registrata ancora."}
+          {readOnly?t("misure.vuotaAtleta"):t("misure.vuota")}
         </div>
       ):(
         <>
@@ -155,7 +159,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
                 <div className="misure-entry">
                   <span className="misure-date">{fmtDateShort(m.data)}</span>
                   {badges.map(f=>(
-                    <span key={f.key} className="misura-badge">{f.emoji} {f.label} {m[f.key]} {f.unit}</span>
+                    <span key={f.key} className="misura-badge">{f.emoji} {etichetta(f)} {fmtNum(m[f.key])} {f.unit}</span>
                   ))}
                   <div style={{flex:1}}/>
                   {!readOnly&&(
@@ -164,10 +168,10 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
                 </div>
                 {deleteConfirm===realIdx&&(
                   <div className="day-delete-confirm" style={{marginBottom:7}}>
-                    <span style={{fontSize:13,color:"var(--text)"}}>Eliminare questa misurazione?</span>
+                    <span style={{fontSize:13,color:"var(--text)"}}>{t("misure.eliminareConferma")}</span>
                     <div style={{display:"flex",gap:8}}>
-                      <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>Annulla</button>
-                      <button className="btn-danger" onClick={()=>handleDelete(realIdx)}>Elimina</button>
+                      <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
+                      <button className="btn-danger" onClick={()=>handleDelete(realIdx)}>{t("comune.elimina")}</button>
                     </div>
                   </div>
                 )}
@@ -176,7 +180,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
           })}
           {misure.length>3&&(
             <button className="appt-expand-btn" onClick={()=>setExpanded(v=>!v)}>
-              {expanded?"Mostra meno ▲":`Vedi tutte (${misure.length}) ▼`}
+              {expanded?`${t("comune.mostraMeno")} ▲`:`${t("comune.vediTutte",{n:misure.length})} ▼`}
             </button>
           )}
         </>
@@ -184,7 +188,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
 
       {misure.length<2?(
         <div style={{color:"var(--muted)",fontSize:13,marginTop:12,padding:"10px 0",textAlign:"center"}}>
-          {misure.length===0?"":readOnly?"":"Aggiungi almeno 2 misurazioni per vedere il grafico"}
+          {misure.length===0?"":readOnly?"":t("misure.almeno2")}
         </div>
       ):(
         <div style={{marginTop:14}}>
@@ -197,13 +201,13 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
                   className={`prog-chip unlocked${sel?" selected":""}`}
                   style={sel?{background:`${cc}1a`,borderColor:cc,color:cc}:{}}
                   onClick={()=>toggleMisura(f.key)}
-                >{f.emoji} {f.label}</button>
+                >{f.emoji} {etichetta(f)}</button>
               );
             })}
           </div>
           {chartLines.length===0?(
             <div style={{color:"var(--muted)",fontSize:13,textAlign:"center",padding:"8px 0"}}>
-              Seleziona una metrica per vedere il grafico
+              {t("misure.selezionaMetrica")}
             </div>
           ):(
             <>

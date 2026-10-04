@@ -8,11 +8,15 @@ import { typeColor, typeBg } from "../lib/appuntamenti.js";
 import AtletaProgressi from "./atleta/AtletaProgressi.jsx";
 import MonthCalendar from "./atleta/MonthCalendar.jsx";
 import Cronometro from "./atleta/Cronometro.jsx";
+import SelettoreLingua from "./SelettoreLingua.jsx";
+import { useTranslation } from "react-i18next";
+import { nomeGiorno, valore } from "../i18n/index.js";
 
 // ── AtletaView ────────────────────────────────────────────────────────────────
 // Dati via token di sessione atleta (src/api/atleta.js). Se il token non è più
 // valido (atleta archiviato, PT disattivato, token scaduto) si torna al login.
 export default function AtletaView({user, onLogout}) {
+  const { t } = useTranslation();
   const todayStr = fmtDate(new Date());
 
   const [atlView, setAtlView] = useState("scheda");
@@ -39,7 +43,7 @@ export default function AtletaView({user, onLogout}) {
   const gestisciErrore = (e) => {
     if(e instanceof api.SessioneScaduta){ onLogout(); return; }
     console.error("[atleta]", e);
-    setLoadErr("Non riesco a caricare i dati. Controlla la connessione e riapri l'app.");
+    setLoadErr("errCaricamento");   // chiave: il testo segue la lingua scelta
   };
 
   useEffect(()=>{
@@ -50,7 +54,7 @@ export default function AtletaView({user, onLogout}) {
       const sortedG=[...(data.scheda_giorni||[])].sort((a,b)=>a.ordine-b.ordine);
       sortedG.forEach(g=>{
         const key=g.giorno_key||`G${g.ordine}`;
-        dayNames[key]=g.nome||`Giorno ${key}`;
+        dayNames[key]=g.nome||"";   // tradotto a schermo con nomeGiorno()
         giornoIds[key]=g.id;
         giorni[key]=(g.scheda_esercizi||[]).sort((a,b)=>a.ordine-b.ordine).map(ex=>{
           const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int);
@@ -105,11 +109,11 @@ export default function AtletaView({user, onLogout}) {
   const handleSave = async ()=>{
     if(saving) return;
     setSaveErr(null);
-    if(selectedDate>todayStr){ setSaveErr("Non puoi registrare un allenamento in una data futura."); return; }
+    if(selectedDate>todayStr){ setSaveErr("errFuturo"); return; }
     const gid=schedaMeta?.giornoIds[activeDay];
     const esercizi=scheda?.giorni[activeDay]||[];
     const serie=esercizi.flatMap(ex=>stati[ex.exKey]?righeDaStato(ex,stati[ex.exKey]):[]);
-    if(!serie.length){ setSaveErr("Hai segnato tutti gli esercizi come saltati: niente da salvare."); return; }
+    if(!serie.length){ setSaveErr("errTuttiSaltati"); return; }
     const note=esercizi
       .filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta&&stati[ex.exKey].nota?.trim())
       .map(ex=>({scheda_esercizio_id:ex.exDbId, nome_esercizio:ex.name, nota:stati[ex.exKey].nota.trim()}));
@@ -125,7 +129,7 @@ export default function AtletaView({user, onLogout}) {
     } catch(e){
       if(e instanceof api.SessioneScaduta){ onLogout(); return; }
       console.error("[salva sessione]", e);
-      setSaveErr("⚠️ Sessione NON salvata: problema di connessione. I dati inseriti restano qui, riprova tra poco.");
+      setSaveErr("errNonSalvata");
     } finally {
       setSaving(false);
     }
@@ -133,7 +137,7 @@ export default function AtletaView({user, onLogout}) {
 
   const handlePDFAtleta = async () => {
     if(!scheda) return;
-    setPdfStateAtleta({progress:0,label:"Preparazione…"});
+    setPdfStateAtleta({progress:0,label:t("pdf.preparazione")});
     try {
       await buildPDF({
         nome: scheda.nome||"", cognome: scheda.cognome||"",
@@ -165,36 +169,37 @@ export default function AtletaView({user, onLogout}) {
     <>
       <div className="cliente-header">
         <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}}>PT<span style={{color:"var(--text)"}}>Studio</span></div>
-        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)"}}>{user.name}</div>
-        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ Esci</button>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{user.name}</div>
+        <SelettoreLingua/>
+        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ {t("comune.esci")}</button>
       </div>
       <div className="atleta-stats-bar">
-        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> sessioni completate</span>
-        <span className="atleta-stats-item">📅 Ultima: <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
-        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> giorni consecutivi</span>
+        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> {t("atleta.sessioniCompletate",{count:sessionTotal})}</span>
+        <span className="atleta-stats-item">📅 {t("atleta.ultima")} <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
+        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> {t("atleta.giorniConsecutivi",{count:sessionStreak})}</span>
       </div>
       <div className="atleta-tab-nav">
-        <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 Scheda</button>
-        <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 Progressi</button>
+        <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 {t("atleta.tabScheda")}</button>
+        <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 {t("atleta.tabProgressi")}</button>
       </div>
-      {loadErr&&<div className="cliente-body" style={{paddingBottom:0}}><div className="session-saved-banner" style={{background:"rgba(255,71,87,.08)",borderColor:"rgba(255,71,87,.3)",color:"var(--danger)"}}>{loadErr}</div></div>}
+      {loadErr&&<div className="cliente-body" style={{paddingBottom:0}}><div className="session-saved-banner" style={{background:"rgba(255,71,87,.08)",borderColor:"rgba(255,71,87,.3)",color:"var(--danger)"}}>{t(`atleta.${loadErr}`)}</div></div>}
     </>
   );
 
   const appuntamenti = futureAppts.length>0 && (
     <div className="appt-section">
-      <div className="appt-section-title">📅 Prossimi appuntamenti</div>
+      <div className="appt-section-title">📅 {t("atleta.prossimiAppuntamenti")}</div>
       {visibleAppts.map((ev,i)=>(
         <div className="appt-card" key={ev.id||i}>
           <div className="appt-date-label">{fmtDateShort(ev.date)}</div>
           <div className="appt-time">{ev.time}</div>
           <div className="appt-name">{ev.clientName}</div>
-          <div className="appt-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
+          <div className="appt-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{valore("tipoAppuntamento",ev.type)}</div>
         </div>
       ))}
       {futureAppts.length>3&&(
         <button className="appt-expand-btn" onClick={()=>setApptExpanded(v=>!v)}>
-          {apptExpanded?"Mostra meno ▲":`Vedi tutti (${futureAppts.length}) ▼`}
+          {apptExpanded?`${t("comune.mostraMeno")} ▲`:`${t("comune.vediTutti",{n:futureAppts.length})} ▼`}
         </button>
       )}
     </div>
@@ -208,11 +213,11 @@ export default function AtletaView({user, onLogout}) {
         {schedaCaricata&&(
           <div style={{textAlign:"center",paddingTop:28}}>
             <div style={{fontSize:48,marginBottom:16}}>📋</div>
-            <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>Nessuna scheda assegnata</div>
-            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>Il tuo PT non ti ha ancora assegnato una scheda.</div>
+            <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>{t("atleta.nessunaScheda")}</div>
+            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>{t("atleta.nessunaSchedaTesto")}</div>
           </div>
         )}
-        {!schedaCaricata&&<div style={{textAlign:"center",color:"var(--muted)",paddingTop:28}}>Caricamento…</div>}
+        {!schedaCaricata&&<div style={{textAlign:"center",color:"var(--muted)",paddingTop:28}}>{t("comune.caricamento")}</div>}
       </div>
     </div>
   );
@@ -220,7 +225,7 @@ export default function AtletaView({user, onLogout}) {
   const giorni = Object.keys(scheda.giorni);
   const esercizi = scheda.giorni[activeDay]||[];
   const dayNamesScheda = scheda.dayNames||{};
-  const activeDayLabel = dayNamesScheda[activeDay] || `Giorno ${activeDay}`;
+  const activeDayLabel = nomeGiorno(dayNamesScheda[activeDay], activeDay);
 
   // Mappa data → sessioni per il calendario (giorno_id → lettera del giorno)
   const _giornoIdToKey = schedaMeta
@@ -230,13 +235,13 @@ export default function AtletaView({user, onLogout}) {
   _rawSupa.forEach(s=>{
     const giornoKey=_giornoIdToKey[s.giorno_id];
     if(!giornoKey) return;
-    const dayLabel = scheda?.dayNames?.[giornoKey] || `Giorno ${giornoKey}`;
+    const dayLabel = nomeGiorno(scheda?.dayNames?.[giornoKey], giornoKey);
     (sessionsByDate[s.data] = sessionsByDate[s.data] || []).push({giornoKey, dayLabel});
   });
 
-  const saveBtnLabel = saving ? "Salvataggio…" : isToday
-    ? (saved ? `Aggiorna sessione — ${activeDayLabel}` : `Salva sessione — ${activeDayLabel}`)
-    : `${saved?"Aggiorna":"Salva"} sessione del ${fmtDateShort(selectedDate)} — ${activeDayLabel}`;
+  const saveBtnLabel = saving ? t("comune.salvataggio") : isToday
+    ? t(saved ? "atleta.aggiornaSessione" : "atleta.salvaSessione", {giorno:activeDayLabel})
+    : t(saved ? "atleta.aggiornaSessioneDel" : "atleta.salvaSessioneDel", {data:fmtDateShort(selectedDate), giorno:activeDayLabel});
 
   return (
     <div style={{minHeight:"100vh",background:"var(--bg)"}}>
@@ -248,12 +253,12 @@ export default function AtletaView({user, onLogout}) {
         {appuntamenti}
 
         <div className="scheda-info-card">
-          <div className="scheda-info-title">{scheda.nome||"La tua scheda"}</div>
+          <div className="scheda-info-title">{scheda.nome||t("atleta.laTuaScheda")}</div>
           <div className="scheda-info-meta">
             {scheda.pt&&<span>👤 PT: <strong style={{color:"var(--text)"}}>{scheda.pt}</strong></span>}
-            {scheda.obiettivo&&<span>🎯 {scheda.obiettivo}</span>}
-            {scheda.livello&&<span>📊 {scheda.livello}</span>}
-            <span>📅 Assegnata il {scheda.assegnataIl?fmtDateShort(scheda.assegnataIl):"—"}</span>
+            {scheda.obiettivo&&<span>🎯 {valore("obiettivo",scheda.obiettivo)}</span>}
+            {scheda.livello&&<span>📊 {valore("livello",scheda.livello)}</span>}
+            <span>📅 {t("atleta.assegnataIl",{data:scheda.assegnataIl?fmtDateShort(scheda.assegnataIl):"—"})}</span>
           </div>
         </div>
 
@@ -261,13 +266,13 @@ export default function AtletaView({user, onLogout}) {
           <div className="day-tabs">
             {giorni.map(d=>(
               <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                {dayNamesScheda[d]||`Giorno ${d}`}
+                {nomeGiorno(dayNamesScheda[d], d)}
               </button>
             ))}
           </div>
           {!pdfStateAtleta&&(
             <button className="btn-ghost" style={{fontSize:12,padding:"7px 14px"}} onClick={handlePDFAtleta}>
-              ⬇ Scarica PDF
+              ⬇ {t("pdf.scarica")}
             </button>
           )}
         </div>
@@ -290,24 +295,24 @@ export default function AtletaView({user, onLogout}) {
           todayStr={todayStr}
         />
         <div style={{textAlign:"center",fontSize:12,fontWeight:600,color:isToday?"var(--muted)":"var(--accent2)",marginBottom:12,letterSpacing:.3}}>
-          {isToday?`Oggi — ${fmtDateLong(selectedDate)}`:fmtDateLong(selectedDate)}
+          {isToday?`${t("comune.oggi")} — ${fmtDateLong(selectedDate)}`:fmtDateLong(selectedDate)}
         </div>
 
         {justSaved&&(
           <div className="session-saved-banner" style={{background:"rgba(71,255,232,.15)",borderColor:"rgba(71,255,232,.4)",fontWeight:700}}>
-            ✓ Sessione salvata con successo!
+            ✓ {t("atleta.sessioneSalvata")}
           </div>
         )}
         {saveErr&&(
           <div className="session-saved-banner" style={{background:"rgba(255,71,87,.1)",borderColor:"rgba(255,71,87,.4)",color:"var(--danger)",fontWeight:700}}>
-            {saveErr}
+            {t(`atleta.${saveErr}`)}
           </div>
         )}
         {!justSaved&&!saveErr&&saved&&(
           <div className="session-saved-banner">
             {isToday
-              ? "↩ Allenamento di oggi già salvato — puoi modificarlo e risalvare"
-              : `↩ Allenamento del ${fmtDateShort(selectedDate)} già salvato — puoi modificarlo e risalvare`
+              ? `↩ ${t("atleta.giaSalvatoOggi")}`
+              : `↩ ${t("atleta.giaSalvatoDel",{data:fmtDateShort(selectedDate)})}`
             }
           </div>
         )}

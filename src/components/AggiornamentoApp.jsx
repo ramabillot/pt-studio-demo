@@ -6,6 +6,7 @@
 //  · al ritorno dopo poco (es. tra una serie e l'altra) → solo un banner
 //    "Aggiorna", per non perdere i pesi che si stanno inserendo
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const VERSIONE = import.meta.env.VITE_APP_VERSION || "dev";
 const RITORNO_LUNGO_MS = 30 * 60 * 1000;
@@ -31,6 +32,7 @@ function ricaricaUnaVolta(v) {
 }
 
 export default function AggiornamentoApp() {
+  const { t } = useTranslation();
   const [nuova, setNuova] = useState(false);
 
   useEffect(() => {
@@ -62,8 +64,8 @@ export default function AggiornamentoApp() {
   if (!nuova) return null;
   return (
     <div className="aggiorna-banner" role="status">
-      <span>Nuova versione disponibile</span>
-      <button onClick={() => window.location.reload()}>Aggiorna</button>
+      <span>{t("aggiorna.nuova")}</span>
+      <button onClick={() => window.location.reload()}>{t("aggiorna.aggiorna")}</button>
     </div>
   );
 }

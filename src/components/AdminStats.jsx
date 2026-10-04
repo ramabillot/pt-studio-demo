@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
-import { MONTHS_IT } from "../data.js";
+import { useTranslation } from "react-i18next";
+import i18n, { nomeMese } from "../i18n/index.js";
 import { BackBtn } from "./Sidebar.jsx";
 
 function LineChart({data, color="#e8ff47"}) {
   const W=300, H=100, pad=10;
   if (!data || data.length < 2) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted)",fontSize:12}}>
-      Dati insufficienti
+      {i18n.t("admin.datiInsufficienti")}
     </div>
   );
   const max = Math.max(...data.map(d=>d.v), 1);
@@ -65,6 +66,7 @@ function BarChart({data, color="#47ffe8"}) {
 }
 
 export default function AdminStats({setView, user}) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -92,7 +94,7 @@ export default function AdminStats({setView, user}) {
         const d = new Date(p.created_at);
         return d >= from && d < to;
       }).length;
-      return { l: MONTHS_IT[from.getMonth()].slice(0,3), v: count };
+      return { m: from.getMonth(), v: count };   // etichetta del mese al render (segue la lingua)
     });
 
     // PT per piano
@@ -108,25 +110,25 @@ export default function AdminStats({setView, user}) {
   useEffect(() => { fetchStats(); }, [user]);
 
   const sysCards = data ? [
-    { label:"PT totali",    val:String(data.total),    icon:"👥", sub:"registrati sulla piattaforma" },
-    { label:"Approvati",    val:String(data.approved), icon:"✅", sub:"accesso attivo" },
-    { label:"In attesa",    val:String(data.pending),  icon:"⏳", sub:"da approvare" },
-    { label:"Versione",     val:"v1.2.0",              icon:"📦", sub:"ultimo deploy" },
+    { label:t("admin.ptTotali"),    val:String(data.total),    icon:"👥", sub:t("admin.subTotali") },
+    { label:t("admin.approvati"),    val:String(data.approved), icon:"✅", sub:t("admin.subApprovati") },
+    { label:t("dash.inAttesa"),    val:String(data.pending),  icon:"⏳", sub:t("admin.subInAttesa") },
+    { label:t("admin.versione"),     val:"v1.2.0",              icon:"📦", sub:t("admin.subVersione") },
   ] : [];
 
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head">
-        <div className="page-title">Statistiche</div>
-        <div className="page-sub">Metriche e andamento della piattaforma</div>
+        <div className="page-title">{t("nav.statistiche")}</div>
+        <div className="page-sub">{t("admin.subStatistiche")}</div>
       </div>
 
       {loading && (
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>Caricamento…</div>
+        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
       )}
       {!loading && err && (
-        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>Errore: {err}</div>
+        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
       )}
 
       {!loading && !err && data && (<>
@@ -144,11 +146,11 @@ export default function AdminStats({setView, user}) {
 
         <div className="charts-grid">
           <div className="chart-card">
-            <div className="chart-title">PT registrati — ultimi 6 mesi</div>
-            <div className="chart-area"><LineChart data={data.lineData} color="#e8ff47"/></div>
+            <div className="chart-title">{t("admin.chartRegistrati")}</div>
+            <div className="chart-area"><LineChart data={data.lineData.map(d=>({l:nomeMese(d.m,"short").replace(".",""), v:d.v}))} color="#e8ff47"/></div>
           </div>
           <div className="chart-card">
-            <div className="chart-title">PT per piano</div>
+            <div className="chart-title">{t("admin.chartPiano")}</div>
             <div className="chart-area"><BarChart data={data.pianoData} color="#47ffe8"/></div>
           </div>
         </div>

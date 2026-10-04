@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { MONTHS_IT, DAYS_IT, SESSION_TYPES } from "../data.js";
+import { SESSION_TYPES } from "../data.js";
 import { fmtDate } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { AtletaSearchField } from "./Builder.jsx";
 import { typeColor, typeBg } from "../lib/appuntamenti.js";
+import { useTranslation } from "react-i18next";
+import { nomeMese, inizialiGiorni, locale, valore, maiuscola } from "../i18n/index.js";
 
 
 function getMonday(d) {
@@ -21,6 +23,8 @@ function CalendarBase({
   enableAtletaSearch=false, atletiList=[],
   onAdd=null, onEdit=null, onDelete=null,
 }) {
+  const { t } = useTranslation();
+  const DAYS = inizialiGiorni("short");   // lun…dom nella lingua scelta
   const now=new Date();
   const todayStr=fmtDate(now);
   const [calView,setCalView]=useState("month");
@@ -87,7 +91,7 @@ function CalendarBase({
   const prevW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()-7); setWeekStart(d); };
   const nextW=()=>{ const d=new Date(weekStart); d.setDate(d.getDate()+7); setWeekStart(d); };
   const weekDays=Array.from({length:7},(_,i)=>{ const d=new Date(weekStart); d.setDate(d.getDate()+i); return d; });
-  const weekLabel=`${weekDays[0].getDate()} ${MONTHS_IT[weekDays[0].getMonth()]} — ${weekDays[6].getDate()} ${MONTHS_IT[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`;
+  const weekLabel=`${weekDays[0].getDate()} ${nomeMese(weekDays[0].getMonth())} — ${weekDays[6].getDate()} ${nomeMese(weekDays[6].getMonth())} ${weekDays[6].getFullYear()}`;
 
   const atletaSearchProps = (f, setF) => enableAtletaSearch ? {
     value: f.clientName,
@@ -102,13 +106,13 @@ function CalendarBase({
       <div className="page-head">
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:20}}>
           <div className="cal-view-toggle">
-            <button className={`cal-view-btn${calView==="month"?" active":""}`} onClick={()=>setCalView("month")}>Mese</button>
-            <button className={`cal-view-btn${calView==="week"?" active":""}`} onClick={()=>setCalView("week")}>Settimana</button>
+            <button className={`cal-view-btn${calView==="month"?" active":""}`} onClick={()=>setCalView("month")}>{t("cal.mese")}</button>
+            <button className={`cal-view-btn${calView==="week"?" active":""}`} onClick={()=>setCalView("week")}>{t("cal.settimana")}</button>
           </div>
           <div className="cal-header">
             <button className="cal-nav" onClick={calView==="month"?prevM:prevW}>‹</button>
             <div className="cal-month" style={{fontSize:calView==="week"?"16px":"24px",letterSpacing:calView==="week"?"1px":"2px"}}>
-              {calView==="month"?`${MONTHS_IT[month]} ${year}`:weekLabel}
+              {calView==="month"?`${nomeMese(month)} ${year}`:weekLabel}
             </div>
             <button className="cal-nav" onClick={calView==="month"?nextM:nextW}>›</button>
           </div>
@@ -118,7 +122,7 @@ function CalendarBase({
 
       {calView==="month"&&(
         <div className="cal-grid">
-          {DAYS_IT.map(d=><div key={d} className="cal-day-label">{d}</div>)}
+          {DAYS.map((d,i)=><div key={i} className="cal-day-label">{d}</div>)}
           {cells.map((cell,i)=>{
             if(!cell.date) return <div key={`e${i}`}/>;
             const dayEvs=evsByDate(cell.date);
@@ -150,7 +154,7 @@ function CalendarBase({
               const isToday=ds===todayStr;
               return (
                 <div key={i} className={`cal-week-header${isToday?" today-col":""}`}>
-                  {DAYS_IT[i]}<br/><span style={{fontSize:14,fontWeight:700}}>{d.getDate()}</span>
+                  {DAYS[i]}<br/><span style={{fontSize:14,fontWeight:700}}>{d.getDate()}</span>
                 </div>
               );
             })}
@@ -181,32 +185,32 @@ function CalendarBase({
         <div className="overlay" onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>
           <div className="day-modal" onClick={e=>e.stopPropagation()}>
             <div className="day-modal-header">
-              <div className="modal-title" style={{fontSize:16,textTransform:"capitalize"}}>
-                {new Date(dayModal+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
+              <div className="modal-title" style={{fontSize:16}}>
+                {maiuscola(new Date(dayModal+"T12:00").toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"}))}
               </div>
-              <button className="modal-close" onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>✕</button>
+              <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>✕</button>
             </div>
             <div className="day-modal-body">
               {evsByDate(dayModal).length===0&&(
-                <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"20px 0"}}>Nessun appuntamento</div>
+                <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"20px 0"}}>{t("cal.nessuno")}</div>
               )}
               {evsByDate(dayModal).map(ev=>(
                 <div key={ev.id}>
                   <div className="day-event-row">
                     <div className="day-event-time">{ev.time}</div>
                     <div className="day-event-name">{ev.clientName}</div>
-                    <div className="day-event-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{ev.type}</div>
+                    <div className="day-event-type-badge" style={{background:typeBg(ev.type),color:typeColor(ev.type)}}>{valore("tipoAppuntamento",ev.type)}</div>
                     <div className="day-event-actions">
-                      <button className="day-event-btn" title="Modifica" onClick={()=>{setDayModal(null);setDeleteConfirm(null);startEdit(ev);}}>✏️</button>
-                      <button className="day-event-btn" title="Elimina" onClick={()=>setDeleteConfirm(deleteConfirm===ev.id?null:ev.id)}>🗑️</button>
+                      <button className="day-event-btn" title={t("comune.modifica")} onClick={()=>{setDayModal(null);setDeleteConfirm(null);startEdit(ev);}}>✏️</button>
+                      <button className="day-event-btn" title={t("comune.elimina")} onClick={()=>setDeleteConfirm(deleteConfirm===ev.id?null:ev.id)}>🗑️</button>
                     </div>
                   </div>
                   {deleteConfirm===ev.id&&(
                     <div className="day-delete-confirm">
-                      <span style={{fontSize:13,color:"var(--text)"}}>Eliminare questo appuntamento?</span>
+                      <span style={{fontSize:13,color:"var(--text)"}}>{t("cal.eliminareConferma")}</span>
                       <div style={{display:"flex",gap:8}}>
-                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>Annulla</button>
-                        <button className="btn-danger" onClick={()=>deleteEvent(ev.id)}>Elimina</button>
+                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
+                        <button className="btn-danger" onClick={()=>deleteEvent(ev.id)}>{t("comune.elimina")}</button>
                       </div>
                     </div>
                   )}
@@ -214,7 +218,7 @@ function CalendarBase({
               ))}
             </div>
             <div className="day-modal-footer">
-              <button className="btn-primary" style={{width:"100%"}} onClick={()=>{const d=dayModal;setDayModal(null);setDeleteConfirm(null);openAddForm(d);}}>+ Aggiungi appuntamento</button>
+              <button className="btn-primary" style={{width:"100%"}} onClick={()=>{const d=dayModal;setDayModal(null);setDeleteConfirm(null);openAddForm(d);}}>+ {t("cal.aggiungi")}</button>
             </div>
           </div>
         </div>
@@ -224,28 +228,28 @@ function CalendarBase({
         <div className="overlay" onClick={()=>setShowAddForm(null)}>
           <div className="form-modal" onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
-              <div className="modal-title">Nuovo Appuntamento</div>
-              <button className="modal-close" onClick={()=>setShowAddForm(null)}>✕</button>
+              <div className="modal-title">{t("cal.nuovo")}</div>
+              <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>setShowAddForm(null)}>✕</button>
             </div>
             <div className="form-modal-body">
               <div style={{fontSize:13,color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
-                📅 {new Date(showAddForm+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
+                📅 {new Date(showAddForm+"T12:00").toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"})}
               </div>
               <label className="field-label">
                 {clientLabel}
                 {enableAtletaSearch
                   ? <AtletaSearchField {...atletaSearchProps(form,setForm)}/>
-                  : <input className="field-input" type="text" placeholder="Nome cognome" value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/>
+                  : <input className="field-input" type="text" placeholder={t("cal.phNome")} value={form.clientName} onChange={e=>setForm(p=>({...p,clientName:e.target.value}))}/>
                 }
               </label>
               <div className="form-row">
-                <label className="field-label">Orario<input className="field-input" type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/></label>
-                <label className="field-label">Tipo<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
+                <label className="field-label">{t("cal.orario")}<input className="field-input" type="time" value={form.time} onChange={e=>setForm(p=>({...p,time:e.target.value}))}/></label>
+                <label className="field-label">{t("cal.tipo")}<select className="field-select" value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(st=><option key={st} value={st}>{valore("tipoAppuntamento",st)}</option>)}</select></label>
               </div>
             </div>
             <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>setShowAddForm(null)}>Annulla</button>
-              <button className="btn-primary" onClick={addEvent} disabled={saving}>{saving?"Salvataggio…":"Salva"}</button>
+              <button className="btn-ghost" onClick={()=>setShowAddForm(null)}>{t("comune.annulla")}</button>
+              <button className="btn-primary" onClick={addEvent} disabled={saving}>{saving?t("comune.salvataggio"):t("comune.salva")}</button>
             </div>
           </div>
         </div>
@@ -255,8 +259,8 @@ function CalendarBase({
         <div className="overlay" onClick={()=>setEditEv(null)}>
           <div className="form-modal" onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
-              <div className="modal-title">Modifica Appuntamento</div>
-              <button className="modal-close" onClick={()=>setEditEv(null)}>✕</button>
+              <div className="modal-title">{t("cal.modifica")}</div>
+              <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>setEditEv(null)}>✕</button>
             </div>
             <div className="form-modal-body">
               <label className="field-label">
@@ -267,15 +271,15 @@ function CalendarBase({
                 }
               </label>
               <div className="form-row">
-                <label className="field-label">Orario<input className="field-input" type="time" value={editForm.time} onChange={e=>setEditForm(p=>({...p,time:e.target.value}))}/></label>
-                <label className="field-label">Tipo<select className="field-select" value={editForm.type} onChange={e=>setEditForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(t=><option key={t}>{t}</option>)}</select></label>
+                <label className="field-label">{t("cal.orario")}<input className="field-input" type="time" value={editForm.time} onChange={e=>setEditForm(p=>({...p,time:e.target.value}))}/></label>
+                <label className="field-label">{t("cal.tipo")}<select className="field-select" value={editForm.type} onChange={e=>setEditForm(p=>({...p,type:e.target.value}))}>{sessionTypes.map(st=><option key={st} value={st}>{valore("tipoAppuntamento",st)}</option>)}</select></label>
               </div>
             </div>
             <div className="form-actions" style={{justifyContent:"space-between"}}>
-              <button className="btn-danger" onClick={()=>{deleteEvent(editEv.id);setEditEv(null);}}>Elimina</button>
+              <button className="btn-danger" onClick={()=>{deleteEvent(editEv.id);setEditEv(null);}}>{t("comune.elimina")}</button>
               <div style={{display:"flex",gap:10}}>
-                <button className="btn-ghost" onClick={()=>setEditEv(null)}>Annulla</button>
-                <button className="btn-primary" onClick={saveEdit} disabled={saving}>{saving?"Salvataggio…":"Salva modifiche"}</button>
+                <button className="btn-ghost" onClick={()=>setEditEv(null)}>{t("comune.annulla")}</button>
+                <button className="btn-primary" onClick={saveEdit} disabled={saving}>{saving?t("comune.salvataggio"):t("comune.salvaModifiche")}</button>
               </div>
             </div>
           </div>
@@ -286,6 +290,7 @@ function CalendarBase({
 }
 
 export function CalendarView({setView, user}) {
+  const { t } = useTranslation();
   const [events,setEvents]=useState([]);
   const [atletiList,setAtletiList]=useState([]);
 
@@ -352,7 +357,7 @@ export function CalendarView({setView, user}) {
   return (
     <CalendarBase
       events={events} setEvents={setEvents}
-      sessionTypes={SESSION_TYPES} clientLabel="Atleta" setView={setView}
+      sessionTypes={SESSION_TYPES} clientLabel={t("comune.atleta")} setView={setView}
       enableAtletaSearch={true} atletiList={atletiList}
       onAdd={onAdd} onEdit={onEdit} onDelete={onDelete}
     />

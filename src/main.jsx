@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './i18n/index.js'   // lingua scelta prima del primo render
 import App from './App.jsx'
 import { installaRaccoltaErrori } from './lib/erroriRecenti.js'
 import { preparaInstallazione } from './lib/installa.js'

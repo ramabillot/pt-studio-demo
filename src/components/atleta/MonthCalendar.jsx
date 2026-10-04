@@ -1,8 +1,10 @@
 // ── Calendario mensile storico allenamenti ────────────────────────────────────
-const MONTHS_CAL = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const WEEKDAYS_CAL = ["L","M","M","G","V","S","D"];
+import { useTranslation } from "react-i18next";
+import { nomeMese, inizialiGiorni } from "../../i18n/index.js";
 
 export default function MonthCalendar({year, month, onPrev, onNext, sessionsByDate, selectedDate, onDaySelect, todayStr}) {
+  useTranslation();   // ridisegna al cambio lingua (mesi e giorni dal browser)
+  const WEEKDAYS_CAL = inizialiGiorni();
   const pad = n => String(n).padStart(2,"0");
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0…Sun=6
   const daysInMonth = new Date(year, month+1, 0).getDate();
@@ -20,7 +22,7 @@ export default function MonthCalendar({year, month, onPrev, onNext, sessionsByDa
       {/* Month nav */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
         <button className="date-nav-btn" onClick={onPrev} style={{fontSize:20,padding:"4px 12px"}}>‹</button>
-        <span style={{fontWeight:700,fontSize:15,color:"var(--text)",letterSpacing:.5}}>{MONTHS_CAL[month]} {year}</span>
+        <span style={{fontWeight:700,fontSize:15,color:"var(--text)",letterSpacing:.5}}>{nomeMese(month)} {year}</span>
         <button className="date-nav-btn" onClick={onNext} disabled={isCurrentMonth} style={{fontSize:20,padding:"4px 12px"}}>›</button>
       </div>
 

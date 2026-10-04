@@ -5,6 +5,8 @@ import { useState } from "react";
 import { LINE_COLORS } from "../data.js";
 import { fmtDateShort } from "../utils.js";
 import { serieDiSessione, METRICHE } from "../lib/allenamento.js";
+import { useTranslation } from "react-i18next";
+import { nomeEsercizio, fmtNum } from "../i18n/index.js";
 
 export function ProgressiMultiChart({lines, onPointClick, selected}) {
   const W=560,H=190,padL=38,padR=14,padT=10,padB=26;
@@ -60,7 +62,8 @@ export function ProgressiMultiChart({lines, onPointClick, selected}) {
 }
 
 // sessioni: [{ data, sessione_serie:[...] }]  ·  ordine: nomi esercizi da mostrare per primi (es. quelli della scheda)
-export default function ProgressiEsercizi({sessioni, ordine=[], vuoto="Nessun allenamento registrato ancora."}) {
+export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
+  const { t } = useTranslation();
   const [metrica,setMetrica]=useState("max");
   const [sel,setSel]=useState(null);       // nomi selezionati (null = default)
   const [punto,setPunto]=useState(null);   // {id,date}
@@ -74,7 +77,7 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto="Nessun al
   });
   const conDati=Object.keys(perEsercizio).filter(nome=>perEsercizio[nome].some(x=>METRICHE.max.calcola(x.serie)!=null));
   const nomi=[...ordine.filter(n=>conDati.includes(n)), ...conDati.filter(n=>!ordine.includes(n)).sort()];
-  if(!nomi.length) return <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>{vuoto}</div>;
+  if(!nomi.length) return <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>{vuoto||t("progressi.vuoto")}</div>;
 
   const colore=Object.fromEntries(nomi.map((n,i)=>[n,LINE_COLORS[i%LINE_COLORS.length]]));
   const attivi=sel??nomi.slice(0,1);
@@ -93,7 +96,7 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto="Nessun al
         {Object.entries(METRICHE).map(([k,m])=>(
           <button key={k} className={`prog-chip unlocked${metrica===k?" selected":""}`}
             style={metrica===k?{background:"rgba(232,255,71,.1)",borderColor:"var(--accent)",color:"var(--accent)"}:{}}
-            onClick={()=>{setMetrica(k);setPunto(null);}}>{m.label}</button>
+            onClick={()=>{setMetrica(k);setPunto(null);}}>{t(m.label)}</button>
         ))}
       </div>
       <div className="prog-chips">
@@ -102,28 +105,28 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto="Nessun al
           return (
             <button key={n} className={`prog-chip unlocked${on?" selected":""}`}
               style={on?{background:`${cc}1a`,borderColor:cc,color:cc}:{}} onClick={()=>toggle(n)}>
-              {n.length>22?n.slice(0,22)+"…":n}
+              {(n=>n.length>22?n.slice(0,22)+"…":n)(nomeEsercizio(n))}
             </button>
           );
         })}
       </div>
       {lines.length===0?(
-        <div className="prog-empty"><div className="prog-empty-icon">📈</div>Seleziona un esercizio</div>
+        <div className="prog-empty"><div className="prog-empty-icon">📈</div>{t("progressi.selezionaEsercizio")}</div>
       ):(
         <>
-          {ultimo&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>{M.label} ultimo allenamento: <strong style={{color:"var(--text)"}}>{String(ultimo.kg).replace(".",",")} {M.unita}</strong></div>}
+          {ultimo&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>{t("progressi.ultimoAllenamento",{metrica:t(M.label)})} <strong style={{color:"var(--text)"}}>{fmtNum(ultimo.kg)} {M.unita}</strong></div>}
           <div className="prog-chart-box">
             <ProgressiMultiChart lines={lines} selected={punto} onPointClick={(id,date)=>setPunto(punto&&punto.id===id&&punto.date===date?null:{id,date})}/>
           </div>
-          {lines.some(l=>l.points.length<2)&&<div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>La linea compare dal secondo allenamento con l'esercizio.</div>}
+          {lines.some(l=>l.points.length<2)&&<div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>{t("progressi.lineaDalSecondo")}</div>}
           {dettaglio?(
             <div style={{marginTop:10,padding:"10px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,fontSize:13}}>
-              <div style={{fontWeight:700,color:"var(--text)",marginBottom:4}}>{punto.id} · <span style={{textTransform:"capitalize"}}>{fmtDateShort(punto.date)}</span></div>
-              <div style={{color:"var(--muted)"}}>{dettaglio.serie.map((s,i)=><span key={i} style={{marginRight:10,whiteSpace:"nowrap"}}>S{i+1}: <strong style={{color:"var(--text)"}}>{s.peso!=null?`${String(s.peso).replace(".",",")} kg`:"—"}{s.reps!=null?` × ${s.reps}`:""}</strong></span>)}</div>
+              <div style={{fontWeight:700,color:"var(--text)",marginBottom:4}}>{nomeEsercizio(punto.id)} · <span style={{textTransform:"capitalize"}}>{fmtDateShort(punto.date)}</span></div>
+              <div style={{color:"var(--muted)"}}>{dettaglio.serie.map((s,i)=><span key={i} style={{marginRight:10,whiteSpace:"nowrap"}}>S{i+1}: <strong style={{color:"var(--text)"}}>{s.peso!=null?`${fmtNum(s.peso)} kg`:"—"}{s.reps!=null?` × ${s.reps}`:""}</strong></span>)}</div>
               {dettaglio.nota&&<div style={{marginTop:6,color:"var(--text)"}}>📝 {dettaglio.nota}</div>}
             </div>
           ):(
-            <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>Tocca un punto per vedere tutte le serie di quel giorno.</div>
+            <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>{t("progressi.toccaPunto")}</div>
           )}
         </>
       )}

@@ -3,9 +3,12 @@ import { EXERCISES, CATEGORIES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from 
 import { buildPDF, calcSummary, fmtDate, getInitials } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
+import { useTranslation } from "react-i18next";
+import { nomeEsercizio, muscoliEsercizio, valore, nomeGiorno } from "../i18n/index.js";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
 export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti}) {
+  const { t } = useTranslation();
   const [q, setQ] = useState(value||"");
   const [showDrop, setShowDrop] = useState(false);
   const allAtleti = propAtleti || [];
@@ -29,7 +32,7 @@ export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti
       <input
         className="field-input"
         type="text"
-        placeholder="Cerca atleta o inserisci nome…"
+        placeholder={t("builder.phCercaONome")}
         value={q}
         autoComplete="off"
         onChange={e=>{ setQ(e.target.value); onChange(e.target.value); setShowDrop(true); }}
@@ -51,7 +54,7 @@ export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti
               </div>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
-                {a.obiettivo&&<div style={{fontSize:11,color:"var(--muted)"}}>{a.obiettivo}</div>}
+                {a.obiettivo&&<div style={{fontSize:11,color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)}</div>}
               </div>
             </div>
           ))}
@@ -63,6 +66,7 @@ export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti
 
 // ── Builder ───────────────────────────────────────────────────────────────────
 export default function Builder({setView, preload=null, setPreload=null, user}) {
+  const { t } = useTranslation();
   const [selectedAtleta,setSelectedAtleta]=useState(null);
   const [searchQ,setSearchQ]=useState("");
   const [showDrop,setShowDrop]=useState(false);
@@ -175,8 +179,8 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     const removedDays=ALL_DAYS.slice(n,numDays);
     const hasContent=removedDays.some(d=>(giorni[d]||[]).length>0);
     if(hasContent){
-      const names=removedDays.filter(d=>(giorni[d]||[]).length>0).map(d=>`Giorno ${d}`).join(", ");
-      if(!window.confirm(`${names} contiene esercizi. Vuoi rimuoverlo?`)) return;
+      const names=removedDays.filter(d=>(giorni[d]||[]).length>0).map(d=>nomeGiorno(dayNames[d], d)).join(", ");
+      if(!window.confirm(t("builder.confermaRimuovi",{giorni:names}))) return;
     }
     setNumDays(n);
     if(!newDays.includes(activeDay)) setActiveDay(newDays[newDays.length-1]);
@@ -204,7 +208,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     if(!Object.values(activeGiorni).some(d=>d.length>0)) return;
     const nome=selectedAtleta?.nome||"";
     const cognome=selectedAtleta?.cognome||"";
-    setPdfState({progress:0,label:"Preparazione…"});
+    setPdfState({progress:0,label:t("pdf.preparazione")});
     try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
     catch(e){console.error(e);}
     finally{setPdfState(null);}
@@ -297,12 +301,12 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
       setSchedaId(sid);
       setShowOverwriteConfirm(false);
-      setToast(`✓ Scheda ${schedaId?"aggiornata":"assegnata"} per ${selectedAtleta.nome} ${selectedAtleta.cognome}`);
+      setToast(`✓ ${t(schedaId?"builder.toastAggiornata":"builder.toastAssegnata",{nome:`${selectedAtleta.nome} ${selectedAtleta.cognome}`})}`);
       setAssigned(true);
       setTimeout(()=>setAssigned(false),2000);
     } catch(e){
       console.error("[assegna scheda]",e);
-      setErrore(`Salvataggio non riuscito: ${e.message||"errore di rete"}. Riprova.`);
+      setErrore(t("builder.errSalvataggio",{msg:e.message||t("builder.erroreRete")}));
     } finally {
       setAssegnaLoading(false);
     }
@@ -319,7 +323,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   return (
     <div>
       <BackBtn setView={setView}/>
-      <div className="page-head"><div className="page-title">Builder Scheda</div><div className="page-sub">{totalEx} esercizi totali</div></div>
+      <div className="page-head"><div className="page-title">{t("builder.titolo")}</div><div className="page-sub">{t("builder.eserciziTotali",{count:totalEx})}</div></div>
       {toast&&(
         <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--accent2)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
           <span>{toast}</span>
@@ -331,15 +335,15 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
       )}
       <div className="builder">
         <div className="client-card">
-          <div className="card-section-title">Dati Atleta</div>
+          <div className="card-section-title">{t("builder.datiAtleta")}</div>
           <div className="client-grid">
             <div style={{gridColumn:"1 / span 2",position:"relative"}}>
               <label className="field-label">
-                Atleta
+                {t("comune.atleta")}
                 <input
                   className="field-input"
                   type="text"
-                  placeholder="Cerca atleta…"
+                  placeholder={t("builder.phCercaAtleta")}
                   value={searchQ}
                   onChange={e=>{setSearchQ(e.target.value);setShowDrop(true);if(!e.target.value)clearAtleta();}}
                   onFocus={()=>setShowDrop(true)}
@@ -360,45 +364,45 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
                       <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
                       <div>
                         <div style={{fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
-                        <div style={{fontSize:11,color:"var(--muted)"}}>{a.obiettivo} · {a.livello}</div>
+                        <div style={{fontSize:11,color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)} · {valore("livello",a.livello)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <label className="field-label">Obiettivo<select className="field-select" value={obiettivo} onChange={e=>setObiettivo(e.target.value)}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
-            <label className="field-label">Livello<select className="field-select" value={livello} onChange={e=>setLivello(e.target.value)}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+            <label className="field-label">{t("comune.obiettivo")}<select className="field-select" value={obiettivo} onChange={e=>setObiettivo(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}</select></label>
+            <label className="field-label">{t("comune.livello")}<select className="field-select" value={livello} onChange={e=>setLivello(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}</select></label>
           </div>
         </div>
 
         <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
           <label style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:"var(--muted)",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>
-            Giorni
+            {t("builder.giorni")}
             <select
               value={numDays}
               onChange={e=>handleNumDays(Number(e.target.value))}
               style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,padding:"6px 12px",borderRadius:8,outline:"none",width:"auto",appearance:"none",cursor:"pointer"}}
             >
-              {[1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{n} {n===1?"giorno":"giorni"}</option>)}
+              {[1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{t("builder.nGiorni",{count:n})}</option>)}
             </select>
           </label>
 
           <div className="day-tabs">
             {activeDays.map(d=>(
               <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                {dayNames[d]||`Giorno ${d}`}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
+                {nomeGiorno(dayNames[d], d)}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
               </button>
             ))}
           </div>
-          <span style={{fontSize:13,color:"var(--muted)"}}>{scheda.length===0?"Giorno vuoto":`${scheda.length} esercizi`}</span>
+          <span style={{fontSize:13,color:"var(--muted)"}}>{scheda.length===0?t("builder.giornoVuoto"):t("libreria.nEsercizi",{count:scheda.length})}</span>
         </div>
 
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
           <input
             className="field-input"
             type="text"
-            placeholder={`Nome giorno (es. Push, Braccia, Gambe…)`}
+            placeholder={t("builder.phNomeGiorno")}
             value={dayNames[activeDay]||""}
             onChange={e=>setDayNames(prev=>({...prev,[activeDay]:e.target.value}))}
             style={{maxWidth:320,fontSize:13,padding:"8px 12px"}}
@@ -409,31 +413,31 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
         </div>
 
         <div className="builder-top">
-          <label>Esercizio
+          <label>{t("builder.esercizio")}
             <select value={selId} onChange={e=>setSelId(e.target.value)}>
               {CATEGORIES.slice(1).filter(cat=>EXERCISES.some(e=>e.cat===cat)||customExercises.some(e=>e.categoria===cat)).map(cat=>(
-                <optgroup key={cat} label={`── ${cat} ──`}>
-                  {EXERCISES.filter(e=>e.cat===cat).map(ex=><option key={ex.id} value={String(ex.id)}>{ex.name}</option>)}
+                <optgroup key={cat} label={`── ${valore("categoria",cat)} ──`}>
+                  {EXERCISES.filter(e=>e.cat===cat).map(ex=><option key={ex.id} value={String(ex.id)}>{nomeEsercizio(ex.name, ex.id)}</option>)}
                   {customExercises.filter(e=>e.categoria===cat).map(ex=><option key={ex.id} value={`c:${ex.id}`}>{ex.nome}</option>)}
                 </optgroup>
               ))}
             </select>
           </label>
-          <label>Serie<input type="number" min={1} max={20} value={sets} onChange={e=>setSets(Number(e.target.value))}/></label>
-          <label>Rip.<input type="text" placeholder="10, 8-10, 30s" title="Ripetizioni (10), intervallo (8-10) o secondi per gli esercizi a tempo (30s)" value={reps} onChange={e=>setReps(e.target.value.replace(/[^0-9sS-]/g,"").toLowerCase())}/></label>
-          <label>Rec.(s)<input type="number" min={0} max={600} step={15} value={rest} onChange={e=>setRest(Number(e.target.value))}/></label>
-          <button className="add-btn" onClick={add} style={{marginTop:22}}>+ Aggiungi</button>
+          <label>{t("builder.serie")}<input type="number" min={1} max={20} value={sets} onChange={e=>setSets(Number(e.target.value))}/></label>
+          <label>{t("builder.rip")}<input type="text" placeholder="10, 8-10, 30s" title={t("builder.ripTitle")} value={reps} onChange={e=>setReps(e.target.value.replace(/[^0-9sS-]/g,"").toLowerCase())}/></label>
+          <label>{t("builder.rec")}<input type="number" min={0} max={600} step={15} value={rest} onChange={e=>setRest(Number(e.target.value))}/></label>
+          <button className="add-btn" onClick={add} style={{marginTop:22}}>+ {t("builder.aggiungi")}</button>
         </div>
 
         <div className="scheda-wrap">
-          {scheda.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div>Giorno {activeDay} vuoto.<br/>Aggiungi il primo esercizio!</div></div>:(
-            <><div className="scheda-head"><div>Esercizio</div><div>Serie × Rip.</div><div>Recupero</div><div>Muscoli</div><div/></div>
+          {scheda.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div>{t("builder.vuoto1",{giorno:nomeGiorno(dayNames[activeDay], activeDay)})}<br/>{t("builder.vuoto2")}</div></div>:(
+            <><div className="scheda-head"><div>{t("builder.esercizio")}</div><div>{t("builder.serieXRip")}</div><div>{t("builder.recupero")}</div><div>{t("builder.muscoli")}</div><div/></div>
             {scheda.map(row=>{const cc=CAT_COLORS[row.cat]||"#e8ff47"; return(
               <div className="scheda-row" key={row.uid}>
-                <div><span className="scheda-dot" style={{background:cc}}/>{row.name}</div>
+                <div><span className="scheda-dot" style={{background:cc}}/>{nomeEsercizio(row.name, row.id)}</div>
                 <div><span className="badge">{row.sets}</span>{" × "}<span className="badge">{row.reps}</span></div>
                 <div><span className="badge badge2">{row.rest}s</span></div>
-                <div style={{fontSize:12,color:"var(--muted)"}}>{(row.muscles||"").split(",")[0]||"—"}</div>
+                <div style={{fontSize:12,color:"var(--muted)"}}>{(muscoliEsercizio(row)||"").split(",")[0]||"—"}</div>
                 <div><button className="del-btn" onClick={()=>del(row.uid)}>✕</button></div>
               </div>
             );})}</>
@@ -442,10 +446,10 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
         {scheda.length>0&&(
           <div className="summary-grid">
-            <div className="summary-card"><div className="summary-label">Serie totali</div><div className="summary-val">{sum.totalSets}</div><div className="summary-sub">Giorno {activeDay}</div></div>
-            <div className="summary-card"><div className="summary-label">Tempo stimato</div><div className="summary-val">{sum.estMin}</div><div className="summary-sub">minuti</div></div>
-            <div className="summary-card"><div className="summary-label">Esercizi</div><div className="summary-val">{sum.count}</div><div className="summary-sub">Giorno {activeDay}</div></div>
-            <div className="summary-card"><div className="summary-label">Gruppi</div><div className="summary-val" style={{fontSize:15,paddingTop:4,lineHeight:1.5}}>{sum.cats.join(", ")||"—"}</div></div>
+            <div className="summary-card"><div className="summary-label">{t("builder.serieTotali")}</div><div className="summary-val">{sum.totalSets}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
+            <div className="summary-card"><div className="summary-label">{t("builder.tempoStimato")}</div><div className="summary-val">{sum.estMin}</div><div className="summary-sub">{t("builder.minuti")}</div></div>
+            <div className="summary-card"><div className="summary-label">{t("progressi.esercizi")}</div><div className="summary-val">{sum.count}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
+            <div className="summary-card"><div className="summary-label">{t("builder.gruppi")}</div><div className="summary-val" style={{fontSize:15,paddingTop:4,lineHeight:1.5}}>{sum.cats.map(c=>valore("categoria",c)).join(", ")||"—"}</div></div>
           </div>
         )}
 
@@ -453,11 +457,11 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
         {showOverwriteConfirm&&(
           <div className="overwrite-confirm">
-            <span className="overwrite-confirm-text">Questo atleta ha già una scheda: verrà aggiornata con queste modifiche. Lo storico degli allenamenti resta.</span>
+            <span className="overwrite-confirm-text">{t("builder.sovrascrivi")}</span>
             <div className="overwrite-confirm-actions">
-              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:13}} onClick={()=>setShowOverwriteConfirm(false)}>Annulla</button>
+              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:13}} onClick={()=>setShowOverwriteConfirm(false)}>{t("comune.annulla")}</button>
               <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:13}} onClick={doAssegna} disabled={assegnaLoading}>
-                {assegnaLoading?"Salvataggio…":"Sì, aggiorna"}
+                {assegnaLoading?t("comune.salvataggio"):t("builder.siAggiorna")}
               </button>
             </div>
           </div>
@@ -465,8 +469,8 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
         {totalEx>0&&!pdfState&&(
           <div className="actions-row">
-            {scheda.length>0&&<button className="btn-ghost" onClick={clear}>Svuota Giorno {activeDay}</button>}
-            <button className="btn-primary" onClick={handlePDF}>⬇ Esporta PDF completo</button>
+            {scheda.length>0&&<button className="btn-ghost" onClick={clear}>{t("builder.svuota",{giorno:nomeGiorno(dayNames[activeDay], activeDay)})}</button>}
+            <button className="btn-primary" onClick={handlePDF}>⬇ {t("builder.esportaPDF")}</button>
             {canAssegna&&(
               <button
                 className="btn-primary"
@@ -474,7 +478,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
                 disabled={assigned||assegnaLoading}
                 onClick={handleAssegna}
               >
-                {assegnaLoading?"Salvataggio…":assigned?"✓ Salvata!":schedaId?"💾 Salva modifiche":"📲 Assegna all'atleta"}
+                {assegnaLoading?t("comune.salvataggio"):assigned?`✓ ${t("builder.salvata")}`:schedaId?`💾 ${t("comune.salvaModifiche")}`:`📲 ${t("builder.assegna")}`}
               </button>
             )}
           </div>

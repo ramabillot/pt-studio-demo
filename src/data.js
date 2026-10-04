@@ -96,11 +96,10 @@ export const EXERCISES = [
 ];
 
 
-export const MONTHS_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-export const DAYS_IT   = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 // URL di ricerca YouTube per esercizi senza video dedicato
-export const ytSearchUrl = (name) => `https://www.youtube.com/results?search_query=${encodeURIComponent(name+" esecuzione")}`;
+// parola: "esecuzione" / "técnica" / "form" secondo la lingua (vedi ytCerca in i18n/index.js)
+export const ytSearchUrl = (name, parola="esecuzione") => `https://www.youtube.com/results?search_query=${encodeURIComponent(name+" "+parola)}`;
 
 export const EX_IMAGES = {
   1:"curl-con-bilanciere", 2:"curl-con-manubri-alternati", 3:"tricep-pushdown-al-cavo",

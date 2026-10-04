@@ -1,0 +1,794 @@
+{
+  "esercizi": {
+    "1": {
+      "nome": "Barbell curl",
+      "muscoli": "Biceps brachii, brachialis"
+    },
+    "2": {
+      "nome": "Alternating dumbbell curl",
+      "muscoli": "Biceps brachii, brachioradialis"
+    },
+    "3": {
+      "nome": "Cable tricep pushdown",
+      "muscoli": "Triceps long and lateral heads"
+    },
+    "4": {
+      "nome": "Skull crushers",
+      "muscoli": "Triceps (long head)"
+    },
+    "5": {
+      "nome": "Hammer curl",
+      "muscoli": "Brachioradialis, biceps brachii"
+    },
+    "6": {
+      "nome": "Barbell overhead press",
+      "muscoli": "Front delts, triceps"
+    },
+    "7": {
+      "nome": "Lateral raises",
+      "muscoli": "Side delts"
+    },
+    "8": {
+      "nome": "Cable face pull",
+      "muscoli": "Rear delts, rhomboids, traps"
+    },
+    "9": {
+      "nome": "Arnold press",
+      "muscoli": "Front delts, side delts, triceps"
+    },
+    "10": {
+      "nome": "Front raises",
+      "muscoli": "Front delts, upper chest"
+    },
+    "11": {
+      "nome": "Deadlift",
+      "muscoli": "Spinal erectors, glutes, hamstrings, traps"
+    },
+    "12": {
+      "nome": "Pull-ups",
+      "muscoli": "Lats, biceps, rhomboids"
+    },
+    "13": {
+      "nome": "Barbell row",
+      "muscoli": "Lats, rhomboids, biceps"
+    },
+    "14": {
+      "nome": "Wide-grip lat pulldown",
+      "muscoli": "Lats, biceps brachii"
+    },
+    "15": {
+      "nome": "Seated cable row",
+      "muscoli": "Rhomboids, mid traps, lats"
+    },
+    "16": {
+      "nome": "Barbell squat",
+      "muscoli": "Quads, glutes, hamstrings"
+    },
+    "17": {
+      "nome": "45° leg press",
+      "muscoli": "Quads, glutes, hamstrings"
+    },
+    "18": {
+      "nome": "Romanian deadlift",
+      "muscoli": "Hamstrings, gluteus maximus, spinal erectors"
+    },
+    "19": {
+      "nome": "Lying leg curl",
+      "muscoli": "Hamstrings, gastrocnemius"
+    },
+    "20": {
+      "nome": "Standing calf raises",
+      "muscoli": "Gastrocnemius, soleus"
+    },
+    "21": {
+      "nome": "Barbell bench press",
+      "muscoli": "Pecs, front delts, triceps"
+    },
+    "22": {
+      "nome": "Incline barbell bench press",
+      "muscoli": "Upper chest, front delts, triceps"
+    },
+    "23": {
+      "nome": "Dumbbell bench press",
+      "muscoli": "Pecs, front delts, triceps"
+    },
+    "24": {
+      "nome": "Incline dumbbell press",
+      "muscoli": "Upper chest, front delts"
+    },
+    "25": {
+      "nome": "Dumbbell flyes",
+      "muscoli": "Pecs"
+    },
+    "26": {
+      "nome": "Cable flyes",
+      "muscoli": "Pecs, front delts"
+    },
+    "27": {
+      "nome": "Machine chest press",
+      "muscoli": "Pecs, triceps, front delts"
+    },
+    "28": {
+      "nome": "Pec deck",
+      "muscoli": "Pecs"
+    },
+    "29": {
+      "nome": "Push-ups",
+      "muscoli": "Pecs, triceps, core"
+    },
+    "30": {
+      "nome": "Parallel bar dips",
+      "muscoli": "Lower chest, triceps, front delts"
+    },
+    "31": {
+      "nome": "Barbell hip thrust",
+      "muscoli": "Gluteus maximus, hamstrings"
+    },
+    "32": {
+      "nome": "Glute bridge",
+      "muscoli": "Gluteus maximus, hamstrings"
+    },
+    "33": {
+      "nome": "Abductor machine",
+      "muscoli": "Gluteus medius and minimus"
+    },
+    "34": {
+      "nome": "Cable kickback",
+      "muscoli": "Gluteus maximus"
+    },
+    "35": {
+      "nome": "Bulgarian split squat",
+      "muscoli": "Glutes, quads"
+    },
+    "36": {
+      "nome": "Dumbbell step-up",
+      "muscoli": "Glutes, quads"
+    },
+    "37": {
+      "nome": "Sumo deadlift",
+      "muscoli": "Glutes, adductors, hamstrings, spinal erectors"
+    },
+    "38": {
+      "nome": "Good morning",
+      "muscoli": "Hamstrings, glutes, spinal erectors"
+    },
+    "39": {
+      "nome": "Front squat",
+      "muscoli": "Quads, glutes, core"
+    },
+    "40": {
+      "nome": "Hack squat",
+      "muscoli": "Quads, glutes"
+    },
+    "41": {
+      "nome": "Dumbbell lunges",
+      "muscoli": "Quads, glutes, hamstrings"
+    },
+    "42": {
+      "nome": "Leg extension",
+      "muscoli": "Quads"
+    },
+    "43": {
+      "nome": "Seated leg curl",
+      "muscoli": "Hamstrings"
+    },
+    "44": {
+      "nome": "Goblet squat",
+      "muscoli": "Quads, glutes, core"
+    },
+    "45": {
+      "nome": "Adductor machine",
+      "muscoli": "Adductors"
+    },
+    "46": {
+      "nome": "Seated calf raises",
+      "muscoli": "Soleus, gastrocnemius"
+    },
+    "47": {
+      "nome": "Smith machine squat",
+      "muscoli": "Quads, glutes"
+    },
+    "48": {
+      "nome": "One-arm dumbbell row",
+      "muscoli": "Lats, rhomboids, rear delts"
+    },
+    "49": {
+      "nome": "Close-grip lat pulldown",
+      "muscoli": "Lats, biceps"
+    },
+    "50": {
+      "nome": "Cable pullover",
+      "muscoli": "Lats, teres major"
+    },
+    "51": {
+      "nome": "T-bar row",
+      "muscoli": "Lats, rhomboids, traps"
+    },
+    "52": {
+      "nome": "Machine row",
+      "muscoli": "Lats, rhomboids, mid traps"
+    },
+    "53": {
+      "nome": "Hyperextension",
+      "muscoli": "Spinal erectors, glutes, hamstrings"
+    },
+    "54": {
+      "nome": "Assisted pull-ups",
+      "muscoli": "Lats, biceps, rhomboids"
+    },
+    "55": {
+      "nome": "Dumbbell shoulder press",
+      "muscoli": "Front and side delts, triceps"
+    },
+    "56": {
+      "nome": "Machine shoulder press",
+      "muscoli": "Front and side delts, triceps"
+    },
+    "57": {
+      "nome": "Cable lateral raises",
+      "muscoli": "Side delts"
+    },
+    "58": {
+      "nome": "Dumbbell rear delt raises",
+      "muscoli": "Rear delts, rhomboids"
+    },
+    "59": {
+      "nome": "Upright row",
+      "muscoli": "Side delts, traps"
+    },
+    "60": {
+      "nome": "Dumbbell shrugs",
+      "muscoli": "Upper traps"
+    },
+    "61": {
+      "nome": "Cable curl",
+      "muscoli": "Biceps brachii"
+    },
+    "62": {
+      "nome": "Preacher curl",
+      "muscoli": "Biceps brachii, brachialis"
+    },
+    "63": {
+      "nome": "Concentration curl",
+      "muscoli": "Biceps brachii"
+    },
+    "64": {
+      "nome": "Overhead dumbbell extension",
+      "muscoli": "Triceps (long head)"
+    },
+    "65": {
+      "nome": "Tricep kickback",
+      "muscoli": "Triceps"
+    },
+    "66": {
+      "nome": "Bench dips",
+      "muscoli": "Triceps, front delts"
+    },
+    "67": {
+      "nome": "Close-grip bench press",
+      "muscoli": "Triceps, pecs"
+    },
+    "68": {
+      "nome": "Rope tricep pushdown",
+      "muscoli": "Triceps (lateral and medial heads)"
+    },
+    "69": {
+      "nome": "Plank",
+      "muscoli": "Rectus and transverse abdominis, core"
+    },
+    "70": {
+      "nome": "Crunch",
+      "muscoli": "Rectus abdominis"
+    },
+    "71": {
+      "nome": "Cable crunch",
+      "muscoli": "Rectus abdominis"
+    },
+    "72": {
+      "nome": "Hanging leg raises",
+      "muscoli": "Rectus abdominis, hip flexors"
+    },
+    "73": {
+      "nome": "Russian twist",
+      "muscoli": "Obliques, rectus abdominis"
+    },
+    "74": {
+      "nome": "Ab wheel rollout",
+      "muscoli": "Rectus abdominis, core, lats"
+    },
+    "75": {
+      "nome": "Side plank",
+      "muscoli": "Obliques, gluteus medius"
+    },
+    "76": {
+      "nome": "Dead bug",
+      "muscoli": "Transverse abdominis, rectus abdominis"
+    },
+    "77": {
+      "nome": "Pallof press",
+      "muscoli": "Obliques, anti-rotation core"
+    },
+    "78": {
+      "nome": "Mountain climbers",
+      "muscoli": "Core, hip flexors"
+    },
+    "79": {
+      "nome": "Decline sit-up",
+      "muscoli": "Rectus abdominis, hip flexors"
+    },
+    "80": {
+      "nome": "Bird dog",
+      "muscoli": "Spinal erectors, glutes, core"
+    },
+    "81": {
+      "nome": "Machine hip thrust",
+      "muscoli": "Gluteus maximus, hamstrings"
+    },
+    "82": {
+      "nome": "Machine glute kickback",
+      "muscoli": "Gluteus maximus (single-leg)"
+    }
+  },
+  "comune": {
+    "errRete": "Connection failed. Check your network and try again.",
+    "password": "Password",
+    "nome": "First name",
+    "cognome": "Last name",
+    "hoCapito": "Got it",
+    "ok": "OK",
+    "esci": "Log out",
+    "giornoN": "Day {{g}}",
+    "mostraMeno": "Show less",
+    "vediTutti": "See all ({{n}})",
+    "caricamento": "Loading…",
+    "salvataggio": "Saving…",
+    "oggi": "Today",
+    "ytParola": "form",
+    "data": "Date",
+    "annulla": "Cancel",
+    "elimina": "Delete",
+    "vediTutte": "See all ({{n}})",
+    "chiudi": "Close",
+    "categoria": "Category",
+    "seleziona": "select",
+    "modifica": "Edit",
+    "salva": "Save",
+    "salvaModifiche": "Save changes",
+    "atleta": "Athlete",
+    "obiettivo": "Goal",
+    "livello": "Level"
+  },
+  "lingua": {
+    "aria": "Language"
+  },
+  "login": {
+    "errUsernamePin": "Enter username and PIN",
+    "bloccatoFino": "Too many wrong attempts. Try again after {{ora}}.",
+    "bloccato": "Too many wrong attempts. Try again in a few minutes.",
+    "errCredAtleta": "Wrong username or PIN",
+    "errEmailPass": "Enter email and password",
+    "errCredPT": "Wrong email or password",
+    "errProfilo": "Couldn't load your profile. Try again.",
+    "errCampi": "Fill in all fields",
+    "errPassDiverse": "Passwords don't match",
+    "errPassCorta": "Password must be at least 6 characters",
+    "subAtleta": "Log in to see your workout plan",
+    "subPT": "Personal Trainer area",
+    "phUsername": "your username",
+    "phEmail": "name@email.com",
+    "accesso": "Logging in…",
+    "accedi": "Log in",
+    "registrati": "Sign up →",
+    "dimenticata": "Forgot password?",
+    "notaAtleta": "Your Personal Trainer gives you your username and PIN.",
+    "creaAccountPT": "Create your PT account",
+    "phNome": "John",
+    "phCognome": "Smith",
+    "phEmailReg": "john@email.com",
+    "phMin6": "min. 6 characters",
+    "confermaPass": "Confirm password",
+    "creazione": "Creating account…",
+    "creaAccount": "Create account",
+    "tornaLogin": "← Back to login",
+    "accountCreato": "Account created!",
+    "inAttesa1": "Your account is awaiting approval.",
+    "inAttesa2": "An administrator will give you access shortly.",
+    "resetTitolo": "Reset password",
+    "resetTesto": "To reset your password, contact the administrator at",
+    "resetTesto2": "They will restore your access.",
+    "username": "Username"
+  },
+  "welcome": {
+    "bentornato": "Welcome back"
+  },
+  "pending": {
+    "titolo": "Awaiting approval",
+    "testo1": "Your account has been registered.",
+    "testo2": "An administrator will check your details and approve access shortly.",
+    "torna": "Back to login"
+  },
+  "installa": {
+    "aria": "Install {{nome}}",
+    "titolo": "Install {{nome}} on your phone",
+    "android": "It opens like an app, full screen.",
+    "iphone": "Tap <b>Share</b> <share>⬆︎</share>, then <b>“Add to Home Screen”</b> and <b>Add</b>.",
+    "soloSafari": "Open this link in <b>Safari</b>: only there can the iPhone install the app.",
+    "installa": "Install",
+    "nonOra": "Not now"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "libreria": "Library",
+    "builder": "Builder",
+    "atleti": "Athletes",
+    "calendario": "Calendar",
+    "statistiche": "Statistics",
+    "mieiPT": "My PTs",
+    "account": "Account",
+    "ruoloAdmin": "Administrator",
+    "ruoloPT": "Personal Trainer"
+  },
+  "home": {
+    "claim1": "Plans, workouts and progress.",
+    "claim2": "Personal trainers and their athletes, in one app.",
+    "atleta": "Log in as Athlete",
+    "pt": "Log in as Personal Trainer"
+  },
+  "pdf": {
+    "preparazione": "Preparing…",
+    "scarica": "Download PDF",
+    "nessunaImmagine": "no image",
+    "schedaPer": "PLAN FOR",
+    "generato": "Made with PT Studio",
+    "note": "NOTES",
+    "nomeFile": "plan"
+  },
+  "atleta": {
+    "errCaricamento": "Can't load your data. Check your connection and reopen the app.",
+    "errFuturo": "You can't log a workout on a future date.",
+    "errTuttiSaltati": "You marked every exercise as skipped: nothing to save.",
+    "errNonSalvata": "⚠️ Session NOT saved: connection problem. Your data stays here, try again shortly.",
+    "sessioniCompletate_one": "session completed",
+    "sessioniCompletate_other": "sessions completed",
+    "ultima": "Last:",
+    "giorniConsecutivi_one": "day streak",
+    "giorniConsecutivi_other": "day streak",
+    "tabScheda": "Plan",
+    "tabProgressi": "Progress",
+    "prossimiAppuntamenti": "Upcoming sessions",
+    "nessunaScheda": "No plan assigned",
+    "nessunaSchedaTesto": "Your PT hasn't assigned you a plan yet.",
+    "salvaSessione": "Save session — {{giorno}}",
+    "aggiornaSessione": "Update session — {{giorno}}",
+    "salvaSessioneDel": "Save session of {{data}} — {{giorno}}",
+    "aggiornaSessioneDel": "Update session of {{data}} — {{giorno}}",
+    "laTuaScheda": "Your plan",
+    "assegnataIl": "Assigned on {{data}}",
+    "sessioneSalvata": "Session saved!",
+    "giaSalvatoOggi": "Today's workout already saved — you can edit it and save again",
+    "giaSalvatoDel": "Workout of {{data}} already saved — you can edit it and save again"
+  },
+  "valori": {
+    "categoria": {
+      "Tutte": "All",
+      "Petto": "Chest",
+      "Schiena": "Back",
+      "Spalle": "Shoulders",
+      "Braccia": "Arms",
+      "Gambe": "Legs",
+      "Glutei": "Glutes",
+      "Core": "Core"
+    },
+    "obiettivo": {
+      "Ipertrofia": "Hypertrophy",
+      "Dimagrimento": "Weight loss",
+      "Forza": "Strength",
+      "Resistenza": "Endurance",
+      "Tonificazione": "Toning"
+    },
+    "livello": {
+      "Principiante": "Beginner",
+      "Intermedio": "Intermediate",
+      "Avanzato": "Advanced"
+    },
+    "tipoAppuntamento": {
+      "Allenamento": "Workout",
+      "Valutazione": "Assessment",
+      "Recupero": "Recovery"
+    },
+    "misura": {
+      "peso": "Weight",
+      "vita": "Waist",
+      "fianchi": "Hips",
+      "petto": "Chest",
+      "braccio": "Arm",
+      "grassoPerc": "Body fat",
+      "fcRiposo": "Resting HR"
+    },
+    "sesso": {
+      "M": "M",
+      "F": "F",
+      "Altro": "Other"
+    }
+  },
+  "allenamento": {
+    "corpoLibero": "bodyweight",
+    "rip": "reps",
+    "pesoMassimo": "Max weight",
+    "volume": "Volume"
+  },
+  "push": {
+    "recuperoFinisce": "Rest · ends at {{ora}}",
+    "recuperoFinito": "Rest over",
+    "siRiparte": "Back to it: {{nome}}",
+    "nomeFinisce": "{{nome}} · ends at {{ora}}",
+    "esercizioATempo": "Timed exercise",
+    "tempoFinito": "Time's up",
+    "recuperoFinoAlle": "Rest until {{ora}}"
+  },
+  "card": {
+    "loFaccio": "I'll do it",
+    "salta": "Skip",
+    "serie_one": "{{count}} set",
+    "serie_other": "{{count}} sets",
+    "recupero": "rest",
+    "ariaTempo": "Start {{s}} seconds",
+    "ariaRecupero": "Start rest {{t}}",
+    "ultimaVolta": "Last time:",
+    "peso": "Weight",
+    "ripetizioni": "Reps",
+    "perSerie": "per set",
+    "pesoSerie": "Weight set {{n}}",
+    "ripSerie": "Reps set {{n}}",
+    "serieDiverse": "Different sets",
+    "stessoPeso": "Same weight for all",
+    "nota": "Note",
+    "cercaVideo": "Find video",
+    "phNota": "E.g. didn't finish the last set, started at 10 kg, ended at 15…"
+  },
+  "progressi": {
+    "esercizi": "Exercises",
+    "vuotoAtleta": "Log your workouts to see your progress.",
+    "mieMisurazioni": "My measurements",
+    "vuoto": "No workouts logged yet.",
+    "selezionaEsercizio": "Select an exercise",
+    "ultimoAllenamento": "{{metrica}} last workout:",
+    "lineaDalSecondo": "The line appears from the second workout with this exercise.",
+    "toccaPunto": "Tap a point to see all sets of that day."
+  },
+  "crono": {
+    "pronti": "Ready",
+    "fatto": "Done",
+    "recuperoFinito": "Rest over",
+    "recupero": "Rest",
+    "chiudi": "Close timer"
+  },
+  "misure": {
+    "ultima": "Last measurement:",
+    "nuova": "New measurement",
+    "nascondiAvanzati": "Hide advanced",
+    "datiAvanzati": "Advanced data",
+    "massaGrassa": "% Body fat",
+    "salva": "Save measurement",
+    "vuotaAtleta": "Your PT hasn't recorded any measurements yet",
+    "vuota": "No measurements recorded yet.",
+    "eliminareConferma": "Delete this measurement?",
+    "almeno2": "Add at least 2 measurements to see the chart",
+    "selezionaMetrica": "Select a metric to see the chart"
+  },
+  "segnala": {
+    "fotoNonLeggibile": "Can't read the photo",
+    "errVuoto": "Write a few words about what happened.",
+    "errInvio": "Sending failed. Try again shortly (your text stays here).",
+    "aria": "Report a bug or an idea",
+    "titolo": "Report",
+    "ok": "Thanks! Report sent.",
+    "phBug": "What happened? What did you expect instead?",
+    "phIdea": "What would you like to have or change?",
+    "fotoAllegata": "Attached photo",
+    "togliFoto": "Remove photo",
+    "aggiungiFoto": "Add photo / screenshot",
+    "nota": "Screen, device and app version are sent automatically too.",
+    "invio": "Sending…",
+    "invia": "Send"
+  },
+  "aggiorna": {
+    "nuova": "New version available",
+    "aggiorna": "Update"
+  },
+  "dash": {
+    "ptRegistrati": "Registered PTs",
+    "ptApprovati": "Approved PTs",
+    "inAttesa": "Pending",
+    "nuoviMese": "New this month",
+    "descStatistiche": "Charts and metrics",
+    "descMieiPT": "Manage registered PTs",
+    "pannello": "Control panel",
+    "vaiA": "Go to",
+    "atletiAttivi": "Active athletes",
+    "schedeCreate": "Plans created",
+    "prossimoAppuntamento": "Next appointment",
+    "eserciziLibreria": "Exercises in library",
+    "descLibreria": "Browse {{n}} exercises",
+    "descBuilder": "Create plans",
+    "descAtleti": "Your athletes",
+    "descCalendario": "Your schedule",
+    "ciao": "Hi, {{nome}}"
+  },
+  "account": {
+    "errAttuale": "Enter your current password",
+    "errCorta": "Password must be at least 6 characters",
+    "errDiverse": "The two passwords don't match",
+    "errUguale": "The new password must differ from the current one",
+    "errSbagliata": "Current password is wrong",
+    "lingua": "Language",
+    "cambiaPassword": "Change password",
+    "attuale": "Current password",
+    "nuova": "New password",
+    "conferma": "Confirm new password",
+    "aggiornata": "Password updated",
+    "aggiornamento": "Updating…",
+    "aggiornaPassword": "Update password",
+    "nota": "For security, your current password is required. If you don't remember it, log out and use \"Forgot password?\" on the login screen."
+  },
+  "libreria": {
+    "muscoliCoinvolti": "Muscles worked:",
+    "muscoli": "Muscles:",
+    "guardaVideo": "Watch video",
+    "titolo": "Exercise library",
+    "nEsercizi_one": "{{count}} exercise",
+    "nEsercizi_other": "{{count}} exercises",
+    "cerca": "Search exercise or muscle…",
+    "nuovo": "New",
+    "phNome": "E.g. Plank, Hollow hold…",
+    "descrizione": "Description (optional)",
+    "phDescrizione": "Muscles, technique notes…",
+    "fotoPresto": "Photo upload — coming soon",
+    "crea": "Create exercise",
+    "nessunRisultato": "No results for \"{{q}}\""
+  },
+  "allenamentiPT": {
+    "caricamento": "Loading workouts…",
+    "errore": "Can't load workouts.",
+    "ultimi": "Recent workouts"
+  },
+  "cal": {
+    "mese": "Month",
+    "settimana": "Week",
+    "nessuno": "No appointments",
+    "eliminareConferma": "Delete this appointment?",
+    "aggiungi": "Add appointment",
+    "nuovo": "New appointment",
+    "phNome": "Full name",
+    "orario": "Time",
+    "tipo": "Type",
+    "modifica": "Edit appointment"
+  },
+  "builder": {
+    "phCercaONome": "Search athlete or enter a name…",
+    "confermaRimuovi": "{{giorni}} has exercises. Remove it?",
+    "toastAggiornata": "Plan updated for {{nome}}",
+    "toastAssegnata": "Plan assigned to {{nome}}",
+    "errSalvataggio": "Save failed: {{msg}}. Try again.",
+    "erroreRete": "network error",
+    "titolo": "Plan builder",
+    "eserciziTotali_one": "{{count}} exercise total",
+    "eserciziTotali_other": "{{count}} exercises total",
+    "datiAtleta": "Athlete details",
+    "phCercaAtleta": "Search athlete…",
+    "giorni": "Days",
+    "nGiorni_one": "{{count}} day",
+    "nGiorni_other": "{{count}} days",
+    "giornoVuoto": "Empty day",
+    "phNomeGiorno": "Day name (e.g. Push, Arms, Legs…)",
+    "esercizio": "Exercise",
+    "serie": "Sets",
+    "rip": "Reps",
+    "ripTitle": "Reps (10), range (8-10) or seconds for timed exercises (30s)",
+    "rec": "Rest(s)",
+    "aggiungi": "Add",
+    "vuoto1": "{{giorno}} is empty.",
+    "vuoto2": "Add the first exercise!",
+    "serieXRip": "Sets × Reps",
+    "recupero": "Rest",
+    "muscoli": "Muscles",
+    "serieTotali": "Total sets",
+    "tempoStimato": "Estimated time",
+    "minuti": "minutes",
+    "gruppi": "Groups",
+    "sovrascrivi": "This athlete already has a plan: it will be updated with these changes. Workout history is kept.",
+    "siAggiorna": "Yes, update",
+    "svuota": "Clear {{giorno}}",
+    "esportaPDF": "Export full PDF",
+    "salvata": "Saved!",
+    "assegna": "Assign to athlete"
+  },
+  "atleti": {
+    "errUsername": "Username is required",
+    "errPin": "PIN must be 4 digits",
+    "errLimite": "You've reached your plan limit ({{n}} athletes). Contact the administrator to raise it.",
+    "errUsernameUsato": "Username already taken. Choose another one.",
+    "msgCiaoNome": "Hi {{nome}}! Here's your access to PT Studio, where you'll find your plan and log your workouts.",
+    "msgCiao": "Hi! Here's your access to PT Studio, where you'll find your plan and log your workouts.",
+    "msgIstruzioni": "Open the link, enter your PIN and install the app on your phone (on iPhone open the link in Safari).",
+    "nAttivi_one": "{{count}} active athlete",
+    "nAttivi_other": "{{count}} active athletes",
+    "nArchiviati_one": "{{count}} archived",
+    "nArchiviati_other": "{{count}} archived",
+    "nuovo": "New athlete",
+    "caricamento": "Loading athletes…",
+    "nSchede_one": "{{count}} plan",
+    "nSchede_other": "{{count}} plans",
+    "archiviati": "Archived ({{n}})",
+    "dettagli": "Details",
+    "ripristina": "Restore",
+    "archiviato": "Archived",
+    "credenziali": "Login details",
+    "copiato": "Copied",
+    "copia": "Copy",
+    "inviaWhatsapp": "Send access via WhatsApp",
+    "messaggioCopiato": "Message copied",
+    "copiaMessaggio": "Copy message",
+    "cambiaPin": "Change PIN",
+    "phNuovoPin": "New PIN (4 digits)",
+    "salvaPin": "Save PIN",
+    "schedaAssegnata": "Assigned plan",
+    "caricamentoScheda": "Loading plan…",
+    "modificaBuilder": "Edit in Builder",
+    "nessunaScheda": "No plan assigned yet.",
+    "creaScheda": "Create plan",
+    "profilo": "Profile",
+    "altezza": "Height",
+    "dataNascita": "Date of birth",
+    "sesso": "Sex",
+    "nonSpecificato": "not specified",
+    "notePT": "PT notes",
+    "phNote": "Injuries, medical notes, preferences…",
+    "telefono": "Phone",
+    "email": "Email",
+    "eta": "Age",
+    "anni": "{{n}} years",
+    "contatti": "Contacts",
+    "schede": "Plans:",
+    "misurazioni": "Measurements",
+    "ripristinaAtleta": "Restore athlete",
+    "eliminaDef": "Delete permanently",
+    "archiviaAtleta": "Archive athlete",
+    "archiviareConferma": "Archive <b>{{nome}}</b>? They won't be able to log in, but all data is kept. You can restore them at any time.",
+    "archivia": "Archive",
+    "nuovoTitolo": "New athlete",
+    "phUsername": "john_smith",
+    "pin4": "PIN (4 digits)",
+    "opzionale": "optional",
+    "eliminazioneDef": "Permanent deletion",
+    "eliminaTesto": "This deletes <b>{{nome}}</b> and their whole history (plans, sessions, measurements). It can't be undone.",
+    "digita": "Type <b>{{nome}}</b> to confirm:"
+  },
+  "admin": {
+    "datiInsufficienti": "Not enough data",
+    "ptTotali": "Total PTs",
+    "subTotali": "registered on the platform",
+    "approvati": "Approved",
+    "subApprovati": "active access",
+    "subInAttesa": "to approve",
+    "versione": "Version",
+    "subVersione": "last deploy",
+    "subStatistiche": "Platform metrics and trends",
+    "errore": "Error:",
+    "chartRegistrati": "Registered PTs — last 6 months",
+    "chartPiano": "PTs by plan",
+    "ptRegistrati": "Registered PTs",
+    "nPT": "{{n}} personal trainers on the platform",
+    "nessunPT": "No PTs registered yet.",
+    "registratoIl": "Registered on {{data}}",
+    "maxAtleti": "Max athletes",
+    "blocca": "Block",
+    "approva": "Approve",
+    "approvato": "Approved",
+    "eliminaPT": "Delete PT",
+    "rifiuta": "Reject",
+    "rifiutaRichiesta": "Reject request",
+    "rifiutaTesto": "You are <b>rejecting</b> the request from <b>{{nome}}</b>. Their account will be permanently deleted.",
+    "eliminaTesto": "This deletes <b>{{nome}}</b>, all their athletes and the whole history (plans, sessions, measurements, appointments). <r>It can't be undone.</r>"
+  }
+}

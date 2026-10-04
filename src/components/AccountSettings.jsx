@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
+import { useTranslation } from "react-i18next";
+import { LINGUE, cambiaLingua } from "../i18n/index.js";
 
 export default function AccountSettings({ setView, user }) {
+  const { t, i18n } = useTranslation();
   const [curPass, setCurPass]         = useState("");
   const [newPass, setNewPass]         = useState("");
   const [confirmPass, setConfirmPass] = useState("");
@@ -12,22 +15,22 @@ export default function AccountSettings({ setView, user }) {
 
   const submit = async () => {
     setErr(""); setSuccess(false);
-    if (!curPass)                  { setErr("Inserisci la password attuale"); return; }
-    if (newPass.length < 6)       { setErr("La password deve essere di almeno 6 caratteri"); return; }
-    if (newPass !== confirmPass)   { setErr("Le due password non coincidono"); return; }
-    if (newPass === curPass)       { setErr("La nuova password deve essere diversa da quella attuale"); return; }
+    if (!curPass)                  { setErr(t("account.errAttuale")); return; }
+    if (newPass.length < 6)       { setErr(t("account.errCorta")); return; }
+    if (newPass !== confirmPass)   { setErr(t("account.errDiverse")); return; }
+    if (newPass === curPass)       { setErr(t("account.errUguale")); return; }
     setLoading(true);
     try {
       // Verifica della password attuale: senza, chiunque trovi il PC/telefono
       // con la sessione aperta potrebbe cambiare la password e prendersi l'account.
       const { error: authErr } = await supabase.auth.signInWithPassword({ email: user.email, password: curPass });
-      if (authErr) { setErr("La password attuale non è corretta"); return; }
+      if (authErr) { setErr(t("account.errSbagliata")); return; }
       const { error } = await supabase.auth.updateUser({ password: newPass });
       if (error) { setErr(error.message); return; }
       setSuccess(true);
       setCurPass(""); setNewPass(""); setConfirmPass("");
     } catch {
-      setErr("Connessione non riuscita. Riprova.");
+      setErr(t("comune.errRete"));
     } finally {
       setLoading(false);
     }
@@ -37,18 +40,28 @@ export default function AccountSettings({ setView, user }) {
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head">
-        <div className="page-title">Account</div>
+        <div className="page-title">{t("nav.account")}</div>
         <div className="page-sub">{user.email}</div>
       </div>
 
       <div style={{maxWidth:440}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"22px 24px",marginBottom:16}}>
+          <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:14}}>
+            {t("account.lingua")}
+          </div>
+          <div className="lingua-scelta">
+            {LINGUE.map(l=>(
+              <button key={l.code} className={`login-role-btn${i18n.language===l.code?" active":""}`} onClick={()=>cambiaLingua(l.code)}>{l.nome}</button>
+            ))}
+          </div>
+        </div>
         <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"22px 24px"}}>
           <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:18}}>
-            Cambia password
+            {t("account.cambiaPassword")}
           </div>
 
           <label className="field-label">
-            Password attuale
+            {t("account.attuale")}
             <input
               className="field-input"
               type="password"
@@ -60,18 +73,18 @@ export default function AccountSettings({ setView, user }) {
           </label>
 
           <label className="field-label" style={{marginTop:12}}>
-            Nuova password
+            {t("account.nuova")}
             <input
               className="field-input"
               type="password"
-              placeholder="min. 6 caratteri"
+              placeholder={t("login.phMin6")}
               value={newPass}
               onChange={e=>{ setNewPass(e.target.value); setErr(""); setSuccess(false); }}
             />
           </label>
 
           <label className="field-label" style={{marginTop:12}}>
-            Conferma nuova password
+            {t("account.conferma")}
             <input
               className="field-input"
               type="password"
@@ -87,7 +100,7 @@ export default function AccountSettings({ setView, user }) {
           )}
           {success&&(
             <div style={{color:"var(--accent2)",fontSize:13,marginTop:12,fontWeight:600}}>
-              ✓ Password aggiornata
+              ✓ {t("account.aggiornata")}
             </div>
           )}
 
@@ -98,12 +111,12 @@ export default function AccountSettings({ setView, user }) {
               onClick={submit}
               disabled={loading}
             >
-              {loading?"Aggiornamento…":"Aggiorna password"}
+              {loading?t("account.aggiornamento"):t("account.aggiornaPassword")}
             </button>
           </div>
 
           <div style={{marginTop:14,fontSize:12,color:"var(--muted)",lineHeight:1.6,borderTop:"1px solid var(--border)",paddingTop:14}}>
-            Per sicurezza serve la password attuale. Se non la ricordi, esci e usa "Password dimenticata?" nella schermata di accesso.
+            {t("account.nota")}
           </div>
         </div>
       </div>

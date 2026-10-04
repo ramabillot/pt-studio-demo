@@ -6,6 +6,8 @@ import { linkAtleta } from "../lib/app.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { MisureSection } from "./MisureSection.jsx";
 import AllenamentiAtletaPT from "./AllenamentiAtletaPT.jsx";
+import { useTranslation, Trans } from "react-i18next";
+import { valore, nomeGiorno } from "../i18n/index.js";
 
 const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
 
@@ -35,6 +37,7 @@ function rowToAtleta(row) {
 const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:"",telefono:"",email:""};
 
 export default function Atleti({setView, setBuilderPreload, user}) {
+  const { t } = useTranslation();
   const [atleti,setAtleti]=useState([]);
   const [loading,setLoading]=useState(true);
   const [selected,setSelected]=useState(null);
@@ -68,10 +71,10 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
   const addAtleta=async()=>{
     if(!form.nome||!form.cognome) return;
-    if(!form.username.trim()){ setLimitErr("Username obbligatorio"); return; }
-    if(!/^\d{4}$/.test(form.pin)){ setLimitErr("Il PIN deve essere di esattamente 4 cifre numeriche"); return; }
+    if(!form.username.trim()){ setLimitErr(t("atleti.errUsername")); return; }
+    if(!/^\d{4}$/.test(form.pin)){ setLimitErr(t("atleti.errPin")); return; }
     if(user?.max_atleti != null && activeAtleti.length >= user.max_atleti){
-      setLimitErr(`Hai raggiunto il limite del tuo piano (${user.max_atleti} atleti). Contatta l'amministratore per aumentare il limite.`);
+      setLimitErr(t("atleti.errLimite",{n:user.max_atleti}));
       return;
     }
     setLimitErr("");
@@ -94,7 +97,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         color:       COLORS[activeAtleti.length%COLORS.length],
       }).select().single();
       if(error){
-        setLimitErr(error.code==="23505" ? "Username già in uso. Scegli un altro username." : error.message);
+        setLimitErr(error.code==="23505" ? t("atleti.errUsernameUsato") : error.message);
         return;
       }
       setAtleti(prev=>[...prev,rowToAtleta(data)]);
@@ -208,7 +211,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   };
 
   const savePINChange=async()=>{
-    if(!/^\d{4}$/.test(changePIN.pin)){ setChangePIN(p=>({...p,err:"Il PIN deve essere di 4 cifre numeriche"})); return; }
+    if(!/^\d{4}$/.test(changePIN.pin)){ setChangePIN(p=>({...p,err:t("atleti.errPin")})); return; }
     const {error}=await supabase.from("atleti").update({pin:changePIN.pin}).eq("id",selected.id);
     if(error){ setChangePIN(p=>({...p,err:error.message})); return; }
     setAtleti(prev=>prev.map(a=>a.id===selected.id?{...a,pin:changePIN.pin}:a));
@@ -221,14 +224,15 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   };
 
   // Messaggio di accesso per l'atleta: link diretto (username già compilato) + PIN + invito a installare
+  // Nella lingua dell'app del PT (più avanti: lingua scelta per l'atleta)
   const messaggioAccesso=(a)=>[
-    `Ciao ${a.nome||""}! Ecco il tuo accesso a PT Studio, dove trovi la tua scheda e registri gli allenamenti.`.replace("Ciao !","Ciao!"),
+    a.nome ? t("atleti.msgCiaoNome",{nome:a.nome}) : t("atleti.msgCiao"),
     ``,
     `👉 ${linkAtleta(a.username)}`,
     `👤 Username: ${a.username}`,
     `🔑 PIN: ${a.pin}`,
     ``,
-    `Apri il link, inserisci il PIN e installa l'app sul telefono (su iPhone apri il link con Safari).`,
+    t("atleti.msgIstruzioni"),
   ].join("\n");
   const whatsappUrl=(a)=>{
     const tel=(a.telefono||"").replace(/[^\d+]/g,"").replace(/^00/,"+");
@@ -252,22 +256,22 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   };
 
   const subtitleText=loading
-    ? "Caricamento…"
-    : `${activeAtleti.length} atleti attivi${archivedAtleti.length>0?` · ${archivedAtleti.length} archiviati`:""}`;
+    ? t("comune.caricamento")
+    : `${t("atleti.nAttivi",{count:activeAtleti.length})}${archivedAtleti.length>0?` · ${t("atleti.nArchiviati",{count:archivedAtleti.length})}`:""}`;
 
   return (
     <div>
       <BackBtn setView={setView}/>
       <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
         <div>
-          <div className="page-title">Atleti</div>
+          <div className="page-title">{t("nav.atleti")}</div>
           <div className="page-sub">{subtitleText}</div>
         </div>
-        <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ Nuovo atleta</button>
+        <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ {t("atleti.nuovo")}</button>
       </div>
 
       {loading&&(
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"32px 0"}}>Caricamento atleti…</div>
+        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"32px 0"}}>{t("atleti.caricamento")}</div>
       )}
 
       <div className="clients-grid">
@@ -277,11 +281,11 @@ export default function Atleti({setView, setBuilderPreload, user}) {
             <div className="client-info">
               <div className="client-name">{a.nome} {a.cognome}</div>
               <div className="client-tags">
-                {a.obiettivo&&<span className="tag">{a.obiettivo}</span>}
-                {a.livello&&<span className="tag">{a.livello}</span>}
+                {a.obiettivo&&<span className="tag">{valore("obiettivo",a.obiettivo)}</span>}
+                {a.livello&&<span className="tag">{valore("livello",a.livello)}</span>}
               </div>
               <div className="client-meta">
-                                <span>📋 {a.schede} schede</span>
+                                <span>📋 {t("atleti.nSchede",{count:a.schede})}</span>
               </div>
             </div>
           </div>
@@ -296,25 +300,25 @@ export default function Atleti({setView, setBuilderPreload, user}) {
             style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:"4px 0",marginBottom:showArchived?10:0}}
           >
             <span style={{fontSize:10}}>{showArchived?"▼":"▶"}</span>
-            Archiviati ({archivedAtleti.length})
+            {t("atleti.archiviati",{n:archivedAtleti.length})}
           </button>
           {showArchived&&archivedAtleti.map(a=>(
             <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:8,opacity:.65}}>
               <div className="avatar" style={{background:a.color,width:36,height:36,fontSize:13}}>{getInitials(a.nome,a.cognome)}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:14,fontWeight:600,color:"var(--muted)"}}>{a.nome} {a.cognome}</div>
-                {a.obiettivo&&<div style={{fontSize:12,color:"var(--muted)",opacity:.7}}>{a.obiettivo}</div>}
+                {a.obiettivo&&<div style={{fontSize:12,color:"var(--muted)",opacity:.7}}>{valore("obiettivo",a.obiettivo)}</div>}
               </div>
               <button
                 className="btn-ghost"
                 style={{fontSize:11,padding:"4px 10px",flexShrink:0}}
                 onClick={()=>openSelected(a)}
-              >Dettagli</button>
+              >{t("atleti.dettagli")}</button>
               <button
                 className="btn-ghost"
                 style={{fontSize:11,padding:"4px 10px",color:"var(--accent2)",borderColor:"rgba(71,255,232,.25)",flexShrink:0}}
                 onClick={()=>restoreAtleta(a.id)}
-              >Ripristina</button>
+              >{t("atleti.ripristina")}</button>
             </div>
           ))}
         </div>
@@ -330,48 +334,48 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 <div style={{fontSize:20,fontWeight:700,display:"flex",alignItems:"center",gap:8}}>
                   {selected.nome} {selected.cognome}
                   {selected.archivedAt&&(
-                    <span style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",background:"rgba(255,159,71,.12)",color:"#ff9f47",padding:"2px 8px",borderRadius:100}}>Archiviato</span>
+                    <span style={{fontSize:10,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",background:"rgba(255,159,71,.12)",color:"#ff9f47",padding:"2px 8px",borderRadius:100}}>{t("atleti.archiviato")}</span>
                   )}
                 </div>
-                <div style={{fontSize:13,color:"var(--muted)",marginTop:2}}>{selected.obiettivo} · {selected.livello}</div>
+                <div style={{fontSize:13,color:"var(--muted)",marginTop:2}}>{valore("obiettivo",selected.obiettivo)} · {valore("livello",selected.livello)}</div>
               </div>
-              <button className="modal-close" onClick={closeSelected}>✕</button>
+              <button className="modal-close" aria-label={t("comune.chiudi")} onClick={closeSelected}>✕</button>
             </div>
             <div className="client-modal-body">
 
               {/* ── Credenziali accesso ── */}
               <div style={{marginBottom:20,padding:"12px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10}}>
-                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>Credenziali accesso</div>
+                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>{t("atleti.credenziali")}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:12,color:"var(--muted)",width:72,flexShrink:0}}>Username</span>
+                    <span style={{fontSize:12,color:"var(--muted)",width:72,flexShrink:0}}>{t("login.username")}</span>
                     <code style={{flex:1,fontSize:13,color:"var(--text)",background:"rgba(255,255,255,.06)",padding:"4px 8px",borderRadius:6}}>{selected.username}</code>
                     <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px",flexShrink:0}} onClick={()=>copyToClipboard(selected.username,"username")}>
-                      {copied==="username"?"✓ Copiato":"Copia"}
+                      {copied==="username"?`✓ ${t("atleti.copiato")}`:t("atleti.copia")}
                     </button>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <span style={{fontSize:12,color:"var(--muted)",width:72,flexShrink:0}}>PIN</span>
                     <code style={{flex:1,fontSize:13,color:"var(--text)",background:"rgba(255,255,255,.06)",padding:"4px 8px",borderRadius:6}}>{selected.pin}</code>
                     <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px",flexShrink:0}} onClick={()=>copyToClipboard(selected.pin,"pin")}>
-                      {copied==="pin"?"✓ Copiato":"Copia"}
+                      {copied==="pin"?`✓ ${t("atleti.copiato")}`:t("atleti.copia")}
                     </button>
                   </div>
                 </div>
                 {!selected.archivedAt&&(
                   <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
                     <a className="btn-primary" style={{fontSize:12,padding:"7px 14px",textDecoration:"none"}} href={whatsappUrl(selected)} target="_blank" rel="noopener noreferrer">
-                      Invia accesso su WhatsApp
+                      {t("atleti.inviaWhatsapp")}
                     </a>
                     <button className="btn-ghost" style={{fontSize:12,padding:"7px 14px"}} onClick={()=>copyToClipboard(messaggioAccesso(selected),"messaggio")}>
-                      {copied==="messaggio"?"✓ Messaggio copiato":"Copia messaggio"}
+                      {copied==="messaggio"?`✓ ${t("atleti.messaggioCopiato")}`:t("atleti.copiaMessaggio")}
                     </button>
                   </div>
                 )}
                 {!selected.archivedAt&&(
                   <div style={{marginTop:10}}>
                     {!changePIN.show?(
-                      <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setChangePIN({show:true,pin:"",err:""})}>🔑 Cambia PIN</button>
+                      <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setChangePIN({show:true,pin:"",err:""})}>🔑 {t("atleti.cambiaPin")}</button>
                     ):(
                       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                         <input
@@ -379,13 +383,13 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                           type="text"
                           inputMode="numeric"
                           maxLength={4}
-                          placeholder="Nuovo PIN (4 cifre)"
+                          placeholder={t("atleti.phNuovoPin")}
                           value={changePIN.pin}
                           onChange={e=>setChangePIN(p=>({...p,pin:e.target.value.replace(/\D/g,""),err:""}))}
                           style={{width:150,letterSpacing:"0.3em"}}
                         />
-                        <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={savePINChange}>Salva PIN</button>
-                        <button className="btn-ghost" style={{fontSize:12,padding:"6px 10px"}} onClick={()=>setChangePIN({show:false,pin:"",err:""})}>Annulla</button>
+                        <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={savePINChange}>{t("atleti.salvaPin")}</button>
+                        <button className="btn-ghost" style={{fontSize:12,padding:"6px 10px"}} onClick={()=>setChangePIN({show:false,pin:"",err:""})}>{t("comune.annulla")}</button>
                         {changePIN.err&&<span style={{fontSize:12,color:"var(--danger)"}}>{changePIN.err}</span>}
                       </div>
                     )}
@@ -395,27 +399,27 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
               {!selected.archivedAt&&(
                 <>
-                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>Scheda assegnata</div>
+                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>{t("atleti.schedaAssegnata")}</div>
                   {loadingScheda?(
-                      <div style={{color:"var(--muted)",fontSize:14}}>Caricamento scheda…</div>
+                      <div style={{color:"var(--muted)",fontSize:14}}>{t("atleti.caricamentoScheda")}</div>
                     ):atletaScheda?(
                       <div>
                         {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
                           const key=g.giorno_key||String.fromCharCode(65+g.ordine);
-                          const label=g.nome?`${key} — ${g.nome}`:`Giorno ${key}`;
-                          return <span key={g.id} className="scheda-chip">📋 {label} · {(g.scheda_esercizi||[]).length} esercizi</span>;
+                          const label=g.nome&&nomeGiorno(g.nome,key)===g.nome?`${key} — ${g.nome}`:nomeGiorno(g.nome,key);
+                          return <span key={g.id} className="scheda-chip">📋 {label} · {t("libreria.nEsercizi",{count:(g.scheda_esercizi||[]).length})}</span>;
                         })}
                         <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
                           <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
                             setBuilderPreload(schedaToPreload(atletaScheda,selected));
                             closeSelected();
                             setView("builder");
-                          }}>✏️ Modifica nel Builder</button>
+                          }}>✏️ {t("atleti.modificaBuilder")}</button>
                         </div>
                       </div>
                     ):(
                       <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                        <div style={{color:"var(--muted)",fontSize:14,flex:1}}>Nessuna scheda assegnata ancora.</div>
+                        <div style={{color:"var(--muted)",fontSize:14,flex:1}}>{t("atleti.nessunaScheda")}</div>
                         <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>{
                           setBuilderPreload({
                             atleta:selected,atletaId:selected.id,
@@ -426,7 +430,7 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                           });
                           closeSelected();
                           setView("builder");
-                        }}>+ Crea scheda</button>
+                        }}>+ {t("atleti.creaScheda")}</button>
                       </div>
                     )}
                 </>
@@ -434,54 +438,54 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 
               <div style={{marginTop:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>Profilo</div>
+                  <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)"}}>{t("atleti.profilo")}</div>
                   {!editingProfilo&&!selected.archivedAt&&(
-                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||"",telefono:selected.telefono||"",email:selected.email||""});setEditingProfilo(true);}}>✏️ Modifica</button>
+                    <button className="btn-ghost" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{setProfiloErr("");setEditProfiloForm({obiettivo:selected.obiettivo||"",livello:selected.livello||"",altezza:selected.altezza||"",dataNascita:selected.dataNascita||"",sesso:selected.sesso||"",note:selected.note||"",telefono:selected.telefono||"",email:selected.email||""});setEditingProfilo(true);}}>✏️ {t("comune.modifica")}</button>
                   )}
                 </div>
                 {editingProfilo&&editProfiloForm?(
                   <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:10}}>
                     <div className="form-row" style={{marginBottom:10}}>
-                      <label className="field-label">Obiettivo<select className="field-select" value={editProfiloForm.obiettivo} onChange={e=>setEditProfiloForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
-                      <label className="field-label">Livello<select className="field-select" value={editProfiloForm.livello} onChange={e=>setEditProfiloForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+                      <label className="field-label">{t("comune.obiettivo")}<select className="field-select" value={editProfiloForm.obiettivo} onChange={e=>setEditProfiloForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— {t("comune.seleziona")} —</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}</select></label>
+                      <label className="field-label">{t("comune.livello")}<select className="field-select" value={editProfiloForm.livello} onChange={e=>setEditProfiloForm(p=>({...p,livello:e.target.value}))}><option value="">— {t("comune.seleziona")} —</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}</select></label>
                     </div>
                     <div className="form-row" style={{marginBottom:10}}>
-                      <label className="field-label">Altezza (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={editProfiloForm.altezza} onChange={e=>setEditProfiloForm(p=>({...p,altezza:e.target.value}))}/></label>
-                      <label className="field-label">Data di nascita<input className="field-input" type="date" value={editProfiloForm.dataNascita} onChange={e=>setEditProfiloForm(p=>({...p,dataNascita:e.target.value}))}/></label>
+                      <label className="field-label">{t("atleti.altezza")} (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={editProfiloForm.altezza} onChange={e=>setEditProfiloForm(p=>({...p,altezza:e.target.value}))}/></label>
+                      <label className="field-label">{t("atleti.dataNascita")}<input className="field-input" type="date" value={editProfiloForm.dataNascita} onChange={e=>setEditProfiloForm(p=>({...p,dataNascita:e.target.value}))}/></label>
                     </div>
-                    <label className="field-label" style={{marginBottom:10}}>Sesso<select className="field-select" value={editProfiloForm.sesso} onChange={e=>setEditProfiloForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
-                    <label className="field-label" style={{marginBottom:10}}>Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={editProfiloForm.note} onChange={e=>setEditProfiloForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+                    <label className="field-label" style={{marginBottom:10}}>{t("atleti.sesso")}<select className="field-select" value={editProfiloForm.sesso} onChange={e=>setEditProfiloForm(p=>({...p,sesso:e.target.value}))}><option value="">— {t("atleti.nonSpecificato")} —</option><option value="M">M</option><option value="F">F</option><option value="Altro">{valore("sesso","Altro")}</option></select></label>
+                    <label className="field-label" style={{marginBottom:10}}>{t("atleti.notePT")}<textarea className="field-input" rows={3} placeholder={t("atleti.phNote")} value={editProfiloForm.note} onChange={e=>setEditProfiloForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
                     <div className="form-row" style={{marginBottom:10}}>
-                      <label className="field-label">Telefono<input className="field-input" type="tel" placeholder="+39 333 1234567" value={editProfiloForm.telefono||""} onChange={e=>setEditProfiloForm(p=>({...p,telefono:e.target.value}))}/></label>
-                      <label className="field-label">Email<input className="field-input" type="email" placeholder="atleta@email.com" value={editProfiloForm.email||""} onChange={e=>setEditProfiloForm(p=>({...p,email:e.target.value}))}/></label>
+                      <label className="field-label">{t("atleti.telefono")}<input className="field-input" type="tel" placeholder="+39 333 1234567" value={editProfiloForm.telefono||""} onChange={e=>setEditProfiloForm(p=>({...p,telefono:e.target.value}))}/></label>
+                      <label className="field-label">{t("atleti.email")}<input className="field-input" type="email" placeholder="atleta@email.com" value={editProfiloForm.email||""} onChange={e=>setEditProfiloForm(p=>({...p,email:e.target.value}))}/></label>
                     </div>
                     {profiloErr&&<div style={{color:"var(--danger)",fontSize:12,marginBottom:8}}>{profiloErr}</div>}
                     <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-                      <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setEditingProfilo(false)}>Annulla</button>
-                      <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={saveProfilo}>Salva</button>
+                      <button className="btn-ghost" style={{fontSize:12,padding:"6px 14px"}} onClick={()=>setEditingProfilo(false)}>{t("comune.annulla")}</button>
+                      <button className="btn-primary" style={{fontSize:12,padding:"6px 14px"}} onClick={saveProfilo}>{t("comune.salva")}</button>
                     </div>
                   </div>
                 ):(
                   <div className="profilo-grid">
                     <div className="profilo-cell">
-                      <div className="profilo-cell-label">Altezza</div>
+                      <div className="profilo-cell-label">{t("atleti.altezza")}</div>
                       <div className="profilo-cell-val">{selected.altezza?`${selected.altezza} cm`:"—"}</div>
                     </div>
                     <div className="profilo-cell">
-                      <div className="profilo-cell-label">Età</div>
-                      <div className="profilo-cell-val">{selected.dataNascita&&calcEta(selected.dataNascita)!==null?`${calcEta(selected.dataNascita)} anni`:"—"}</div>
+                      <div className="profilo-cell-label">{t("atleti.eta")}</div>
+                      <div className="profilo-cell-val">{selected.dataNascita&&calcEta(selected.dataNascita)!==null?t("atleti.anni",{n:calcEta(selected.dataNascita)}):"—"}</div>
                     </div>
                     <div className="profilo-cell">
-                      <div className="profilo-cell-label">Sesso</div>
-                      <div className="profilo-cell-val">{selected.sesso||"—"}</div>
+                      <div className="profilo-cell-label">{t("atleti.sesso")}</div>
+                      <div className="profilo-cell-val">{valore("sesso",selected.sesso)||"—"}</div>
                     </div>
                     <div className="profilo-cell" style={{gridColumn:"1/-1"}}>
-                      <div className="profilo-cell-label">Note PT</div>
+                      <div className="profilo-cell-label">{t("atleti.notePT")}</div>
                       <div className="profilo-cell-val" style={{fontSize:13,whiteSpace:"pre-wrap"}}>{selected.note||"—"}</div>
                     </div>
                     {(selected.telefono||selected.email)&&(
                       <div className="profilo-cell" style={{gridColumn:"1/-1"}}>
-                        <div className="profilo-cell-label">Contatti</div>
+                        <div className="profilo-cell-label">{t("atleti.contatti")}</div>
                         <div className="profilo-cell-val" style={{fontSize:13,display:"flex",gap:16,flexWrap:"wrap"}}>
                           {selected.telefono&&<span>📞 {selected.telefono}</span>}
                           {selected.email&&<span>✉️ {selected.email}</span>}
@@ -493,16 +497,16 @@ export default function Atleti({setView, setBuilderPreload, user}) {
               </div>
 
               <div style={{marginTop:16,padding:"14px 16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
-                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>Statistiche</div>
+                <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>{t("nav.statistiche")}</div>
                 <div style={{display:"flex",gap:24,fontSize:14}}>
-                  <div><span style={{color:"var(--muted)"}}>Schede: </span><strong style={{color:"var(--accent)"}}>{selected.schede||0}</strong></div>
+                  <div><span style={{color:"var(--muted)"}}>{t("atleti.schede")} </span><strong style={{color:"var(--accent)"}}>{selected.schede||0}</strong></div>
                 </div>
               </div>
 
               {!selected.archivedAt&&(
                 <>
                   <div style={{marginTop:24}}>
-                    <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 Misurazioni</div>
+                    <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 {t("atleti.misurazioni")}</div>
                     <MisureSection
                       ptId={user?.supabaseId}
                       supabaseAtletaId={selected.id}
@@ -522,9 +526,9 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     <button
                       style={{background:"rgba(71,255,232,.08)",border:"1px solid rgba(71,255,232,.2)",color:"var(--accent2)",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,padding:"9px 16px",borderRadius:9,cursor:"pointer",alignSelf:"flex-start"}}
                       onClick={()=>restoreAtleta(selected.id)}
-                    >↩ Ripristina atleta</button>
+                    >↩ {t("atleti.ripristinaAtleta")}</button>
                     {!hardDelete.show?(
-                      <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)",alignSelf:"flex-start"}} onClick={()=>setHardDelete({show:true,typed:""})}>Elimina definitivamente…</button>
+                      <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)",alignSelf:"flex-start"}} onClick={()=>setHardDelete({show:true,typed:""})}>{t("atleti.eliminaDef")}…</button>
                     ):(
                       <HardDeleteConfirm
                         name={`${selected.nome} ${selected.cognome}`}
@@ -540,18 +544,18 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                   <>
                     {!archiveConfirm&&!hardDelete.show&&(
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                        <button className="btn-ghost" style={{fontSize:12}} onClick={()=>setArchiveConfirm(true)}>Archivia atleta</button>
-                        <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)"}} onClick={()=>setHardDelete({show:true,typed:""})}>Elimina definitivamente…</button>
+                        <button className="btn-ghost" style={{fontSize:12}} onClick={()=>setArchiveConfirm(true)}>{t("atleti.archiviaAtleta")}</button>
+                        <button className="btn-ghost" style={{fontSize:12,color:"var(--muted)"}} onClick={()=>setHardDelete({show:true,typed:""})}>{t("atleti.eliminaDef")}…</button>
                       </div>
                     )}
                     {archiveConfirm&&(
                       <div style={{background:"rgba(255,159,71,.06)",border:"1px solid rgba(255,159,71,.2)",borderRadius:9,padding:"12px 14px"}}>
                         <div style={{fontSize:13,color:"var(--text)",marginBottom:10}}>
-                          Archiviare <strong>{selected.nome} {selected.cognome}</strong>? Non potrà più accedere, ma tutti i dati vengono conservati. Potrai ripristinarlo in qualsiasi momento.
+                          <Trans i18nKey="atleti.archiviareConferma" values={{nome:`${selected.nome} ${selected.cognome}`}} components={{b:<strong/>}}/>
                         </div>
                         <div style={{display:"flex",gap:8}}>
-                          <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setArchiveConfirm(false)}>Annulla</button>
-                          <button style={{background:"rgba(255,159,71,.15)",border:"1px solid rgba(255,159,71,.3)",color:"#ff9f47",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"5px 14px",borderRadius:8,cursor:"pointer"}} onClick={archiveAtleta}>Archivia</button>
+                          <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={()=>setArchiveConfirm(false)}>{t("comune.annulla")}</button>
+                          <button style={{background:"rgba(255,159,71,.15)",border:"1px solid rgba(255,159,71,.3)",color:"#ff9f47",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"5px 14px",borderRadius:8,cursor:"pointer"}} onClick={archiveAtleta}>{t("atleti.archivia")}</button>
                         </div>
                       </div>
                     )}
@@ -578,37 +582,37 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         <div className="overlay" onClick={()=>setShowForm(false)}>
           <div className="form-modal" style={{maxWidth:520}} onClick={e=>e.stopPropagation()}>
             <div className="form-modal-header">
-              <div className="modal-title">Nuovo Atleta</div>
-              <button className="modal-close" onClick={()=>setShowForm(false)}>✕</button>
+              <div className="modal-title">{t("atleti.nuovoTitolo")}</div>
+              <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>setShowForm(false)}>✕</button>
             </div>
             <div className="form-modal-body">
               <div className="form-row">
-                <label className="field-label">Nome<input className="field-input" type="text" placeholder="Marco" value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/></label>
-                <label className="field-label">Cognome<input className="field-input" type="text" placeholder="Rossi" value={form.cognome} onChange={e=>setForm(p=>({...p,cognome:e.target.value}))}/></label>
+                <label className="field-label">{t("comune.nome")}<input className="field-input" type="text" placeholder={t("login.phNome")} value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))}/></label>
+                <label className="field-label">{t("comune.cognome")}<input className="field-input" type="text" placeholder={t("login.phCognome")} value={form.cognome} onChange={e=>setForm(p=>({...p,cognome:e.target.value}))}/></label>
               </div>
               <div className="form-row">
-                <label className="field-label">Username<input className="field-input" type="text" placeholder="marco_rossi" value={form.username} onChange={e=>setForm(p=>({...p,username:e.target.value}))}/></label>
-                <label className="field-label">PIN (4 cifre)<input className="field-input" type="text" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e=>setForm(p=>({...p,pin:e.target.value.replace(/\D/g,"")}))} style={{letterSpacing:"0.3em"}}/></label>
+                <label className="field-label">Username<input className="field-input" type="text" placeholder={t("atleti.phUsername")} value={form.username} onChange={e=>setForm(p=>({...p,username:e.target.value}))}/></label>
+                <label className="field-label">{t("atleti.pin4")}<input className="field-input" type="text" inputMode="numeric" maxLength={4} placeholder="••••" value={form.pin} onChange={e=>setForm(p=>({...p,pin:e.target.value.replace(/\D/g,"")}))} style={{letterSpacing:"0.3em"}}/></label>
               </div>
               <div className="form-row">
-                <label className="field-label">Obiettivo<select className="field-select" value={form.obiettivo} onChange={e=>setForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— seleziona —</option>{OBIETTIVI.map(o=><option key={o}>{o}</option>)}</select></label>
-                <label className="field-label">Livello<select className="field-select" value={form.livello} onChange={e=>setForm(p=>({...p,livello:e.target.value}))}><option value="">— seleziona —</option>{LIVELLI.map(l=><option key={l}>{l}</option>)}</select></label>
+                <label className="field-label">{t("comune.obiettivo")}<select className="field-select" value={form.obiettivo} onChange={e=>setForm(p=>({...p,obiettivo:e.target.value}))}><option value="">— {t("comune.seleziona")} —</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}</select></label>
+                <label className="field-label">{t("comune.livello")}<select className="field-select" value={form.livello} onChange={e=>setForm(p=>({...p,livello:e.target.value}))}><option value="">— {t("comune.seleziona")} —</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}</select></label>
               </div>
               <div className="form-row">
-                <label className="field-label">Altezza (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={form.altezza} onChange={e=>setForm(p=>({...p,altezza:e.target.value}))}/></label>
-                <label className="field-label">Data di nascita<input className="field-input" type="date" value={form.dataNascita} onChange={e=>setForm(p=>({...p,dataNascita:e.target.value}))}/></label>
+                <label className="field-label">{t("atleti.altezza")} (cm)<input className="field-input" type="number" min={100} max={250} placeholder="175" value={form.altezza} onChange={e=>setForm(p=>({...p,altezza:e.target.value}))}/></label>
+                <label className="field-label">{t("atleti.dataNascita")}<input className="field-input" type="date" value={form.dataNascita} onChange={e=>setForm(p=>({...p,dataNascita:e.target.value}))}/></label>
               </div>
-              <label className="field-label">Sesso<select className="field-select" value={form.sesso} onChange={e=>setForm(p=>({...p,sesso:e.target.value}))}><option value="">— non specificato —</option><option value="M">M</option><option value="F">F</option><option value="Altro">Altro</option></select></label>
-              <label className="field-label">Note PT<textarea className="field-input" rows={3} placeholder="Infortuni, note mediche, preferenze…" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
+              <label className="field-label">{t("atleti.sesso")}<select className="field-select" value={form.sesso} onChange={e=>setForm(p=>({...p,sesso:e.target.value}))}><option value="">— {t("atleti.nonSpecificato")} —</option><option value="M">M</option><option value="F">F</option><option value="Altro">{valore("sesso","Altro")}</option></select></label>
+              <label className="field-label">{t("atleti.notePT")}<textarea className="field-input" rows={3} placeholder={t("atleti.phNote")} value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{resize:"vertical",fontFamily:"'DM Sans',sans-serif",fontSize:14}}/></label>
               <div className="form-row">
-                <label className="field-label">Telefono <span style={{color:"var(--muted)",fontSize:11}}>(opzionale)</span><input className="field-input" type="tel" placeholder="+39 333 1234567" value={form.telefono} onChange={e=>setForm(p=>({...p,telefono:e.target.value}))}/></label>
-                <label className="field-label">Email <span style={{color:"var(--muted)",fontSize:11}}>(opzionale)</span><input className="field-input" type="email" placeholder="atleta@email.com" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></label>
+                <label className="field-label">{t("atleti.telefono")} <span style={{color:"var(--muted)",fontSize:11}}>({t("atleti.opzionale")})</span><input className="field-input" type="tel" placeholder="+39 333 1234567" value={form.telefono} onChange={e=>setForm(p=>({...p,telefono:e.target.value}))}/></label>
+                <label className="field-label">{t("atleti.email")} <span style={{color:"var(--muted)",fontSize:11}}>({t("atleti.opzionale")})</span><input className="field-input" type="email" placeholder="atleta@email.com" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/></label>
               </div>
             </div>
             {limitErr&&<div style={{color:"var(--danger)",fontSize:13,padding:"10px 16px",background:"rgba(255,71,87,.07)",border:"1px solid rgba(255,71,87,.2)",borderRadius:8,margin:"0 0 4px"}}>{limitErr}</div>}
             <div className="form-actions">
-              <button className="btn-ghost" onClick={()=>{setShowForm(false);setLimitErr("");}}>Annulla</button>
-              <button className="btn-primary" onClick={addAtleta}>Aggiungi</button>
+              <button className="btn-ghost" onClick={()=>{setShowForm(false);setLimitErr("");}}>{t("comune.annulla")}</button>
+              <button className="btn-primary" onClick={addAtleta}>{t("builder.aggiungi")}</button>
             </div>
           </div>
         </div>
@@ -618,14 +622,15 @@ export default function Atleti({setView, setBuilderPreload, user}) {
 }
 
 function HardDeleteConfirm({name, typed, onChange, onCancel, onConfirm}) {
+  const { t } = useTranslation();
   return (
     <div style={{background:"rgba(255,71,87,.06)",border:"1px solid rgba(255,71,87,.25)",borderRadius:9,padding:"14px 16px"}}>
-      <div style={{fontSize:13,color:"var(--text)",marginBottom:4,fontWeight:600}}>Eliminazione definitiva</div>
+      <div style={{fontSize:13,color:"var(--text)",marginBottom:4,fontWeight:600}}>{t("atleti.eliminazioneDef")}</div>
       <div style={{fontSize:12,color:"var(--muted)",lineHeight:1.5,marginBottom:12}}>
-        Questa azione elimina <strong style={{color:"var(--text)"}}>{name}</strong> e tutto il suo storico (schede, sessioni, misurazioni). Non è reversibile.
+        <Trans i18nKey="atleti.eliminaTesto" values={{nome:name}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
       </div>
       <div style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>
-        Digita <strong style={{color:"var(--text)"}}>{name}</strong> per confermare:
+        <Trans i18nKey="atleti.digita" values={{nome:name}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
       </div>
       <input
         className="field-input"
@@ -636,13 +641,13 @@ function HardDeleteConfirm({name, typed, onChange, onCancel, onConfirm}) {
         style={{marginBottom:10,fontSize:13}}
       />
       <div style={{display:"flex",gap:8}}>
-        <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={onCancel}>Annulla</button>
+        <button className="btn-ghost" style={{fontSize:12,padding:"5px 12px"}} onClick={onCancel}>{t("comune.annulla")}</button>
         <button
           className="btn-danger"
           style={{fontSize:12,padding:"5px 14px",opacity:typed===name?1:.4,cursor:typed===name?"pointer":"default"}}
           disabled={typed!==name}
           onClick={onConfirm}
-        >Elimina definitivamente</button>
+        >{t("atleti.eliminaDef")}</button>
       </div>
     </div>
   );

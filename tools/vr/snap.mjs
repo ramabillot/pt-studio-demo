@@ -1,6 +1,14 @@
 // Visual regression: cattura le schermate principali con dati finti e data fissa.
 import { chromium } from 'playwright';
 const OUT = process.argv[2] || 'base';
+// Lingua del browser simulato (LANG=it|es|en, default it): l'app la prende da lì
+const LANG = process.env.LANG_APP || 'it';
+const LOCALE = {it:'it-IT', es:'es-AR', en:'en-US'}[LANG];
+const L = {
+  it:{progressi:'📈 Progressi', nav:[['Libreria','libreria'],['Builder','builder'],['Atleti','atleti'],['Calendario','calendario'],['Account','account']], atleti:'Atleti', admin:[['Statistiche','stats'],['I miei PT','pt']]},
+  es:{progressi:'📈 Progreso', nav:[['Biblioteca','libreria'],['Builder','builder'],['Atletas','atleti'],['Calendario','calendario'],['Cuenta','account']], atleti:'Atletas', admin:[['Estadísticas','stats'],['Mis PT','pt']]},
+  en:{progressi:'📈 Progress', nav:[['Library','libreria'],['Builder','builder'],['Athletes','atleti'],['Calendar','calendario'],['Account','account']], atleti:'Athletes', admin:[['Statistics','stats'],['My PTs','pt']]},
+}[LANG];
 const b = await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.env.PW_CHROMIUM}:{});
 const FIXED = new Date('2026-10-02T12:00:00');
 const scheda={id:'s1',nome:'Full Body 2x',obiettivo:'Ipertrofia',livello:'Intermedio',assegnata_il:'2026-10-01',scheda_giorni:[
@@ -47,20 +55,20 @@ import fs from 'fs'; fs.mkdirSync(OUT,{recursive:true});
 
 for (const [vp,tag] of [[{width:390,height:844},'m'],[{width:1300,height:900},'d']]) {
   // login
-  let ctx=await b.newContext({viewport:vp}); let p=await ctx.newPage(); await mock(p);
+  let ctx=await b.newContext({viewport:vp,locale:LOCALE}); let p=await ctx.newPage(); await mock(p);
   await p.goto('http://localhost:4173/'); await shot(p,`${tag}-home`);
   await p.goto('http://localhost:4173/atleta/?u=rbillot'); await shot(p,`${tag}-login-atleta`);
   await p.goto('http://localhost:4173/pt/'); await shot(p,`${tag}-login-pt`);
   await ctx.close();
   // atleta
-  ctx=await b.newContext({viewport:vp}); p=await ctx.newPage(); await mock(p);
+  ctx=await b.newContext({viewport:vp,locale:LOCALE}); p=await ctx.newPage(); await mock(p);
   await p.addInitScript(()=>localStorage.setItem('ptstudio_atleta_token','t'.repeat(64)));
   await p.goto('http://localhost:4173/atleta/'); await p.waitForTimeout(1200); await shot(p,`${tag}-atleta-scheda`);
-  await p.getByText('📈 Progressi').click(); await shot(p,`${tag}-atleta-progressi`);
+  await p.getByText(L.progressi).click(); await shot(p,`${tag}-atleta-progressi`);
   await ctx.close();
   // PT
   for (const admin of [false,true]) {
-    ctx=await b.newContext({viewport:vp}); p=await ctx.newPage(); await mock(p,admin);
+    ctx=await b.newContext({viewport:vp,locale:LOCALE}); p=await ctx.newPage(); await mock(p,admin);
     await p.goto('http://localhost:4173/pt/'); await p.waitForTimeout(500);
     await p.fill('input[type=email]','pt@x.it'); await p.fill('input[type=password]','secret'); await p.click('.login-btn');
     await p.waitForTimeout(3800);
@@ -68,11 +76,11 @@ for (const [vp,tag] of [[{width:390,height:844},'m'],[{width:1300,height:900},'d
     await shot(p,`${pre}-dashboard`);
     const nav = async label => { const loc=p.locator(`.sidebar-item:has-text("${label}"), .mobile-nav-item:has-text("${label}")`).locator('visible=true').first(); await loc.click(); };
     if(!admin){
-      for (const [label,name] of [['Libreria','libreria'],['Builder','builder'],['Atleti','atleti'],['Calendario','calendario'],['Account','account']]) { await nav(label); await shot(p,`${pre}-${name}`); }
-      await nav('Atleti'); await p.waitForTimeout(500); await p.locator('.client-item').first().click(); await p.waitForTimeout(900);
+      for (const [label,name] of L.nav) { await nav(label); await shot(p,`${pre}-${name}`); }
+      await nav(L.atleti); await p.waitForTimeout(500); await p.locator('.client-item').first().click(); await p.waitForTimeout(900);
       await p.locator('.client-modal').screenshot({path:`${OUT}/${pre}-atleta-modal.png`});
     } else {
-      for (const [label,name] of [['Statistiche','stats'],['I miei PT','pt']]) { await nav(label); await shot(p,`${pre}-${name}`); }
+      for (const [label,name] of L.admin) { await nav(label); await shot(p,`${pre}-${name}`); }
     }
     await ctx.close();
   }

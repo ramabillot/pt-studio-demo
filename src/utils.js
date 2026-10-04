@@ -1,5 +1,6 @@
 // ── Utility functions, storage helpers, PDF generation ────────────────────────
 import { CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
+import { t, locale, nomeEsercizio, valore } from "./i18n/index.js";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 export function fmtDate(d) {
@@ -7,11 +8,11 @@ export function fmtDate(d) {
 }
 
 export function fmtDateShort(dateStr) {
-  return new Date(dateStr+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
+  return new Date(dateStr+"T12:00").toLocaleDateString(locale(),{weekday:"short",day:"numeric",month:"short"});
 }
 
 export function fmtDateLong(dateStr) {
-  return new Date(dateStr+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  return new Date(dateStr+"T12:00").toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
 
 export function calcEta(dataNascita) {
@@ -51,7 +52,7 @@ export const LS_ATLETA_USERNAME = "ptstudio_atleta_username";   // per precompil
 function drawPH(doc,x,y,w,h) {
   doc.setFillColor(240,240,245); doc.roundedRect(x,y,w,h,2,2,"F");
   doc.setDrawColor(210,210,220); doc.setLineWidth(0.3); doc.roundedRect(x,y,w,h,2,2,"S");
-  doc.setFontSize(7); doc.setTextColor(170,170,185); doc.text("nessuna immagine",x+w/2,y+h/2+1,{align:"center"});
+  doc.setFontSize(7); doc.setTextColor(170,170,185); doc.text(t("pdf.nessunaImmagine"),x+w/2,y+h/2+1,{align:"center"});
 }
 
 async function localImgToBase64(exId) {
@@ -89,14 +90,14 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
   doc.setTextColor(130,160,0); doc.text("Studio",M+10,90);
   doc.setDrawColor(42,42,58); doc.setLineWidth(0.5); doc.line(M+10,98,PW-M,98);
   const cn=[nome,cognome].filter(Boolean).join(" ")||"—";
-  doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(107,107,128); doc.text("SCHEDA PER",M+10,112);
+  doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(107,107,128); doc.text(t("pdf.schedaPer"),M+10,112);
   doc.setFontSize(26); doc.setFont("helvetica","bold"); doc.setTextColor(232,232,240); doc.text(cn,M+10,126);
   let dy=142;
-  [{k:"Obiettivo",v:obiettivo||"—"},{k:"Livello",v:livello||"—"},{k:"Data",v:new Date().toLocaleDateString("it-IT")}].forEach(({k,v})=>{
+  [{k:t("comune.obiettivo"),v:valore("obiettivo",obiettivo)||"—"},{k:t("comune.livello"),v:valore("livello",livello)||"—"},{k:t("comune.data"),v:new Date().toLocaleDateString(locale())}].forEach(({k,v})=>{
     doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(107,107,128); doc.text(k.toUpperCase(),M+10,dy);
     doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(200,200,215); doc.text(v,M+10,dy+7); dy+=18;
   });
-  doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(60,60,80); doc.text("Generato con PT Studio",M+10,PH-10);
+  doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(60,60,80); doc.text(t("pdf.generato"),M+10,PH-10);
 
   const activeDays=ALL_DAYS.filter(d=>giorni[d]&&giorni[d].length>0);
   let exDone=0,totalEx=activeDays.reduce((s,d)=>s+giorni[d].length,0);
@@ -106,32 +107,34 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
     doc.addPage(); y=M;
     doc.setFillColor(255,255,255); doc.rect(0,0,PW,28,"F");
     doc.setFillColor(130,160,0); doc.rect(0,0,4,28,"F");
-    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(40,40,50); doc.text(`GIORNO ${day}`,M,19);
+    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(40,40,50); doc.text(t("comune.giornoN",{g:day}).toUpperCase(),M,19);
     doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(150,150,160); doc.text(cn,PW-M,12,{align:"right"});
-    doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text(`${scheda.length} esercizi`,PW-M,22,{align:"right"});
+    doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text(t("libreria.nEsercizi",{count:scheda.length}),PW-M,22,{align:"right"});
     doc.setDrawColor(220,220,225); doc.setLineWidth(0.4); doc.line(0,28,PW,28);
     const sum=calcSummary(scheda);
     doc.setFillColor(248,248,252); doc.rect(0,28,PW,14,"F");
     doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(80,80,100);
-    let sx2=M; [`Serie totali: ${sum.totalSets}`,`Tempo stimato: ~${sum.estMin} min`,`Gruppi: ${sum.cats.join(", ")}`].forEach(s=>{ doc.text(s,sx2,37); sx2+=doc.getTextWidth(s)+14; });
+    let sx2=M; [`${t("builder.serieTotali")}: ${sum.totalSets}`,`${t("builder.tempoStimato")}: ~${sum.estMin} min`,`${t("builder.gruppi")}: ${sum.cats.map(c=>valore("categoria",c)).join(", ")}`].forEach(s=>{ doc.text(s,sx2,37); sx2+=doc.getTextWidth(s)+14; });
     y=48;
 
     const IMG_W=55,IMG_H=42;
     for(let i=0;i<scheda.length;i++) {
       const row=scheda[i];
-      onProgress&&onProgress(exDone/totalEx,`Giorno ${day} — ${row.name}…`);
+      const nomeEx=nomeEsercizio(row.name,row.id);
+      onProgress&&onProgress(exDone/totalEx,`${t("comune.giornoN",{g:day})} — ${nomeEx}…`);
       np(82);
       const rgb=CAT_COLORS_PDF[row.cat]||[80,80,200];
       doc.setFillColor(248,248,252); doc.roundedRect(M,y,CW,11,2,2,"F");
       doc.setFillColor(...rgb); doc.roundedRect(M,y,12,11,2,2,"F");
       doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text(String(i+1),M+6,y+7.2,{align:"center"});
-      doc.setFontSize(11); doc.setTextColor(25,25,35); doc.text(row.name,M+16,y+7.5);
-      const bw=doc.getTextWidth(row.cat.toUpperCase())+8;
+      doc.setFontSize(11); doc.setTextColor(25,25,35); doc.text(nomeEx,M+16,y+7.5);
+      const catTxt=String(valore("categoria",row.cat)||"").toUpperCase();
+      const bw=doc.getTextWidth(catTxt)+8;
       doc.setFillColor(...rgb.map(c=>Math.min(255,c+80))); doc.roundedRect(PW-M-bw-2,y+2,bw,7,1.5,1.5,"F");
-      doc.setFontSize(7); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(row.cat.toUpperCase(),PW-M-bw/2-2,y+7,{align:"center"});
+      doc.setFontSize(7); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(catTxt,PW-M-bw/2-2,y+7,{align:"center"});
       y+=14;
       let cx2=M+2;
-      [{label:"Serie",val:String(row.sets)},{label:"Ripetizioni",val:String(row.reps)},{label:"Recupero",val:`${row.rest}s`}].forEach(({label,val})=>{
+      [{label:t("builder.serie"),val:String(row.sets)},{label:t("card.ripetizioni"),val:String(row.reps)},{label:t("builder.recupero"),val:`${row.rest}s`}].forEach(({label,val})=>{
         const cw2=doc.getTextWidth(`${label}: ${val}`)+10;
         doc.setFillColor(243,243,248); doc.roundedRect(cx2-2,y-4.5,cw2,7,1.5,1.5,"F");
         doc.setFontSize(8.5); doc.setFont("helvetica","normal"); doc.setTextColor(110,110,125); doc.text(`${label}: `,cx2,y);
@@ -151,7 +154,7 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
         }catch{ drawPH(doc,M,y,IMG_W,IMG_H); }
       } else { drawPH(doc,M,y,IMG_W,IMG_H); }
       const nx=M+IMG_W+8,nw=CW-IMG_W-8; let ny2=y+6;
-      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text("NOTE",nx,ny2); ny2+=6;
+      doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text(t("pdf.note"),nx,ny2); ny2+=6;
       for(let l=0;l<4;l++){ doc.setDrawColor(220,220,228); doc.setLineWidth(0.3); doc.line(nx,ny2,nx+nw,ny2); ny2+=8; }
       y+=IMG_H+10;
       doc.setDrawColor(230,230,235); doc.setLineWidth(0.3); doc.line(M,y,PW-M,y); y+=7;
@@ -162,5 +165,5 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
   const total=doc.getNumberOfPages();
   for(let p=2;p<=total;p++){ doc.setPage(p); doc.setDrawColor(220,220,225); doc.setLineWidth(0.3); doc.line(M,PH-11,PW-M,PH-11); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(170,170,180); doc.text("PT Studio",M,PH-5); doc.text(`${p-1}/${total-1}`,PW-M,PH-5,{align:"right"}); }
   const fn=[nome,cognome].filter(Boolean).join("-")||"atleta";
-  doc.save(`scheda-${fn}.pdf`);
+  doc.save(`${t("pdf.nomeFile")}-${fn}.pdf`);
 }

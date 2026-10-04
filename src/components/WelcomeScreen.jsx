@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function WelcomeScreen({user,onDone}) {
+  const { t } = useTranslation();
   const [leaving,setLeaving]=useState(false);
   useEffect(()=>{ const t=setTimeout(()=>{ setLeaving(true); setTimeout(onDone,500); },2600); return()=>clearTimeout(t); },[]);
   return (
     <div className={`welcome-screen${leaving?" leaving":""}`}>
       <div className="welcome-text">
-        <div className="welcome-ciao">Bentornato</div>
+        <div className="welcome-ciao">{t("welcome.bentornato")}</div>
         <div className="welcome-name"><span>{user.name.split(" ")[0]}</span> {user.name.split(" ").slice(1).join(" ")}</div>
       </div>
       <div className="lifter-wrap">

@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { loginAtleta } from "../api/atleta.js";
 import { store, LS_ATLETA_USERNAME } from "../utils.js";
+import { useTranslation } from "react-i18next";
+import { locale } from "../i18n/index.js";
+import SelettoreLingua from "./SelettoreLingua.jsx";
 
 function buildUserObj(supaUser, profile) {
   return {
@@ -23,6 +26,7 @@ function buildUserObj(supaUser, profile) {
 
 // ruolo: "atleta" (app /atleta/) o "pt" (app /pt/) — deciso dall'indirizzo, niente selettore
 export default function LoginScreen({ruolo, onLogin}) {
+  const { t } = useTranslation();
   // mode: "login" | "register" | "registered"
   const [mode, setMode] = useState("login");
   // Login fields — l'atleta arriva dal link del PT (/atleta/?u=username): username già compilato
@@ -90,36 +94,36 @@ export default function LoginScreen({ruolo, onLogin}) {
     setErr("");
     const u = user.trim();
     if (ruolo === "atleta") {
-      if (!u || !pass) { setErr("Inserisci username e PIN"); return; }
+      if (!u || !pass) { setErr(t("login.errUsernamePin")); return; }
       setLoading(true);
       try {
         const r = await loginAtleta(u, pass);
         if (r.ok) { onLogin(r.atleta); return; }
         if (r.errore === "bloccato") {
-          const ora = r.fino ? new Date(r.fino).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : "";
-          setErr(`Troppi tentativi sbagliati. Riprova${ora ? ` dopo le ${ora}` : " tra qualche minuto"}.`);
+          const ora = r.fino ? new Date(r.fino).toLocaleTimeString(locale(),{hour:"2-digit",minute:"2-digit"}) : "";
+          setErr(ora ? t("login.bloccatoFino",{ora}) : t("login.bloccato"));
         } else {
-          setErr("Username o PIN non corretti");
+          setErr(t("login.errCredAtleta"));
         }
       } catch {
-        setErr("Connessione non riuscita. Controlla la rete e riprova.");
+        setErr(t("comune.errRete"));
       } finally {
         setLoading(false);
       }
       return;
     }
     // Personal Trainer / admin: email + password
-    if (!u || !pass) { setErr("Inserisci email e password"); return; }
+    if (!u || !pass) { setErr(t("login.errEmailPass")); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: u, password: pass });
-      if (error) { setErr("Email o password non corretti"); return; }
+      if (error) { setErr(t("login.errCredPT")); return; }
       const { data: profile, error: profileErr } = await supabase
         .from("profiles").select("*").eq("id", data.user.id).maybeSingle();
-      if (profileErr) { setErr("Errore nel caricamento del profilo. Riprova."); return; }
+      if (profileErr) { setErr(t("login.errProfilo")); return; }
       onLogin(buildUserObj(data.user, profile));
     } catch {
-      setErr("Connessione non riuscita. Controlla la rete e riprova.");
+      setErr(t("comune.errRete"));
     } finally {
       setLoading(false);
     }
@@ -127,9 +131,9 @@ export default function LoginScreen({ruolo, onLogin}) {
 
   const register = async () => {
     setErr("");
-    if (!rNome.trim()||!rCognome.trim()||!rEmail.trim()||!rPass) { setErr("Compila tutti i campi"); return; }
-    if (rPass !== rPass2) { setErr("Le password non coincidono"); return; }
-    if (rPass.length < 6) { setErr("Password minimo 6 caratteri"); return; }
+    if (!rNome.trim()||!rCognome.trim()||!rEmail.trim()||!rPass) { setErr(t("login.errCampi")); return; }
+    if (rPass !== rPass2) { setErr(t("login.errPassDiverse")); return; }
+    if (rPass.length < 6) { setErr(t("login.errPassCorta")); return; }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email: rEmail.trim(),
@@ -151,6 +155,7 @@ export default function LoginScreen({ruolo, onLogin}) {
   return (
     <div className="login-wrap">
       <canvas ref={canvasRef} className="login-canvas"/>
+      <SelettoreLingua className="lingua-angolo"/>
       <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:12,padding:"0 16px"}}>
 
         <div className="login-box" style={{margin:0}}>
@@ -158,11 +163,11 @@ export default function LoginScreen({ruolo, onLogin}) {
 
           {/* ── LOGIN ── */}
           {mode==="login"&&<>
-            <div className="login-sub">{ruolo==="atleta"?"Accedi per vedere la tua scheda":"Area Personal Trainer"}</div>
+            <div className="login-sub">{ruolo==="atleta"?t("login.subAtleta"):t("login.subPT")}</div>
             {ruolo==="atleta"?(<>
               <div className="login-field">
-                <label htmlFor="login-user">Username</label>
-                <input id="login-user" className="login-input" type="text" placeholder="il tuo username" value={user}
+                <label htmlFor="login-user">{t("login.username")}</label>
+                <input id="login-user" className="login-input" type="text" placeholder={t("login.phUsername")} value={user}
                   autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}
                   onChange={e=>{setUser(e.target.value);setErr("");}}
                   onKeyDown={e=>e.key==="Enter"&&submit()}/>
@@ -177,13 +182,13 @@ export default function LoginScreen({ruolo, onLogin}) {
             </>):(<>
               <div className="login-field">
                 <label htmlFor="login-email">Email</label>
-                <input id="login-email" className="login-input" type="email" placeholder="nome@email.com" value={user}
+                <input id="login-email" className="login-input" type="email" placeholder={t("login.phEmail")} value={user}
                   autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false}
                   onChange={e=>{setUser(e.target.value);setErr("");}}
                   onKeyDown={e=>e.key==="Enter"&&submit()}/>
               </div>
               <div className="login-field">
-                <label htmlFor="login-pass">Password</label>
+                <label htmlFor="login-pass">{t("comune.password")}</label>
                 <input id="login-pass" className="login-input" type="password" placeholder="••••••••" value={pass}
                   autoComplete="current-password"
                   onChange={e=>{setPass(e.target.value);setErr("");}}
@@ -192,16 +197,16 @@ export default function LoginScreen({ruolo, onLogin}) {
             </>)}
             {err&&<div className="login-err">{err}</div>}
             <button className="login-btn" onClick={submit} disabled={loading}>
-              {loading?"Accesso in corso…":"Accedi"}
+              {loading?t("login.accesso"):t("login.accedi")}
             </button>
             {ruolo==="pt"?(
               <div style={{display:"flex",justifyContent:"space-between",marginTop:14,flexWrap:"wrap",gap:8}}>
-                {linkBtn(()=>{setMode("register");reset();},"Registrati →","var(--accent)")}
-                {linkBtn(()=>setShowForgotModal(true),"Password dimenticata?")}
+                {linkBtn(()=>{setMode("register");reset();},t("login.registrati"),"var(--accent)")}
+                {linkBtn(()=>setShowForgotModal(true),t("login.dimenticata"))}
               </div>
             ):(
               <div style={{textAlign:"center",marginTop:14,fontSize:13,color:"var(--muted)"}}>
-                Username e PIN te li dà il tuo Personal Trainer.
+                {t("login.notaAtleta")}
               </div>
             )}
 
@@ -209,41 +214,41 @@ export default function LoginScreen({ruolo, onLogin}) {
 
           {/* ── REGISTER ── */}
           {mode==="register"&&<>
-            <div className="login-sub">Crea il tuo account PT</div>
+            <div className="login-sub">{t("login.creaAccountPT")}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
               <div className="login-field" style={{marginBottom:0}}>
-                <label>Nome</label>
-                <input className="login-input" type="text" placeholder="Marco" value={rNome}
+                <label>{t("comune.nome")}</label>
+                <input className="login-input" type="text" placeholder={t("login.phNome")} value={rNome}
                   onChange={e=>{setRNome(e.target.value);setErr("");}}/>
               </div>
               <div className="login-field" style={{marginBottom:0}}>
-                <label>Cognome</label>
-                <input className="login-input" type="text" placeholder="Rossi" value={rCognome}
+                <label>{t("comune.cognome")}</label>
+                <input className="login-input" type="text" placeholder={t("login.phCognome")} value={rCognome}
                   onChange={e=>{setRCognome(e.target.value);setErr("");}}/>
               </div>
             </div>
             <div className="login-field">
               <label>Email</label>
-              <input className="login-input" type="email" placeholder="marco@email.com" value={rEmail}
+              <input className="login-input" type="email" placeholder={t("login.phEmailReg")} value={rEmail}
                 onChange={e=>{setREmail(e.target.value);setErr("");}}/>
             </div>
             <div className="login-field">
-              <label>Password</label>
-              <input className="login-input" type="password" placeholder="min. 6 caratteri" value={rPass}
+              <label>{t("comune.password")}</label>
+              <input className="login-input" type="password" placeholder={t("login.phMin6")} value={rPass}
                 onChange={e=>{setRPass(e.target.value);setErr("");}}/>
             </div>
             <div className="login-field">
-              <label>Conferma password</label>
+              <label>{t("login.confermaPass")}</label>
               <input className="login-input" type="password" placeholder="••••••••" value={rPass2}
                 onChange={e=>{setRPass2(e.target.value);setErr("");}}
                 onKeyDown={e=>e.key==="Enter"&&register()}/>
             </div>
             {err&&<div className="login-err">{err}</div>}
             <button className="login-btn" onClick={register} disabled={loading}>
-              {loading?"Creazione account…":"Crea account"}
+              {loading?t("login.creazione"):t("login.creaAccount")}
             </button>
             <div style={{textAlign:"center",marginTop:14}}>
-              {linkBtn(goLogin,"← Torna al login")}
+              {linkBtn(goLogin,t("login.tornaLogin"))}
             </div>
           </>}
 
@@ -251,13 +256,13 @@ export default function LoginScreen({ruolo, onLogin}) {
           {mode==="registered"&&(
             <div style={{textAlign:"center",padding:"8px 0 4px"}}>
               <div style={{fontSize:48,marginBottom:16}}>🎉</div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,letterSpacing:1.5,marginBottom:10}}>Account creato!</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,letterSpacing:1.5,marginBottom:10}}>{t("login.accountCreato")}</div>
               <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.75,marginBottom:24}}>
-                Il tuo account è in attesa di approvazione.<br/>
-                Un amministratore ti darà accesso a breve.
+                {t("login.inAttesa1")}<br/>
+                {t("login.inAttesa2")}
               </div>
               <button className="btn-ghost" onClick={goLogin} style={{width:"100%",padding:11,fontSize:14}}>
-                ← Torna al login
+                {t("login.tornaLogin")}
               </button>
             </div>
           )}
@@ -271,18 +276,18 @@ export default function LoginScreen({ruolo, onLogin}) {
           <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,padding:"28px 28px 24px",maxWidth:380,width:"100%",animation:"slideUp .2s ease"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,marginBottom:12}}>
-              Reset password
+              {t("login.resetTitolo")}
             </div>
             <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.7,marginBottom:24}}>
-              Per reimpostare la password contatta l'amministratore all'indirizzo{" "}
+              {t("login.resetTesto")}{" "}
               <strong style={{color:"var(--text)"}}>ptstudio.admin@proton.me</strong>.
-              <br/>Provvederà a ripristinare il tuo accesso.
+              <br/>{t("login.resetTesto2")}
             </div>
             <button
               className="login-btn"
               style={{marginTop:0}}
               onClick={()=>setShowForgotModal(false)}
-            >Ho capito</button>
+            >{t("comune.hoCapito")}</button>
           </div>
         </div>
       )}
