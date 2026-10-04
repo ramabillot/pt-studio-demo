@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "./supabase.js";
 import { riprendiSessioneAtleta, logoutAtleta } from "./api/atleta.js";
 import LoginScreen from "./components/LoginScreen.jsx";
@@ -7,6 +7,8 @@ import PendingApproval from "./components/PendingApproval.jsx";
 import { Sidebar, MobileNav } from "./components/Sidebar.jsx";
 import SegnalaBug from "./components/SegnalaBug.jsx";
 import AggiornamentoApp from "./components/AggiornamentoApp.jsx";
+import InvitoInstalla from "./components/InvitoInstalla.jsx";
+import { APP } from "./lib/app.js";
 
 // Viste caricate solo quando servono: l'atleta non scarica il codice del PT e viceversa
 const Dashboard       = lazy(()=>import("./components/Dashboard.jsx"));
@@ -28,10 +30,18 @@ export default function App() {
   const [view,setView]=useState("dashboard");
   const [builderPreload,setBuilderPreload]=useState(null);
 
-  // Ripristino sessione all'apertura:
-  //  · PT/admin → sessione Supabase Auth (evento INITIAL_SESSION, JWT già propagato)
-  //  · atleta   → token salvato sul telefono (atleta_me); così non deve rifare il login
+  // Ripristino sessione all'apertura (ogni app guarda SOLO la propria sessione):
+  //  · app /atleta/ → token salvato sul telefono (atleta_me); così non deve rifare il login
+  //  · app /pt/     → sessione Supabase Auth (evento INITIAL_SESSION, JWT già propagato)
   useEffect(()=>{
+    if(APP==="atleta"){
+      let vivo=true;
+      riprendiSessioneAtleta().then(atleta=>{
+        if(!vivo) return;
+        if(atleta){ setUser(atleta); setPhase("app"); } else setPhase("login");
+      });
+      return ()=>{ vivo=false; };
+    }
     const { data:{ subscription } } = supabase.auth.onAuthStateChange(async (event, session)=>{
       if(event==="INITIAL_SESSION"){
         if(session?.user){
@@ -43,8 +53,6 @@ export default function App() {
           setPhase(acc.is_approved ? "app" : "pending");
           return;
         }
-        const atleta = await riprendiSessioneAtleta();
-        if(atleta){ setUser(atleta); setPhase("app"); return; }
         setPhase("login");
       } else if(event==="SIGNED_OUT"){
         setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
@@ -52,8 +60,6 @@ export default function App() {
     });
     return ()=>subscription.unsubscribe();
   },[]);
-
-  useEffect(()=>{ if(window.location.pathname==="/admin"&&user?.role==="admin") setView("admin"); },[user]);
 
   const handleLogin=(acc)=>{
     setUser(acc);
@@ -63,7 +69,8 @@ export default function App() {
   };
   const handleWelcomeDone=()=>{ setPhase("app"); };
   const handleLogout=async()=>{
-    if(user?.role==="atleta") await logoutAtleta();
+    // Logout solo dell'app aperta: l'altra app sullo stesso telefono resta dentro
+    if(APP==="atleta") await logoutAtleta();
     else await supabase.auth.signOut();
     setUser(null); setPhase("login"); setView("dashboard"); setBuilderPreload(null);
   };
@@ -76,7 +83,7 @@ export default function App() {
   return (
     <>
       {phase==="loading"&&null}
-      {phase==="login"&&<LoginScreen onLogin={handleLogin}/>}
+      {phase==="login"&&<LoginScreen ruolo={APP} onLogin={handleLogin}/>}
       {phase==="welcome"&&<WelcomeScreen user={user} onDone={handleWelcomeDone}/>}
       {phase==="pending"&&<PendingApproval user={user} onLogout={handleLogout}/>}
       {phase==="app"&&user?.role==="atleta"&&(
@@ -99,6 +106,7 @@ export default function App() {
         </div>
       )}
       {phase==="app"&&<SegnalaBug user={user} view={user?.role==="atleta"?null:view}/>}
+      {phase==="app"&&<InvitoInstalla/>}
       <AggiornamentoApp/>
     </>
   );

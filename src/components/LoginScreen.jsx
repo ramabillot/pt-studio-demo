@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { loginAtleta } from "../api/atleta.js";
-import { store } from "../utils.js";
-
-const LS_RUOLO = "ptstudio_login_ruolo";
 
 function buildUserObj(supaUser, profile) {
   return {
@@ -23,14 +20,12 @@ function buildUserObj(supaUser, profile) {
   };
 }
 
-export default function LoginScreen({onLogin}) {
+// ruolo: "atleta" (app /atleta/) o "pt" (app /pt/) — deciso dall'indirizzo, niente selettore
+export default function LoginScreen({ruolo, onLogin}) {
   // mode: "login" | "register" | "registered"
   const [mode, setMode] = useState("login");
-  // Chi sta entrando: "atleta" (username + PIN) o "pt" (email + password). Ricordato sul dispositivo.
-  const [ruolo, setRuolo] = useState(()=> store.get(LS_RUOLO)==="pt" ? "pt" : "atleta");
-  const scegliRuolo = (r) => { setRuolo(r); store.set(LS_RUOLO, r); setErr(""); setPass(""); };
-  // Login fields
-  const [user, setUser] = useState("");
+  // Login fields — l'atleta arriva dal link del PT (/atleta/?u=username): username già compilato
+  const [user, setUser] = useState(()=> ruolo==="atleta" ? (new URLSearchParams(window.location.search).get("u") || "") : "");
   const [pass, setPass] = useState("");
   // Register fields
   const [rNome, setRNome] = useState("");
@@ -162,10 +157,6 @@ export default function LoginScreen({onLogin}) {
           {/* ── LOGIN ── */}
           {mode==="login"&&<>
             <div className="login-sub">{ruolo==="atleta"?"Accedi per vedere la tua scheda":"Area Personal Trainer"}</div>
-            <div className="login-role" role="tablist" aria-label="Tipo di accesso">
-              <button type="button" role="tab" aria-selected={ruolo==="atleta"} className={`login-role-btn${ruolo==="atleta"?" active":""}`} onClick={()=>scegliRuolo("atleta")}>Atleta</button>
-              <button type="button" role="tab" aria-selected={ruolo==="pt"} className={`login-role-btn${ruolo==="pt"?" active":""}`} onClick={()=>scegliRuolo("pt")}>Personal Trainer</button>
-            </div>
             {ruolo==="atleta"?(<>
               <div className="login-field">
                 <label htmlFor="login-user">Username</label>
@@ -177,7 +168,7 @@ export default function LoginScreen({onLogin}) {
               <div className="login-field">
                 <label htmlFor="login-pin">PIN</label>
                 <input id="login-pin" className="login-input login-pin" type="password" inputMode="numeric" pattern="[0-9]*"
-                  maxLength={4} placeholder="••••" value={pass} autoComplete="current-password"
+                  maxLength={4} placeholder="••••" value={pass} autoComplete="current-password" autoFocus={!!user}
                   onChange={e=>{setPass(e.target.value.replace(/\D/g,""));setErr("");}}
                   onKeyDown={e=>e.key==="Enter"&&submit()}/>
               </div>

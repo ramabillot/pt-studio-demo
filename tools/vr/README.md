@@ -18,4 +18,5 @@ python3 cmp.py base after   # "px>40: 0" = solo rumore; numeri alti = differenza
 
 - Le cartelle `base/` e `after/` non vanno committate.
 - Il canvas animato del login è coperto (rettangolo magenta).
+- Indirizzi: `/` Home, `/atleta/?u=rbillot` login atleta, `/pt/` login e viste PT/admin.
 - Differenze su schermate con animazioni (es. admin-stats) possono essere solo tempismo: riprovare con attesa più lunga.

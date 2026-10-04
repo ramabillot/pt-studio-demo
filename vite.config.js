@@ -1,4 +1,8 @@
 import process from 'node:process'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = fileURLToPath(new URL('.', import.meta.url))
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -17,8 +21,18 @@ const versionFile = () => ({
 })
 
 // https://vite.dev/config/
+// Tre pagine: / = Home (non installabile), /atleta/ e /pt/ = due app installabili separate
 export default defineConfig({
   plugins: [react(), versionFile()],
+  build: {
+    rollupOptions: {
+      input: {
+        home:   resolve(ROOT, 'index.html'),
+        atleta: resolve(ROOT, 'atleta/index.html'),
+        pt:     resolve(ROOT, 'pt/index.html'),
+      },
+    },
+  },
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(VERSION),
   },

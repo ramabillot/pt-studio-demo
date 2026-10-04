@@ -50,11 +50,16 @@ npm run lint      # ESLint
 pt-studio-demo/
 ├── CLAUDE.md
 ├── README.md
-├── index.html             ← font Google (Bebas Neue + DM Sans) caricati qui
+├── index.html             ← Home (/) non installabile → src/home.jsx
+├── atleta/index.html      ← app atleta (/atleta/) → src/main.jsx, manifest public/atleta/
+├── pt/index.html          ← app PT/admin (/pt/) → src/main.jsx, manifest public/pt/
 ├── public/exercises-custom/ ← 20 foto esercizi .jpg (→ Supabase Storage in futuro)
 ├── supabase/migrations/   ← migration numerate, append-only
 └── src/
-    ├── main.jsx           ← entry point React
+    ├── main.jsx           ← entry delle due app (/atleta/ e /pt/)
+    ├── home.jsx           ← entry della Home (leggera: niente Supabase)
+    ├── lib/app.js         ← APP = "atleta" | "pt" dall'indirizzo, link di accesso atleta
+    ├── lib/installa.js    ← prompt di installazione Android + rilevamento iPhone/standalone
     ├── App.jsx            ← shell: sessione, fasi, routing; viste caricate con React.lazy
     ├── styles/app.css     ← CSS globale + token colore (:root)
     ├── index.css          ← CSS template Vite (da rimuovere nel restyling)
@@ -64,7 +69,7 @@ pt-studio-demo/
     ├── lib/allenamento.js ← logica registrazione allenamento (ultima volta, serie, riepiloghi)
     ├── lib/appuntamenti.js← colori per tipo appuntamento
     └── components/
-        ├── LoginScreen, WelcomeScreen, PendingApproval, Sidebar (Sidebar, MobileNav, BackBtn)
+        ├── Home, LoginScreen, WelcomeScreen, PendingApproval, Sidebar (Sidebar, MobileNav, BackBtn), InvitoInstalla
         ├── Dashboard, Library (VideoModal), Builder (AtletaSearchField), Atleti, Calendar (CalendarView)
         ├── AdminStats, AdminPanel, AccountSettings
         ├── AtletaView         ← vista atleta (scheda, registrazione, calendario)
@@ -103,12 +108,20 @@ pt-studio-demo/
 
 ---
 
-## App installabile + aggiornamento automatico
+## Tre indirizzi, due app installabili (2026-10-04)
 
-- `public/manifest.webmanifest` (nome "PT Studio", standalone, colore `#07070d`) + meta iOS in `index.html` (`apple-touch-icon`, `apple-mobile-web-app-*`).
-- Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO" piccolo sotto, largo esattamente come "PT". Sorgente vettoriale `public/icons/logo.svg`; icone PNG in `public/icons/` (192, 512, maskable 512), `public/apple-touch-icon.png` (180), favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Generate dai glifi del font (testo convertito in tracciati).
+- **`/`** = Home (`index.html` → `src/home.jsx` → `components/Home.jsx`): cos'è + "Accedi come Atleta / PT". **Nessun manifest** → non installabile. Non carica Supabase.
+- **`/atleta/`** = app atleta "PT Studio": `public/atleta/manifest.webmanifest` (`id`/`start_url`/`scope` = `/atleta/`), icone `public/icons/`, `apple-touch-icon.png`.
+- **`/pt/`** = app PT/admin "PT Studio Coach" (short name "PT Coach"): `public/pt/manifest.webmanifest` (`/pt/`), icone `public/icons/coach/` (logo con "COACH" al posto di "STUDIO", sorgente `public/icons/coach/logo.svg`).
+- Vite multi-pagina (`build.rollupOptions.input` in `vite.config.js`); stesso `main.jsx`/`App.jsx` per le due app, `APP` (da `lib/app.js`) decide quale.
+- **Sessioni indipendenti** (Android: stesso storage per le due app): app atleta = solo token `ptstudio_atleta_token`, client Supabase con `persistSession:false` (non legge la sessione del PT); app PT = solo Supabase Auth. Il logout esce solo dall'app aperta.
+- Login senza selettore: il ruolo viene dall'indirizzo. `/atleta/?u=<username>` precompila lo username (link del messaggio WhatsApp generato in `Atleti.jsx`, con PIN).
+- `InvitoInstalla`: dopo il login, solo su telefono e se non già installata → Android bottone "Installa" (`beforeinstallprompt`), iPhone istruzioni Safari. Chiuso una volta, non ricompare (`ptstudio_invito_installa_<app>`).
+- `vercel.json`: redirect `/atleta`→`/atleta/`, `/pt`→`/pt/`, `/admin`→`/pt/`; no-cache su HTML, manifest e `version.json`.
+- CSS: `home.jsx` importa `index.css` prima di `app.css` come le app, così il CSS condiviso resta in un solo file nello stesso ordine (altrimenti il template Vite sovrascrive i token).
+- Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO"/"COACH" piccolo sotto, largo esattamente come "PT". Favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Icone generate dai glifi del font (testo convertito in tracciati).
 - Versione = commit Vercel (`VITE_APP_VERSION`); il plugin in `vite.config.js` scrive `dist/version.json`. `components/AggiornamentoApp.jsx` lo confronta: all'apertura o al ritorno dopo >30 min ricarica da sola (una volta per versione), al ritorno dopo poco mostra il banner "Aggiorna" (non perdere i pesi in inserimento).
-- Nessun service worker (niente offline) per ora.
+- Nessun service worker (niente offline) per ora. Le notifiche push del cronometro (STATUS #2c) aggiungeranno un service worker solo-notifiche con scope `/atleta/`.
 
 ---
 

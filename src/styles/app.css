@@ -629,3 +629,24 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .crono.finito { border-color:var(--accent); animation:crono-flash 1s ease-out 2; }
 .crono.finito .crono-tempo, .crono.finito .crono-label { color:var(--accent); }
 @keyframes crono-flash { 0% { box-shadow:0 0 0 0 rgba(var(--accent-rgb),.55); } 100% { box-shadow:0 0 0 18px rgba(var(--accent-rgb),0); } }
+
+/* ── Home (/) ── */
+.home-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; background:var(--bg); }
+.home-box { width:100%; max-width:420px; text-align:center; }
+.home-logo { font-size:44px; margin-bottom:16px; }
+.home-claim { color:var(--muted); font-size:15px; line-height:1.6; margin:0 0 36px; }
+.home-azioni { display:flex; flex-direction:column; gap:12px; }
+.home-btn { display:block; text-decoration:none; text-align:center; margin-top:0; padding:14px; font-size:15px; font-weight:700; border-radius:10px; }
+a.btn-ghost.home-btn { color:var(--text); }
+
+/* ── Invito a installare l'app ── */
+.invito-installa { position:fixed; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); z-index:295; max-width:480px; margin:0 auto; display:flex; align-items:center; gap:12px; padding:12px; background:var(--card2); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); animation:slideUp .25s ease; }
+.invito-icona { width:44px; height:44px; border-radius:10px; flex-shrink:0; }
+.invito-testo { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; font-size:12px; color:var(--muted); line-height:1.45; }
+.invito-testo strong { color:var(--text); font-size:13px; }
+.invito-testo b { color:var(--text); font-weight:600; }
+.invito-share { display:inline-block; color:var(--accent2); }
+.invito-azioni { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+.invito-si { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+.invito-installa.sopra-nav { bottom:calc(150px + env(safe-area-inset-bottom, 0px)); }
+@media(min-width:801px){ .invito-installa.sopra-nav { bottom:24px; } }

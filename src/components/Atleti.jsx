@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
 import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
+import { linkAtleta } from "../lib/app.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { MisureSection } from "./MisureSection.jsx";
 import AllenamentiAtletaPT from "./AllenamentiAtletaPT.jsx";
@@ -219,6 +220,21 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     navigator.clipboard.writeText(text).then(()=>{ setCopied(key); setTimeout(()=>setCopied(null),1800); });
   };
 
+  // Messaggio di accesso per l'atleta: link diretto (username già compilato) + PIN + invito a installare
+  const messaggioAccesso=(a)=>[
+    `Ciao ${a.nome||""}! Ecco il tuo accesso a PT Studio, dove trovi la tua scheda e registri gli allenamenti.`.replace("Ciao !","Ciao!"),
+    ``,
+    `👉 ${linkAtleta(a.username)}`,
+    `🔑 PIN: ${a.pin}`,
+    ``,
+    `Apri il link, inserisci il PIN e installa l'app sul telefono (su iPhone apri il link con Safari).`,
+  ].join("\n");
+  const whatsappUrl=(a)=>{
+    const tel=(a.telefono||"").replace(/[^\d+]/g,"").replace(/^00/,"+");
+    const num=tel.startsWith("+")?tel.slice(1):(tel?`39${tel}`:"");
+    return `https://wa.me/${num}?text=${encodeURIComponent(messaggioAccesso(a))}`;
+  };
+
   const openSelected=(a)=>{
     setSelected(a);
     setArchiveConfirm(false);
@@ -341,6 +357,16 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                     </button>
                   </div>
                 </div>
+                {!selected.archivedAt&&(
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
+                    <a className="btn-primary" style={{fontSize:12,padding:"7px 14px",textDecoration:"none"}} href={whatsappUrl(selected)} target="_blank" rel="noopener noreferrer">
+                      Invia accesso su WhatsApp
+                    </a>
+                    <button className="btn-ghost" style={{fontSize:12,padding:"7px 14px"}} onClick={()=>copyToClipboard(messaggioAccesso(selected),"messaggio")}>
+                      {copied==="messaggio"?"✓ Messaggio copiato":"Copia messaggio"}
+                    </button>
+                  </div>
+                )}
                 {!selected.archivedAt&&(
                   <div style={{marginTop:10}}>
                     {!changePIN.show?(

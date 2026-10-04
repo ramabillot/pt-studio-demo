@@ -48,20 +48,20 @@ import fs from 'fs'; fs.mkdirSync(OUT,{recursive:true});
 for (const [vp,tag] of [[{width:390,height:844},'m'],[{width:1300,height:900},'d']]) {
   // login
   let ctx=await b.newContext({viewport:vp}); let p=await ctx.newPage(); await mock(p);
-  await p.goto('http://localhost:4173'); await shot(p,`${tag}-login-atleta`);
-  await p.getByRole('tab',{name:'Personal Trainer'}).click(); await shot(p,`${tag}-login-pt`);
+  await p.goto('http://localhost:4173/'); await shot(p,`${tag}-home`);
+  await p.goto('http://localhost:4173/atleta/?u=rbillot'); await shot(p,`${tag}-login-atleta`);
+  await p.goto('http://localhost:4173/pt/'); await shot(p,`${tag}-login-pt`);
   await ctx.close();
   // atleta
   ctx=await b.newContext({viewport:vp}); p=await ctx.newPage(); await mock(p);
   await p.addInitScript(()=>localStorage.setItem('ptstudio_atleta_token','t'.repeat(64)));
-  await p.goto('http://localhost:4173'); await p.waitForTimeout(1200); await shot(p,`${tag}-atleta-scheda`);
+  await p.goto('http://localhost:4173/atleta/'); await p.waitForTimeout(1200); await shot(p,`${tag}-atleta-scheda`);
   await p.getByText('📈 Progressi').click(); await shot(p,`${tag}-atleta-progressi`);
   await ctx.close();
   // PT
   for (const admin of [false,true]) {
     ctx=await b.newContext({viewport:vp}); p=await ctx.newPage(); await mock(p,admin);
-    await p.goto('http://localhost:4173'); await p.waitForTimeout(500);
-    await p.getByRole('tab',{name:'Personal Trainer'}).click();
+    await p.goto('http://localhost:4173/pt/'); await p.waitForTimeout(500);
     await p.fill('input[type=email]','pt@x.it'); await p.fill('input[type=password]','secret'); await p.click('.login-btn');
     await p.waitForTimeout(3800);
     const pre=admin?`${tag}-admin`:`${tag}-pt`;
