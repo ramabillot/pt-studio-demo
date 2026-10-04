@@ -432,7 +432,7 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
   display:flex; align-items:center; justify-content:space-between;
   padding:14px 20px;
 }
-.cliente-body { max-width:600px; margin:0 auto; padding:28px 16px 60px; }
+.cliente-body { max-width:600px; margin:0 auto; padding:28px 16px 96px; }
 .scheda-info-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:24px; }
 .scheda-info-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; margin-bottom:4px; }
 .scheda-info-meta { display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
@@ -617,3 +617,15 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 /* ── AGGIORNAMENTO APP ── */
 .aggiorna-banner { position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%); z-index:2500; display:flex; align-items:center; gap:12px; background:var(--card2); border:1px solid rgba(var(--accent-rgb),.35); border-radius:12px; padding:8px 8px 8px 14px; font-size:13px; color:var(--text); box-shadow:var(--shadow); white-space:nowrap; animation:slideUp .25s ease; }
 .aggiorna-banner button { background:var(--accent); color:var(--accent-fg); border:none; border-radius:8px; padding:7px 12px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+
+/* ── Cronometro recupero / esercizi a tempo (atleta) ── */
+.crono-chip { background:rgba(var(--accent2-rgb),.08); border:1px solid rgba(var(--accent2-rgb),.25); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; cursor:pointer; margin-right:6px; font-variant-numeric:tabular-nums; vertical-align:baseline; }
+.crono-chip:active { transform:scale(.96); }
+.crono { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:290; display:flex; align-items:center; gap:10px; padding:6px 6px 6px 16px; background:var(--card2); border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow); overflow:hidden; max-width:calc(100vw - 128px); }
+.crono-label { font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.crono-tempo { font-family:'Bebas Neue',sans-serif; font-size:26px; line-height:1; letter-spacing:.5px; color:var(--text); font-variant-numeric:tabular-nums; min-width:44px; text-align:center; }
+.crono-btn { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; height:32px; min-width:32px; padding:0 10px; border-radius:999px; cursor:pointer; flex-shrink:0; }
+.crono-bar { position:absolute; left:0; bottom:0; height:2px; width:100%; background:var(--accent2); transform-origin:left; transition:transform .25s linear; pointer-events:none; }
+.crono.finito { border-color:var(--accent); animation:crono-flash 1s ease-out 2; }
+.crono.finito .crono-tempo, .crono.finito .crono-label { color:var(--accent); }
+@keyframes crono-flash { 0% { box-shadow:0 0 0 0 rgba(var(--accent-rgb),.55); } 100% { box-shadow:0 0 0 18px rgba(var(--accent-rgb),0); } }

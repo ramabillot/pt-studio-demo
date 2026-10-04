@@ -7,6 +7,7 @@ import * as api from "../api/atleta.js";
 import { typeColor, typeBg } from "../lib/appuntamenti.js";
 import AtletaProgressi from "./atleta/AtletaProgressi.jsx";
 import MonthCalendar from "./atleta/MonthCalendar.jsx";
+import Cronometro from "./atleta/Cronometro.jsx";
 
 // ── AtletaView ────────────────────────────────────────────────────────────────
 // Dati via token di sessione atleta (src/api/atleta.js). Se il token non è più
@@ -325,6 +326,7 @@ export default function AtletaView({user, onLogout}) {
           {saveBtnLabel}
         </button>
       </div>}
+      <Cronometro/>
     </div>
   );
 }

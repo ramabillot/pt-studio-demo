@@ -420,7 +420,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             </select>
           </label>
           <label>Serie<input type="number" min={1} max={20} value={sets} onChange={e=>setSets(Number(e.target.value))}/></label>
-          <label>Rip.<input type="text" inputMode="numeric" placeholder="10 o 8-10" value={reps} onChange={e=>setReps(e.target.value.replace(/[^0-9-]/g,""))}/></label>
+          <label>Rip.<input type="text" placeholder="10, 8-10, 30s" title="Ripetizioni (10), intervallo (8-10) o secondi per gli esercizi a tempo (30s)" value={reps} onChange={e=>setReps(e.target.value.replace(/[^0-9sS-]/g,"").toLowerCase())}/></label>
           <label>Rec.(s)<input type="number" min={0} max={600} step={15} value={rest} onChange={e=>setRest(Number(e.target.value))}/></label>
           <button className="add-btn" onClick={add} style={{marginTop:22}}>+ Aggiungi</button>
         </div>

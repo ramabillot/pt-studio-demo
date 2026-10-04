@@ -68,7 +68,7 @@ pt-studio-demo/
         ├── Dashboard, Library (VideoModal), Builder (AtletaSearchField), Atleti, Calendar (CalendarView)
         ├── AdminStats, AdminPanel, AccountSettings
         ├── AtletaView         ← vista atleta (scheda, registrazione, calendario)
-        ├── atleta/            ← AtletaProgressi, MonthCalendar
+        ├── atleta/            ← AtletaProgressi, MonthCalendar, Cronometro
         ├── MisureSection      ← misurazioni (atleta e PT)
         ├── EsercizioCard, ProgressiEsercizi (ProgressiMultiChart), AllenamentiAtletaPT
 ```
@@ -120,13 +120,20 @@ pt-studio-demo/
 - Foto opzionale: ridotta a 1280px jpeg nel browser e salvata come `bytea` (niente bucket Storage aperto agli anonimi).
 - Tabella senza policy RLS: si legge solo da Claude (connettore Supabase) o dal SQL Editor. Campi di gestione: `stato` (aperta | in_corso | risolta | scartata), `risposta`, `aggiornata_at`.
 
+## Cronometro (atleta)
+
+- `lib/cronometro.js` (logica, audio, localStorage `ptstudio_cronometro`) + `components/atleta/Cronometro.jsx` (pillola in basso, montata in `AtletaView`).
+- Chip ⏱ (recupero `rest_sec`) e ▶ Ns (se `reps` = "30s") nella riga meta di `EsercizioCard`. Un solo cronometro alla volta.
+- Si salva l'**ora di fine**, non i secondi rimasti: a schermo bloccato / ricaricamento il tempo resta giusto; dopo la fine mostra `+m:ss` e sparisce dopo 10 min.
+- Suona/vibra solo se la fine avviene con l'app visibile (audio sbloccato dal tocco sul chip; iPhone non vibra). Niente notifiche (servirebbe il service worker).
+
 ---
 
 ## Convenzioni & pattern noti
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
 - **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
-- **Ripetizioni:** `reps` è testo (accetta intervalli "8-10").
+- **Ripetizioni:** `reps` è testo (accetta intervalli "8-10" e secondi "30s" per gli esercizi a tempo).
 - **Sessioni:** si salvano tutti gli esercizi del giorno (anche corpo libero, peso null), una riga per serie, con `esercizio_id` = id `scheda_esercizi`.
 - **PIN atleta:** `inputMode="numeric"` per tastiera numerica automatica su mobile. Reset PIN dal pannello PT.
 - **Mobile:** layout già fixati a 2x2 (dashboard PT, sezione "VAI A"). Testare sempre su viewport stretto.

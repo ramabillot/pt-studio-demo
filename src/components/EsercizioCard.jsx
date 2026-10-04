@@ -3,6 +3,7 @@ import { useState } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES, ytSearchUrl } from "../data.js";
 import { VideoModal } from "./Library.jsx";
 import { riassuntoSerie } from "../lib/allenamento.js";
+import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
 
 const soloNum = v => v.replace(/[^0-9.,]/g, "");
 const soloInt = v => v.replace(/\D/g, "").slice(0, 3);
@@ -26,6 +27,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const slug = EX_IMAGES[ex.id];
   const exFull = EXERCISES.find(e => e.id === ex.id);
   const set = patch => onChange({...stato, ...patch});
+  const secTempo = secondiATempo(ex.reps);   // esercizio a tempo ("30s")
 
   const dividi = () => set({
     modo:"serie",
@@ -46,7 +48,15 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
             <button className="ex-link" onClick={()=>set({salta:!stato.salta})}>{stato.salta?"↩ Lo faccio":"Salta"}</button>
           </div>
           <div className="ex-cliente-name">{ex.name}</div>
-          <div className="ex-cliente-meta">{ex.sets} serie × {ex.reps} rip · recupero {ex.rest}s</div>
+          <div className="ex-cliente-meta">
+            {ex.sets} serie × {secTempo?`${secTempo}s`:`${ex.reps} rip`} ·{" "}
+            {stato.salta
+              ? <>recupero {ex.rest}s</>
+              : <>
+                  {secTempo>0&&<button className="crono-chip" onClick={()=>avviaTempo(ex.name, secTempo, ex.rest)} aria-label={`Avvia ${secTempo} secondi`}>▶ {secTempo}s</button>}
+                  {ex.rest>0&&<button className="crono-chip" onClick={()=>avviaRecupero(ex.name, ex.rest)} aria-label={`Avvia recupero ${fmtMMSS(ex.rest)}`}>⏱ {fmtMMSS(ex.rest)}</button>}
+                </>}
+          </div>
 
           {!stato.salta&&<>
             {ultima&&(
@@ -59,7 +69,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
               <div className="ex-input-row">
                 <Campo label="Peso" value={stato.peso} onChange={v=>set({peso:v})} unita="kg"/>
                 <span className="ex-per">×</span>
-                <Campo label="Ripetizioni" value={stato.reps} onChange={v=>set({reps:v})} unita="rip" decimale={false}/>
+                <Campo label="Ripetizioni" value={stato.reps} onChange={v=>set({reps:v})} unita={secTempo?"s":"rip"} decimale={false}/>
                 <span className="ex-per" style={{fontSize:12}}>per serie</span>
               </div>
             ):(
@@ -69,7 +79,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                     <span className="ex-serie-n">S{i+1}</span>
                     <Campo label={`Peso serie ${i+1}`} value={s.peso} onChange={v=>setSerie(i,{peso:v})} unita="kg"/>
                     <span className="ex-per">×</span>
-                    <Campo label={`Ripetizioni serie ${i+1}`} value={s.reps} onChange={v=>setSerie(i,{reps:v})} unita="rip" decimale={false}/>
+                    <Campo label={`Ripetizioni serie ${i+1}`} value={s.reps} onChange={v=>setSerie(i,{reps:v})} unita={secTempo?"s":"rip"} decimale={false}/>
                   </div>
                 ))}
               </div>
