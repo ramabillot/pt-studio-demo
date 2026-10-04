@@ -2,6 +2,7 @@
 // Si salva l'ORA DI FINE (non i secondi rimasti): a schermo bloccato o dopo un ricaricamento
 // il tempo resta giusto. Un solo cronometro alla volta; stato in localStorage + evento "pt-cronometro".
 import { store } from "../utils.js";
+import { attivaNotifiche, cronometroFermato } from "./notifiche.js";
 
 const KEY = "ptstudio_cronometro";
 const EVENTO = "pt-cronometro";
@@ -53,7 +54,7 @@ export function leggi() {
 }
 
 export function scrivi(t) {
-  if (t) store.set(KEY, JSON.stringify(t)); else store.del(KEY);
+  if (t) store.set(KEY, JSON.stringify(t)); else { store.del(KEY); cronometroFermato(); }
   window.dispatchEvent(new Event(EVENTO));
 }
 
@@ -64,12 +65,14 @@ export function ascolta(fn) {
 
 // Recupero: parte subito. A tempo: 3 s di preparazione, poi il tempo; alla fine parte il recupero.
 export function avviaRecupero(nome, secondi) {
+  attivaNotifiche();   // prima volta: chiede il permesso (serve il tocco dell'utente)
   sbloccaAudio();
   const ora = Date.now();
   scrivi({ tipo: "recupero", nome, inizio: ora, fine: ora + secondi * 1000 });
 }
 
 export function avviaTempo(nome, secondi, recupero) {
+  attivaNotifiche();
   sbloccaAudio();
   const inizio = Date.now() + PREPARAZIONE_MS;
   scrivi({ tipo: "tempo", nome, inizio, fine: inizio + secondi * 1000, recupero: recupero || 0 });

@@ -60,6 +60,7 @@ pt-studio-demo/
     ├── home.jsx           ← entry della Home (leggera: niente Supabase)
     ├── lib/app.js         ← APP = "atleta" | "pt" dall'indirizzo, link di accesso atleta
     ├── lib/installa.js    ← prompt di installazione Android + rilevamento iPhone/standalone
+    ├── lib/notifiche.js   ← push del cronometro (permesso, iscrizione, programma/annulla)
     ├── App.jsx            ← shell: sessione, fasi, routing; viste caricate con React.lazy
     ├── styles/app.css     ← CSS globale + token colore (:root)
     ├── index.css          ← CSS template Vite (da rimuovere nel restyling)
@@ -122,7 +123,16 @@ pt-studio-demo/
 - CSS: `home.jsx` importa `index.css` prima di `app.css` come le app, così il CSS condiviso resta in un solo file nello stesso ordine (altrimenti il template Vite sovrascrive i token).
 - Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO"/"COACH" piccolo sotto, largo esattamente come "PT". Favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Icone generate dai glifi del font (testo convertito in tracciati).
 - Versione = commit Vercel (`VITE_APP_VERSION`); il plugin in `vite.config.js` scrive `dist/version.json`. `components/AggiornamentoApp.jsx` lo confronta: all'apertura o al ritorno dopo >30 min ricarica da sola (una volta per versione), al ritorno dopo poco mostra il banner "Aggiorna" (non perdere i pesi in inserimento).
-- Nessun service worker (niente offline) per ora. Le notifiche push del cronometro (STATUS #2c) aggiungeranno un service worker solo-notifiche con scope `/atleta/`.
+- Nessuna cache / modalità offline. L'app atleta ha un **service worker solo per le notifiche** (`public/atleta/sw.js`, scope `/atleta/`, nessun gestore `fetch`).
+
+## Notifiche push del cronometro (atleta)
+
+- Regola: la notifica compare **solo quando l'app non è a schermo**. `lib/notifiche.js`: in secondo piano (`visibilitychange` hidden / `pagehide`) con cronometro attivo → `atleta_programma_push` ("… · finisce alle HH:MM:SS" subito e silenziosa + "Recupero finito" all'ora di fine); di nuovo a schermo → `atleta_annulla_push` + chiusura delle notifiche con tag `cronometro`. RPC con `fetch(..., {keepalive:true})` perché partono mentre la pagina si nasconde.
+- Permesso chiesto al primo tocco su ⏱ / ▶ (`attivaNotifiche` in `avviaRecupero`/`avviaTempo`); iscrizione salvata con `atleta_salva_push`. iPhone: solo dall'app installata.
+- Server (migration 019/020): tabelle `push_iscrizioni`, `push_programmate`; `pg_cron` ogni 5 s esegue `private.push_dovute()` che chiama l'Edge Function `invia-push` (`supabase/functions/invia-push`, verify_jwt off, header `x-cron-secret`) **solo se** ci sono avvisi dovuti. La funzione usa `SUPABASE_DB_URL` + `web-push`; iscrizioni 404/410 tolte da sole.
+- Chiavi VAPID + segreto in `private.push_config` (inserite a mano, **mai nel repo**). La chiave pubblica VAPID è in `lib/notifiche.js`.
+- Il SW mostra **sempre** una notifica per ogni push (obbligatorio su iPhone): non si filtra nel SW, si evita di programmare.
+- Pulizia registro pg_cron: migration 021 (da incollare a mano).
 
 ---
 
@@ -168,7 +178,7 @@ pt-studio-demo/
 
 Nessuna modifica deve richiedere agli utenti di cancellare e reinstallare l'app (icona sulla Home). Tutto deve arrivare con l'aggiornamento automatico (`AggiornamentoApp`). In pratica **non cambiare mai**:
 - gli indirizzi `/atleta/` e `/pt/` (e `/` come Home);
-- `id` e `scope` dei manifest (`api/manifest-atleta.js`, `public/pt/manifest.webmanifest`);
+- `id` e `scope` dei manifest (`api/manifest-atleta.js`, `public/pt/manifest.webmanifest`) e l'indirizzo del service worker `/atleta/sw.js`;
 - le chiavi salvate sul telefono (`ptstudio_atleta_token`, `ptstudio_atleta_username`, sessione Supabase): se servono nuove chiavi, leggere anche le vecchie e migrare.
 
 Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'alternativa e, solo se è davvero l'unica strada, spiegarlo a Ramiro prima di farla. (Decisione 2026-10-04 in DECISIONS.md; durante la beta è stata fatta un'eccezione per la separazione /atleta/ /pt/.)
@@ -188,5 +198,5 @@ Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'a
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 018 in `supabase/migrations/`.
+- Migration fino alla 021 in `supabase/migrations/` (021 da incollare a mano). Edge Function in `supabase/functions/`.
 - Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).
