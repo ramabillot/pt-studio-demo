@@ -61,6 +61,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                   {ex.rest>0&&<button className="crono-chip" onClick={()=>avviaRecupero(nome, ex.rest)} aria-label={t("card.ariaRecupero",{t:fmtMMSS(ex.rest)})}>⏱ {fmtMMSS(ex.rest)}</button>}
                 </>}
           </div>
+          {ex.nota&&<div className="ex-nota-pt">{ex.nota}</div>}
 
           {!stato.salta&&<>
             {ultima&&(

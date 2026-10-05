@@ -172,6 +172,7 @@ pt-studio-demo/
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
 - **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
+- **Note del PT:** `scheda_esercizi.note` arriva all'atleta (`atleta_get_scheda`, migration 022) e si vede nella card sotto serie/recupero (`.ex-nota-pt`). Testo libero: non si traduce, scriverlo nella lingua dell'atleta.
 - **Ripetizioni:** `reps` è testo (accetta intervalli "8-10" e secondi "30s" per gli esercizi a tempo).
 - **Sessioni:** si salvano tutti gli esercizi del giorno (anche corpo libero, peso null), una riga per serie, con `esercizio_id` = id `scheda_esercizi`.
 - **PIN atleta:** `inputMode="numeric"` per tastiera numerica automatica su mobile. Reset PIN dal pannello PT.
@@ -211,5 +212,5 @@ Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'a
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 021 in `supabase/migrations/` (021 da incollare a mano). Edge Function in `supabase/functions/`.
+- Migration fino alla 022 in `supabase/migrations/` (021 da incollare a mano). Edge Function in `supabase/functions/`.
 - Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).

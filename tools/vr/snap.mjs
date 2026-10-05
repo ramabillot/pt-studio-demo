@@ -13,7 +13,7 @@ const b = await chromium.launch(process.env.PW_CHROMIUM?{executablePath:process.
 const FIXED = new Date('2026-10-02T12:00:00');
 const scheda={id:'s1',nome:'Full Body 2x',obiettivo:'Ipertrofia',livello:'Intermedio',assegnata_il:'2026-10-01',scheda_giorni:[
  {id:'gA',nome:'Full Body A',giorno_key:'A',ordine:0,scheda_esercizi:[
-   {id:'e1',nome:'Squat con bilanciere',esercizio_id_int:16,serie:3,reps:'6-8',rest_sec:150,ordine:0},
+   {id:'e1',nome:'Squat con bilanciere',esercizio_id_int:16,serie:3,reps:'6-8',rest_sec:150,ordine:0,note:'Scendi lento, 3 secondi. Ginocchia in linea con le punte'},
    {id:'e2',nome:'Plank',esercizio_id_int:69,serie:3,reps:'30s',rest_sec:60,ordine:1}]},
  {id:'gB',nome:'Full Body B',giorno_key:'B',ordine:1,scheda_esercizi:[
    {id:'e3',nome:'Leg press 45°',esercizio_id_int:17,serie:3,reps:'10-12',rest_sec:120,ordine:0}]}]};

@@ -62,6 +62,7 @@ export default function AtletaView({user, onLogout}) {
             id:ex.esercizio_id_int||0, exKey:ex.id, exDbId:ex.id,
             name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10",
             rest:ex.rest_sec||90, cat:exFull?.cat||"",
+            nota:(ex.note||"").trim(),   // nota del PT (testo libero, non si traduce)
           };
         });
       });
