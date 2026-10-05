@@ -99,6 +99,19 @@
       ]
     },
     {
+      "source": "/pt/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/pt/"
+        }
+      ]
+    },
+    {
       "source": "/atleta/sw.js",
       "headers": [
         {

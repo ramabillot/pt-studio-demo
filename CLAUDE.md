@@ -124,7 +124,7 @@ pt-studio-demo/
 - CSS: `home.jsx` importa `index.css` prima di `app.css` come le app, così il CSS condiviso resta in un solo file nello stesso ordine (altrimenti il template Vite sovrascrive i token).
 - Logo: "PT" (Bebas Neue, `#e8ff47`) con "STUDIO"/"COACH" piccolo sotto, largo esattamente come "PT". Favicon `favicon.svg` (solo "PT") + `favicon-32.png`. Icone generate dai glifi del font (testo convertito in tracciati).
 - Versione = commit Vercel (`VITE_APP_VERSION`); il plugin in `vite.config.js` scrive `dist/version.json`. `components/AggiornamentoApp.jsx` lo confronta: all'apertura o al ritorno dopo >30 min ricarica da sola (una volta per versione), al ritorno dopo poco mostra il banner "Aggiorna" (non perdere i pesi in inserimento).
-- Nessuna cache / modalità offline. L'app atleta ha un **service worker solo per le notifiche** (`public/atleta/sw.js`, scope `/atleta/`, nessun gestore `fetch`).
+- Nessuna cache / modalità offline. L'app atleta ha un **service worker solo per le notifiche** (`public/atleta/sw.js`, scope `/atleta/`, nessun gestore `fetch`). L'app PT ha un service worker **vuoto** (`public/pt/sw.js`, scope `/pt/`, registrato in `main.jsx`): serve solo perché Android la installi come app vera (senza, Chrome a volte crea un collegamento che si apre con la barra del browser).
 
 ## Notifiche push del cronometro (atleta)
 
@@ -192,7 +192,7 @@ pt-studio-demo/
 
 Nessuna modifica deve richiedere agli utenti di cancellare e reinstallare l'app (icona sulla Home). Tutto deve arrivare con l'aggiornamento automatico (`AggiornamentoApp`). In pratica **non cambiare mai**:
 - gli indirizzi `/atleta/` e `/pt/` (e `/` come Home);
-- `id` e `scope` dei manifest (`api/manifest-atleta.js`, `public/pt/manifest.webmanifest`) e l'indirizzo del service worker `/atleta/sw.js`;
+- `id` e `scope` dei manifest (`api/manifest-atleta.js`, `public/pt/manifest.webmanifest`) e gli indirizzi dei service worker `/atleta/sw.js` e `/pt/sw.js`;
 - le chiavi salvate sul telefono (`ptstudio_atleta_token`, `ptstudio_atleta_username`, sessione Supabase): se servono nuove chiavi, leggere anche le vecchie e migrare.
 
 Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'alternativa e, solo se è davvero l'unica strada, spiegarlo a Ramiro prima di farla. (Decisione 2026-10-04 in DECISIONS.md; durante la beta è stata fatta un'eccezione per la separazione /atleta/ /pt/.)

@@ -11,6 +11,8 @@ import { registraServiceWorker } from './lib/notifiche.js'
 installaRaccoltaErrori()
 preparaInstallazione()   // prima possibile: il browser manda l'evento una volta sola
 if (APP === 'atleta') registraServiceWorker()   // solo notifiche del cronometro, nessuna cache
+// App PT: service worker vuoto, solo perché Android la installi come app (senza barra di Chrome)
+else if ('serviceWorker' in navigator) navigator.serviceWorker.register('/pt/sw.js', { scope: '/pt/' }).catch(() => {})
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
