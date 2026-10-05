@@ -306,7 +306,7 @@ export function CalendarView({setView, user}) {
           id: r.id,
           clientName: r.atleti ? `${r.atleti.nome||""} ${r.atleti.cognome||""}`.trim() : (r.titolo||""),
           date: r.data,
-          time: r.ora_inizio || "00:00",
+          time: (r.ora_inizio || "00:00").slice(0,5),
           type: "Allenamento",
           atletaId: r.atleta_id,
         })));
@@ -334,7 +334,7 @@ export function CalendarView({setView, user}) {
       id: data.id,
       clientName: data.atleti ? `${data.atleti.nome||""} ${data.atleti.cognome||""}`.trim() : (data.titolo||clientName),
       date: data.data,
-      time: data.ora_inizio||"00:00",
+      time: (data.ora_inizio||"00:00").slice(0,5),
       type: "Allenamento",
       atletaId: data.atleta_id,
     };
