@@ -448,11 +448,7 @@
     "errFuturo": "You can't log a workout on a future date.",
     "errTuttiSaltati": "You marked every exercise as skipped: nothing to save.",
     "errNonSalvata": "⚠️ Session NOT saved: connection problem. Your data stays here, try again shortly.",
-    "sessioniCompletate_one": "session completed",
-    "sessioniCompletate_other": "sessions completed",
     "ultima": "Last:",
-    "giorniConsecutivi_one": "day streak",
-    "giorniConsecutivi_other": "day streak",
     "tabScheda": "Plan",
     "tabProgressi": "Progress",
     "prossimiAppuntamenti": "Upcoming sessions",
@@ -472,7 +468,10 @@
     "nonFatti_other": "{{count}} exercises are not marked as done:",
     "salvaSoloFatti_one": "Save only the one done",
     "salvaSoloFatti_other": "Save only the {{count}} done",
-    "eranoTuttiFatti": "I did them all, save"
+    "eranoTuttiFatti": "I did them all, save",
+    "questaSettimana": "This week",
+    "settimaneDiFila_one": "week in a row",
+    "settimaneDiFila_other": "weeks in a row"
   },
   "valori": {
     "categoria": {

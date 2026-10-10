@@ -128,3 +128,31 @@ export const METRICHE = {
 export function righeRiepilogo(sessione) {
   return Object.values(serieDiSessione(sessione)).map(e => ({ nome: e.nome, testo: riassuntoSerie(e.serie), nota: e.nota }));
 }
+
+// ── Costanza a settimane (barra in alto dell'atleta) ─────────────────────────
+// Settimana = lunedì → domenica. Obiettivo = numero di giorni della scheda.
+// "Di fila" = settimane consecutive con l'obiettivo raggiunto: le settimane chiuse a ritroso
+// dalla scorsa, più quella in corso solo se è già raggiunto (così il lunedì la serie non va a 0).
+// Più allenamenti nello stesso giorno contano una volta sola.
+const giornoISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export function lunediDi(dataStr) {
+  const d = new Date(dataStr + "T12:00");
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return giornoISO(d);
+}
+export function costanzaSettimanale(sessioni, obiettivo, oggiStr) {
+  const ob = Math.max(1, obiettivo || 1);
+  const perSettimana = {};
+  new Set((sessioni || []).map(s => s.data).filter(d => d && d <= oggiStr))
+    .forEach(d => { const w = lunediDi(d); perSettimana[w] = (perSettimana[w] || 0) + 1; });
+  const questa = lunediDi(oggiStr);
+  const fatti = perSettimana[questa] || 0;
+  let diFila = 0;
+  const w = new Date(questa + "T12:00");
+  for (;;) {
+    w.setDate(w.getDate() - 7);
+    if ((perSettimana[giornoISO(w)] || 0) >= ob) diFila++; else break;
+  }
+  if (fatti >= ob) diFila++;
+  return { fatti, obiettivo: ob, diFila };
+}

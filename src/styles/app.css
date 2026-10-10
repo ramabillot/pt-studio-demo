@@ -562,9 +562,10 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .atleta-tab.active { background:rgba(var(--accent-rgb),.08); border-color:rgba(var(--accent-rgb),.2); color:var(--accent); }
 
 /* ── STATS BAR ATLETA ── */
-.atleta-stats-bar { display:flex; gap:16px; flex-wrap:wrap; padding:7px 16px; background:var(--surface); border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--muted); }
+.atleta-stats-bar { display:flex; gap:2px 16px; flex-wrap:wrap; padding:7px 16px; background:var(--surface); border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--muted); }
 .atleta-stats-item { display:flex; align-items:center; gap:4px; white-space:nowrap; }
 .atleta-stats-item strong { color:var(--text); font-weight:700; }
+.atleta-stats-item.raggiunto strong { color:var(--accent2); }
 
 /* ── RESET DEMO DIALOG ── */
 .reset-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; padding:24px; animation:fadeIn .15s ease; }

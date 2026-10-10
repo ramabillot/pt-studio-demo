@@ -448,11 +448,7 @@
     "errFuturo": "No podés registrar un entrenamiento en una fecha futura.",
     "errTuttiSaltati": "Marcaste todos los ejercicios como salteados: no hay nada para guardar.",
     "errNonSalvata": "⚠️ Sesión NO guardada: problema de conexión. Los datos quedan acá, probá de nuevo en un rato.",
-    "sessioniCompletate_one": "sesión completada",
-    "sessioniCompletate_other": "sesiones completadas",
     "ultima": "Última:",
-    "giorniConsecutivi_one": "día seguido",
-    "giorniConsecutivi_other": "días seguidos",
     "tabScheda": "Rutina",
     "tabProgressi": "Progreso",
     "prossimiAppuntamenti": "Próximos turnos",
@@ -472,7 +468,10 @@
     "nonFatti_other": "{{count}} ejercicios no están marcados como hechos:",
     "salvaSoloFatti_one": "Guardar solo el que hice",
     "salvaSoloFatti_other": "Guardar solo los {{count}} hechos",
-    "eranoTuttiFatti": "Los hice todos, guardar"
+    "eranoTuttiFatti": "Los hice todos, guardar",
+    "questaSettimana": "Esta semana",
+    "settimaneDiFila_one": "semana seguida",
+    "settimaneDiFila_other": "semanas seguidas"
   },
   "valori": {
     "categoria": {

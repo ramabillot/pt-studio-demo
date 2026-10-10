@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { EXERCISES } from "../data.js";
 import { fmtDate, fmtDateShort, fmtDateLong, buildPDF, store } from "../utils.js";
-import { ultimaVolta, righeEsercizio, statoIniziale, righeDaStato } from "../lib/allenamento.js";
+import { ultimaVolta, righeEsercizio, statoIniziale, righeDaStato, costanzaSettimanale } from "../lib/allenamento.js";
 import EsercizioCard from "./EsercizioCard.jsx";
 import * as api from "../api/atleta.js";
 import { typeColor, typeBg } from "../lib/appuntamenti.js";
@@ -201,12 +201,8 @@ export default function AtletaView({user, onLogout}) {
   const latestSessionDate = sessionTotal > 0
     ? [..._rawSupa].sort((a,b)=>b.data.localeCompare(a.data))[0].data
     : null;
-  const _sessionDates = new Set(_rawSupa.map(s=>s.data));
-  let sessionStreak = 0;
-  if(_sessionDates.has(todayStr)) {
-    const _sd = new Date(todayStr+"T12:00");
-    while(_sessionDates.has(fmtDate(_sd))){ sessionStreak++; _sd.setDate(_sd.getDate()-1); }
-  }
+  // Costanza: allenamenti di questa settimana rispetto ai giorni della scheda + settimane di fila
+  const costanza = costanzaSettimanale(_rawSupa, Object.keys(scheda?.giorni||{}).length, todayStr);
   const futureAppts = calEvents
     .filter(e=>e.date>=todayStr)
     .sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
@@ -220,9 +216,9 @@ export default function AtletaView({user, onLogout}) {
         <button type="button" className="impost-apri" onClick={()=>setImpostAperte(true)} aria-label={t("impostazioni.titolo")}>⚙&#xFE0E;</button>
       </div>
       <div className="atleta-stats-bar">
-        <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> {t("atleta.sessioniCompletate",{count:sessionTotal})}</span>
+        <span className={`atleta-stats-item${costanza.fatti>=costanza.obiettivo?" raggiunto":""}`}>🎯 {t("atleta.questaSettimana")} <strong>{costanza.fatti}/{costanza.obiettivo}{costanza.fatti>=costanza.obiettivo?" ✓":""}</strong></span>
+        {costanza.diFila>0&&<span className="atleta-stats-item">🔥 <strong>{costanza.diFila}</strong> {t("atleta.settimaneDiFila",{count:costanza.diFila})}</span>}
         <span className="atleta-stats-item">📅 {t("atleta.ultima")} <strong>{latestSessionDate?fmtDateShort(latestSessionDate):"—"}</strong></span>
-        <span className="atleta-stats-item">🔥 <strong>{sessionStreak}</strong> {t("atleta.giorniConsecutivi",{count:sessionStreak})}</span>
       </div>
       <div className="atleta-tab-nav">
         <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 {t("atleta.tabScheda")}</button>

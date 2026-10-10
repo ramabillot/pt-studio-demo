@@ -448,11 +448,7 @@
     "errFuturo": "Non puoi registrare un allenamento in una data futura.",
     "errTuttiSaltati": "Hai segnato tutti gli esercizi come saltati: niente da salvare.",
     "errNonSalvata": "⚠️ Sessione NON salvata: problema di connessione. I dati inseriti restano qui, riprova tra poco.",
-    "sessioniCompletate_one": "sessione completata",
-    "sessioniCompletate_other": "sessioni completate",
     "ultima": "Ultima:",
-    "giorniConsecutivi_one": "giorno consecutivo",
-    "giorniConsecutivi_other": "giorni consecutivi",
     "tabScheda": "Scheda",
     "tabProgressi": "Progressi",
     "prossimiAppuntamenti": "Prossimi appuntamenti",
@@ -472,7 +468,10 @@
     "nonFatti_other": "{{count}} esercizi non sono segnati come fatti:",
     "salvaSoloFatti_one": "Salva solo quello fatto",
     "salvaSoloFatti_other": "Salva solo i {{count}} fatti",
-    "eranoTuttiFatti": "Li ho fatti tutti, salva"
+    "eranoTuttiFatti": "Li ho fatti tutti, salva",
+    "questaSettimana": "Questa settimana",
+    "settimaneDiFila_one": "settimana di fila",
+    "settimaneDiFila_other": "settimane di fila"
   },
   "valori": {
     "categoria": {
