@@ -21,15 +21,15 @@ export default function MonthCalendar({year, month, onPrev, onNext, sessionsByDa
     <div style={{marginBottom:20}}>
       {/* Month nav */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <button className="date-nav-btn" onClick={onPrev} style={{fontSize:20,padding:"4px 12px"}}>‹</button>
-        <span style={{fontWeight:700,fontSize:15,color:"var(--text)",letterSpacing:.5}}>{nomeMese(month)} {year}</span>
-        <button className="date-nav-btn" onClick={onNext} disabled={isCurrentMonth} style={{fontSize:20,padding:"4px 12px"}}>›</button>
+        <button className="date-nav-btn" onClick={onPrev} style={{fontSize:"1.25rem",padding:"4px 12px"}}>‹</button>
+        <span style={{fontWeight:700,fontSize:"0.9375rem",color:"var(--text)",letterSpacing:.5}}>{nomeMese(month)} {year}</span>
+        <button className="date-nav-btn" onClick={onNext} disabled={isCurrentMonth} style={{fontSize:"1.25rem",padding:"4px 12px"}}>›</button>
       </div>
 
       {/* Weekday header */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:3}}>
         {WEEKDAYS_CAL.map((d,i)=>(
-          <div key={i} style={{textAlign:"center",fontSize:9,fontWeight:700,letterSpacing:.8,color:"var(--muted)",textTransform:"uppercase",padding:"2px 0"}}>{d}</div>
+          <div key={i} style={{textAlign:"center",fontSize:"0.5625rem",fontWeight:700,letterSpacing:.8,color:"var(--muted)",textTransform:"uppercase",padding:"2px 0"}}>{d}</div>
         ))}
       </div>
 
@@ -75,18 +75,18 @@ export default function MonthCalendar({year, month, onPrev, onNext, sessionsByDa
               )}
 
               {/* Day number */}
-              <span style={{position:"relative",fontSize:12,fontWeight:hasSession?700:400,color:hasSession?"var(--text)":"var(--muted)",lineHeight:1}}>
+              <span style={{position:"relative",fontSize:"0.75rem",fontWeight:hasSession?700:400,color:hasSession?"var(--text)":"var(--muted)",lineHeight:1}}>
                 {day}
               </span>
 
               {/* Session label + overflow badge */}
               {hasSession&&(
                 <div style={{position:"relative",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                  <span style={{fontSize:9,fontWeight:700,color:"var(--accent)",textAlign:"center",width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:.2,padding:"0 2px",lineHeight:1.25}}>
+                  <span style={{fontSize:"0.5625rem",fontWeight:700,color:"var(--accent)",textAlign:"center",width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:.2,padding:"0 2px",lineHeight:1.25}}>
                     {firstLabel.length>9?firstLabel.slice(0,9)+"…":firstLabel}
                   </span>
                   {extra>0&&(
-                    <span style={{fontSize:8,fontWeight:700,color:"var(--muted)",background:"var(--card2)",borderRadius:3,padding:"1px 4px",lineHeight:1.4}}>+{extra}</span>
+                    <span style={{fontSize:"0.5rem",fontWeight:700,color:"var(--muted)",background:"var(--card2)",borderRadius:3,padding:"1px 4px",lineHeight:1.4}}>+{extra}</span>
                   )}
                 </div>
               )}

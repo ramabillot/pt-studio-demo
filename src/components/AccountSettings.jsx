@@ -3,6 +3,7 @@ import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { useTranslation } from "react-i18next";
 import { LINGUE, cambiaLingua } from "../i18n/index.js";
+import SceltaTesto from "./SceltaTesto.jsx";
 
 export default function AccountSettings({ setView, user }) {
   const { t, i18n } = useTranslation();
@@ -46,7 +47,7 @@ export default function AccountSettings({ setView, user }) {
 
       <div style={{maxWidth:440}}>
         <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"22px 24px",marginBottom:16}}>
-          <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:14}}>
+          <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:14}}>
             {t("account.lingua")}
           </div>
           <div className="lingua-scelta">
@@ -55,8 +56,15 @@ export default function AccountSettings({ setView, user }) {
             ))}
           </div>
         </div>
+        <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"22px 24px",marginBottom:16}}>
+          <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:14}}>
+            {t("impostazioni.testo")}
+          </div>
+          <SceltaTesto/>
+          <div style={{fontSize:"0.8125rem",color:"var(--muted)",marginTop:10}}>{t("impostazioni.testoNota")}</div>
+        </div>
         <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:"22px 24px"}}>
-          <div style={{fontSize:12,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:18}}>
+          <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:18}}>
             {t("account.cambiaPassword")}
           </div>
 
@@ -96,10 +104,10 @@ export default function AccountSettings({ setView, user }) {
           </label>
 
           {err&&(
-            <div style={{color:"var(--danger)",fontSize:13,marginTop:12,lineHeight:1.5}}>{err}</div>
+            <div style={{color:"var(--danger)",fontSize:"0.8125rem",marginTop:12,lineHeight:1.5}}>{err}</div>
           )}
           {success&&(
-            <div style={{color:"var(--accent2)",fontSize:13,marginTop:12,fontWeight:600}}>
+            <div style={{color:"var(--accent2)",fontSize:"0.8125rem",marginTop:12,fontWeight:600}}>
               ✓ {t("account.aggiornata")}
             </div>
           )}
@@ -107,7 +115,7 @@ export default function AccountSettings({ setView, user }) {
           <div style={{marginTop:18}}>
             <button
               className="btn-primary"
-              style={{fontSize:13,padding:"9px 22px"}}
+              style={{fontSize:"0.8125rem",padding:"9px 22px"}}
               onClick={submit}
               disabled={loading}
             >
@@ -115,7 +123,7 @@ export default function AccountSettings({ setView, user }) {
             </button>
           </div>
 
-          <div style={{marginTop:14,fontSize:12,color:"var(--muted)",lineHeight:1.6,borderTop:"1px solid var(--border)",paddingTop:14}}>
+          <div style={{marginTop:14,fontSize:"0.75rem",color:"var(--muted)",lineHeight:1.6,borderTop:"1px solid var(--border)",paddingTop:14}}>
             {t("account.nota")}
           </div>
         </div>

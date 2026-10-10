@@ -7,7 +7,7 @@ import { BackBtn } from "./Sidebar.jsx";
 function LineChart({data, color="#e8ff47"}) {
   const W=300, H=100, pad=10;
   if (!data || data.length < 2) return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted)",fontSize:12}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted)",fontSize:"0.75rem"}}>
       {i18n.t("admin.datiInsufficienti")}
     </div>
   );
@@ -34,7 +34,7 @@ function LineChart({data, color="#e8ff47"}) {
         return (
           <g key={i}>
             <circle cx={x} cy={y} r="3" fill={color}/>
-            <text x={x} y={H-1} textAnchor="middle" fill="#5a5a78" fontSize="8">{d.l}</text>
+            <text x={x} y={H-1} textAnchor="middle" style={{fill:"var(--muted)"}} fontSize="8">{d.l}</text>
           </g>
         );
       })}
@@ -56,7 +56,7 @@ function BarChart({data, color="#47ffe8"}) {
         return (
           <g key={i}>
             <rect x={x} y={y} width={bw} height={bh} rx="3" fill={color} opacity="0.7"/>
-            <text x={x+bw/2} y={H-1} textAnchor="middle" fill="#5a5a78" fontSize="8">{d.l}</text>
+            <text x={x+bw/2} y={H-1} textAnchor="middle" style={{fill:"var(--muted)"}} fontSize="8">{d.l}</text>
             <text x={x+bw/2} y={y-3} textAnchor="middle" fill={color} fontSize="9" fontWeight="600">{d.v||""}</text>
           </g>
         );
@@ -125,10 +125,10 @@ export default function AdminStats({setView, user}) {
       </div>
 
       {loading && (
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
+        <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
       )}
       {!loading && err && (
-        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
+        <div style={{color:"var(--danger)",fontSize:"0.875rem",textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
       )}
 
       {!loading && !err && data && (<>
@@ -137,9 +137,9 @@ export default function AdminStats({setView, user}) {
             <div className="stat-card" key={i} style={{animationDelay:`${i*.06}s`}}>
               <div className="stat-glow"/>
               <div className="stat-icon">{c.icon}</div>
-              <div className="stat-val" style={{fontSize:24}}>{c.val}</div>
+              <div className="stat-val" style={{fontSize:"1.5rem"}}>{c.val}</div>
               <div className="stat-label">{c.label}</div>
-              <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{c.sub}</div>
+              <div style={{fontSize:"0.6875rem",color:"var(--muted)",marginTop:2}}>{c.sub}</div>
             </div>
           ))}
         </div>

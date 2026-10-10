@@ -8,7 +8,7 @@ import { typeColor, typeBg } from "../lib/appuntamenti.js";
 import AtletaProgressi from "./atleta/AtletaProgressi.jsx";
 import MonthCalendar from "./atleta/MonthCalendar.jsx";
 import Cronometro from "./atleta/Cronometro.jsx";
-import SelettoreLingua from "./SelettoreLingua.jsx";
+import ImpostazioniAtleta from "./atleta/ImpostazioniAtleta.jsx";
 import { useTranslation } from "react-i18next";
 import { nomeGiorno, valore, nomeEsercizio } from "../i18n/index.js";
 
@@ -46,7 +46,8 @@ export default function AtletaView({user, onLogout}) {
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [chiediConferma, setChiediConferma] = useState(false);   // esercizi non segnati "fatto" al salvataggio
+  const [chiediConferma, setChiediConferma] = useState(false);
+  const [impostAperte, setImpostAperte] = useState(false);   // pannello Impostazioni (testo, lingua, esci)   // esercizi non segnati "fatto" al salvataggio
   const bozzaDaScrivere = useRef(false);   // true solo dopo una modifica dell'atleta
   const [saveErr, setSaveErr] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
@@ -215,9 +216,8 @@ export default function AtletaView({user, onLogout}) {
     <>
       <div className="cliente-header">
         <div className="sidebar-logo" style={{marginBottom:0,cursor:"default",userSelect:"none"}}>PT<span style={{color:"var(--text)"}}>Studio</span></div>
-        <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{user.name}</div>
-        <SelettoreLingua/>
-        <button className="sidebar-logout" style={{width:"auto",marginTop:0,padding:"8px 14px"}} onClick={onLogout}>↩ {t("comune.esci")}</button>
+        <div style={{fontSize:"0.8125rem",fontWeight:600,color:"var(--muted)",flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"center"}}>{user.name}</div>
+        <button type="button" className="impost-apri" onClick={()=>setImpostAperte(true)} aria-label={t("impostazioni.titolo")}>⚙&#xFE0E;</button>
       </div>
       <div className="atleta-stats-bar">
         <span className="atleta-stats-item">💪 <strong>{sessionTotal}</strong> {t("atleta.sessioniCompletate",{count:sessionTotal})}</span>
@@ -228,6 +228,7 @@ export default function AtletaView({user, onLogout}) {
         <button className={`atleta-tab${atlView==="scheda"?" active":""}`} onClick={()=>setAtlView("scheda")}>📋 {t("atleta.tabScheda")}</button>
         <button className={`atleta-tab${atlView==="progressi"?" active":""}`} onClick={()=>setAtlView("progressi")}>📈 {t("atleta.tabProgressi")}</button>
       </div>
+      {impostAperte&&<ImpostazioniAtleta onClose={()=>setImpostAperte(false)} onLogout={onLogout}/>}
       {loadErr&&<div className="cliente-body" style={{paddingBottom:0}}><div className="session-saved-banner" style={{background:"rgba(255,71,87,.08)",borderColor:"rgba(255,71,87,.3)",color:"var(--danger)"}}>{t(`atleta.${loadErr}`)}</div></div>}
     </>
   );
@@ -258,9 +259,9 @@ export default function AtletaView({user, onLogout}) {
         {appuntamenti}
         {schedaCaricata&&(
           <div style={{textAlign:"center",paddingTop:28}}>
-            <div style={{fontSize:48,marginBottom:16}}>📋</div>
-            <div style={{fontSize:18,fontWeight:600,color:"var(--text)",marginBottom:8}}>{t("atleta.nessunaScheda")}</div>
-            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.6}}>{t("atleta.nessunaSchedaTesto")}</div>
+            <div style={{fontSize:"3rem",marginBottom:16}}>📋</div>
+            <div style={{fontSize:"1.125rem",fontWeight:600,color:"var(--text)",marginBottom:8}}>{t("atleta.nessunaScheda")}</div>
+            <div style={{fontSize:"0.875rem",color:"var(--muted)",lineHeight:1.6}}>{t("atleta.nessunaSchedaTesto")}</div>
           </div>
         )}
         {!schedaCaricata&&<div style={{textAlign:"center",color:"var(--muted)",paddingTop:28}}>{t("comune.caricamento")}</div>}
@@ -320,14 +321,14 @@ export default function AtletaView({user, onLogout}) {
             ))}
           </div>
           {!pdfStateAtleta&&(
-            <button className="btn-ghost" style={{fontSize:12,padding:"7px 14px"}} onClick={handlePDFAtleta}>
+            <button className="btn-ghost" style={{fontSize:"0.75rem",padding:"7px 14px"}} onClick={handlePDFAtleta}>
               ⬇ {t("pdf.scarica")}
             </button>
           )}
         </div>
         {pdfStateAtleta&&(
           <div className="pdf-progress" style={{marginBottom:16}}>
-            <span style={{fontSize:16}}>⏳</span>
+            <span style={{fontSize:"1rem"}}>⏳</span>
             <div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfStateAtleta.progress*100)}%`}}/></div>
             <span className="prog-label">{pdfStateAtleta.label}</span>
           </div>
@@ -343,7 +344,7 @@ export default function AtletaView({user, onLogout}) {
           onDaySelect={(dateStr,giornoKey)=>{setSelectedDate(dateStr);if(giornoKey)setActiveDay(giornoKey);}}
           todayStr={todayStr}
         />
-        <div style={{textAlign:"center",fontSize:12,fontWeight:600,color:isToday?"var(--muted)":"var(--accent2)",marginBottom:12,letterSpacing:.3}}>
+        <div style={{textAlign:"center",fontSize:"0.75rem",fontWeight:600,color:isToday?"var(--muted)":"var(--accent2)",marginBottom:12,letterSpacing:.3}}>
           {isToday?`${t("comune.oggi")} — ${fmtDateLong(selectedDate)}`:fmtDateLong(selectedDate)}
         </div>
 

@@ -58,11 +58,11 @@ function ExCard({ex,onVideo,onDelete}) {
           <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}}>
             {confirming?(
               <div style={{display:"flex",gap:6}}>
-                <button onClick={()=>{onDelete();setConfirming(false);}} style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:5,cursor:"pointer"}}>{t("comune.elimina")}</button>
-                <button onClick={()=>setConfirming(false)} style={{background:"var(--card2)",border:"1px solid var(--border)",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:11,padding:"3px 8px",borderRadius:5,cursor:"pointer"}}>{t("comune.annulla")}</button>
+                <button onClick={()=>{onDelete();setConfirming(false);}} style={{background:"var(--danger)",border:"none",color:"#fff",fontFamily:"'DM Sans',sans-serif",fontSize:"0.6875rem",fontWeight:700,padding:"3px 10px",borderRadius:5,cursor:"pointer"}}>{t("comune.elimina")}</button>
+                <button onClick={()=>setConfirming(false)} style={{background:"var(--card2)",border:"1px solid var(--border)",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.6875rem",padding:"3px 8px",borderRadius:5,cursor:"pointer"}}>{t("comune.annulla")}</button>
               </div>
             ):(
-              <button onClick={()=>setConfirming(true)} style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,cursor:"pointer",padding:"3px 0",transition:"color .15s"}} onMouseEnter={e=>e.currentTarget.style.color="var(--danger)"} onMouseLeave={e=>e.currentTarget.style.color="var(--muted)"}>✕ {t("comune.elimina")}</button>
+              <button onClick={()=>setConfirming(true)} style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.6875rem",fontWeight:600,cursor:"pointer",padding:"3px 0",transition:"color .15s"}} onMouseEnter={e=>e.currentTarget.style.color="var(--danger)"} onMouseLeave={e=>e.currentTarget.style.color="var(--muted)"}>✕ {t("comune.elimina")}</button>
             )}
           </div>
         )}
@@ -133,7 +133,7 @@ export default function Library({setView,user}) {
         <div className="filters">
           {CATEGORIES.map(c=><button key={c} className={`filter-btn${filter===c?" active":""}`} onClick={()=>setFilter(c)}>{valore("categoria",c)}</button>)}
           {(
-            <button onClick={()=>setShowForm(p=>!p)} style={{background:showForm?"rgba(232,255,71,.12)":"var(--card2)",border:"1px solid var(--border)",color:"var(--accent)",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+            <button onClick={()=>setShowForm(p=>!p)} style={{background:showForm?"rgba(232,255,71,.12)":"var(--card2)",border:"1px solid var(--border)",color:"var(--accent)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.75rem",fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
               {showForm?`✕ ${t("comune.chiudi")}`:`+ ${t("libreria.nuovo")}`}
             </button>
           )}
@@ -142,29 +142,29 @@ export default function Library({setView,user}) {
       {showForm&&(
         <form onSubmit={handleCreate} style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:12,padding:"16px 18px",marginBottom:16}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-            <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:11,fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)"}}>
+            <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:"0.6875rem",fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)"}}>
               {t("comune.nome")} *
-              <input className="field-input" type="text" value={nome} onChange={e=>setNome(e.target.value)} placeholder={t("libreria.phNome")} required style={{fontSize:14,padding:"9px 12px"}}/>
+              <input className="field-input" type="text" value={nome} onChange={e=>setNome(e.target.value)} placeholder={t("libreria.phNome")} required style={{fontSize:"0.875rem",padding:"9px 12px"}}/>
             </label>
-            <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:11,fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)"}}>
+            <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:"0.6875rem",fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)"}}>
               {t("comune.categoria")} *
-              <select className="field-select" value={categoria} onChange={e=>setCategoria(e.target.value)} required style={{fontSize:14,padding:"9px 12px"}}>
+              <select className="field-select" value={categoria} onChange={e=>setCategoria(e.target.value)} required style={{fontSize:"0.875rem",padding:"9px 12px"}}>
                 <option value="">— {t("comune.seleziona")} —</option>
                 {CATEGORIES.slice(1).map(c=><option key={c} value={c}>{valore("categoria",c)}</option>)}
               </select>
             </label>
           </div>
-          <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:11,fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>
+          <label style={{display:"flex",flexDirection:"column",gap:5,fontSize:"0.6875rem",fontWeight:700,letterSpacing:".8px",textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>
             {t("libreria.descrizione")}
-            <textarea className="field-input" value={descrizione} onChange={e=>setDescrizione(e.target.value)} placeholder={t("libreria.phDescrizione")} rows={2} style={{fontSize:13,padding:"9px 12px",resize:"vertical",minHeight:56}}/>
+            <textarea className="field-input" value={descrizione} onChange={e=>setDescrizione(e.target.value)} placeholder={t("libreria.phDescrizione")} rows={2} style={{fontSize:"0.8125rem",padding:"9px 12px",resize:"vertical",minHeight:56}}/>
           </label>
           <div style={{background:"var(--surface)",border:"1px dashed var(--border)",borderRadius:9,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10,opacity:.6}}>
-            <span style={{fontSize:22}}>📷</span>
-            <span style={{fontSize:12,color:"var(--muted)",fontWeight:500}}>{t("libreria.fotoPresto")}</span>
+            <span style={{fontSize:"1.375rem"}}>📷</span>
+            <span style={{fontSize:"0.75rem",color:"var(--muted)",fontWeight:500}}>{t("libreria.fotoPresto")}</span>
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-            <button type="button" className="btn-ghost" style={{fontSize:13,padding:"7px 14px"}} onClick={()=>setShowForm(false)}>{t("comune.annulla")}</button>
-            <button type="submit" className="btn-primary" style={{fontSize:13,padding:"7px 16px"}} disabled={saving||!nome.trim()||!categoria}>
+            <button type="button" className="btn-ghost" style={{fontSize:"0.8125rem",padding:"7px 14px"}} onClick={()=>setShowForm(false)}>{t("comune.annulla")}</button>
+            <button type="submit" className="btn-primary" style={{fontSize:"0.8125rem",padding:"7px 16px"}} disabled={saving||!nome.trim()||!categoria}>
               {saving?t("comune.salvataggio"):t("libreria.crea")}
             </button>
           </div>

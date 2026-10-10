@@ -159,12 +159,21 @@ pt-studio-demo/
 - **Regola: ogni testo nuovo a schermo → chiave in `src/i18n/it.json` + `es.json` + `en.json`** (stessa chiave nei tre file). Mai testo scritto direttamente nel JSX. Spagnolo rioplatense (vos: "ingresá", "probá"), rivisto da Ramiro.
 - Componenti: `const { t } = useTranslation();` → `t("sezione.chiave", {var})`. Plurali: chiavi `_one` / `_other` + `{count}`. Testo con grassetto: `<Trans i18nKey=… components={{b:<strong/>}}/>`. Fuori dai componenti: `t` da `src/i18n/index.js`.
 - **Controllo automatico:** `npm run check-i18n` (gira anche da solo prima di ogni `npm run build`, quindi anche su Vercel): chiavi uguali nei 3 file, niente testi vuoti, ogni `t("…")` del codice esiste. Se fallisce la build si ferma.
-- Lingua: scelta salvata per app (`ptstudio_lingua_home|atleta|pt`) → altrimenti quella scelta nella Home → altrimenti lingua del telefono/PC → italiano. Selettore `SelettoreLingua` (Home, login, intestazione atleta) e card "Lingua" in Account (PT).
+- Lingua: scelta salvata per app (`ptstudio_lingua_home|atleta|pt`) → altrimenti quella scelta nella Home → altrimenti lingua del telefono/PC → italiano. Selettore `SelettoreLingua` (Home, login), pannello Impostazioni ⚙ (app atleta) e card "Lingua" in Account (PT).
 - **Nel database resta tutto in italiano** (nomi esercizi del catalogo, categorie, obiettivo, livello, tipo appuntamento, "Giorno A"): si traduce solo a schermo con gli helper di `i18n/index.js` → `nomeEsercizio(nome, id)`, `muscoliEsercizio(ex)`, `valore(gruppo, v)`, `nomeGiorno(nome, key)`. Storico e grafici continuano a raggruppare per nome italiano.
 - Esercizi del catalogo: `esercizi.<id>.nome/muscoli` nei JSON. Esercizio nuovo in `data.js` → aggiungere anche le 3 traduzioni (termini da palestra, meglio l'inglese diffuso che una traduzione forzata).
 - Date, mesi, giorni: `locale()` (it-IT, es-AR, en-GB), `nomeMese()`, `inizialiGiorni()`, `maiuscola()`. Decimali: `fmtNum()` (62,5 / 62.5); nei campi si accettano virgola e punto (`parseNum`).
 - Non si traducono i contenuti scritti dalle persone (note, nomi schede e giorni scelti dal PT, esercizi custom, segnalazioni). Messaggio WhatsApp e PDF: lingua di chi li genera. Testi delle push: lingua dell'app atleta al momento del cronometro.
 - `tools/vr/snap.mjs` accetta `LANG_APP=it|es|en` per le foto nelle tre lingue.
+
+## Dimensione del testo e contrasto (2026-10-10)
+
+- **Regola: misure dei caratteri sempre in `rem`** (CSS e `fontSize:"0.875rem"` inline), mai in px. Eccezione: testo dentro SVG con `viewBox` (unità SVG).
+- `lib/testo.js` imposta il font-size di `<html>`: **base app** (atleta 18px, PT/Home 16px) × **telefono** (iPhone: `-apple-system-body`, 17px = normale; Android: lo fa Chrome) × **scelta utente** A/A+/A++ = 1 / 1,2 / 1,4 (`ptstudio_testo_atleta|pt`). `avviaTesto()` in `main.jsx` prima del render; ricalcola al ritorno in primo piano. `html[data-app]` = atleta|pt.
+- `index.css` (template Vite) mette 18px su `:root` per schermi >1024px: `app.css` lo riporta a 100% e ridà 18px + line-height al `body` su desktop per app PT/Home (zero cambi visivi).
+- Scelta A/A+/A++: componente `SceltaTesto` → app atleta nel pannello **Impostazioni** (`atleta/ImpostazioniAtleta.jsx`, bottone ⚙ nell'intestazione, con Lingua ed Esci: niente più chip lingua ed Esci sempre a schermo), app PT in **Account**.
+- Grigio secondario `--muted` = `#a8a8c0` (contrasto ~7,9:1 sulle card; prima `#5a5a78`, 2,8:1). Mai colori grigi scritti a mano: usare `var(--muted)` (in SVG `style={{fill:"var(--muted)"}}`).
+- Elementi con testo dentro: larghezze in `em`/`rem` o `min-width`, e righe che possono andare a capo (`flex-wrap`). Verifica: `LANG_APP` + `ptstudio_testo_atleta=a++` negli screenshot.
 
 ## Convenzioni & pattern noti
 

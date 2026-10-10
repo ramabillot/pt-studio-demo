@@ -109,7 +109,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
   return (
     <div>
       {lastMisura&&(
-        <div style={{fontSize:12,color:"var(--muted)",marginBottom:12}}>
+        <div style={{fontSize:"0.75rem",color:"var(--muted)",marginBottom:12}}>
           {t("misure.ultima")} <strong style={{color:"var(--text)"}}>
             {new Date(lastMisura.data+"T12:00").toLocaleDateString(locale(),{day:"numeric",month:"short",year:"numeric"})}
           </strong>
@@ -117,7 +117,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
       )}
       {!readOnly&&(
         <div style={{background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>{t("misure.nuova")}</div>
+          <div style={{fontSize:"0.6875rem",fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>{t("misure.nuova")}</div>
           <div className="form-row" style={{marginBottom:10}}>
             <label className="field-label">{t("comune.data")}<input className="field-input" type="date" value={form.data} onChange={e=>setForm(p=>({...p,data:e.target.value}))}/></label>
           </div>
@@ -125,7 +125,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
             <label className="field-label">{etichetta({key:"peso"})} (kg)<input className="field-input" type="number" min={0} max={300} step={0.1} placeholder="78.5" value={form.peso} onChange={e=>setForm(p=>({...p,peso:e.target.value}))}/></label>
             <label className="field-label">{etichetta({key:"vita"})} (cm)<input className="field-input" type="number" min={0} max={200} placeholder="82" value={form.vita} onChange={e=>setForm(p=>({...p,vita:e.target.value}))}/></label>
           </div>
-          <button className="btn-ghost" style={{fontSize:11,padding:"5px 12px",marginBottom:showAvanzati?8:0}} onClick={()=>setShowAvanzati(v=>!v)}>
+          <button className="btn-ghost" style={{fontSize:"0.6875rem",padding:"5px 12px",marginBottom:showAvanzati?8:0}} onClick={()=>setShowAvanzati(v=>!v)}>
             {showAvanzati?`▲ ${t("misure.nascondiAvanzati")}`:`➕ ${t("misure.datiAvanzati")}`}
           </button>
           {showAvanzati&&(
@@ -146,7 +146,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
       )}
 
       {misure.length===0?(
-        <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>
+        <div style={{color:"var(--muted)",fontSize:"0.8125rem",padding:"8px 0"}}>
           {readOnly?t("misure.vuotaAtleta"):t("misure.vuota")}
         </div>
       ):(
@@ -168,9 +168,9 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
                 </div>
                 {deleteConfirm===realIdx&&(
                   <div className="day-delete-confirm" style={{marginBottom:7}}>
-                    <span style={{fontSize:13,color:"var(--text)"}}>{t("misure.eliminareConferma")}</span>
+                    <span style={{fontSize:"0.8125rem",color:"var(--text)"}}>{t("misure.eliminareConferma")}</span>
                     <div style={{display:"flex",gap:8}}>
-                      <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
+                      <button className="btn-ghost" style={{padding:"5px 12px",fontSize:"0.75rem"}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
                       <button className="btn-danger" onClick={()=>handleDelete(realIdx)}>{t("comune.elimina")}</button>
                     </div>
                   </div>
@@ -187,7 +187,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
       )}
 
       {misure.length<2?(
-        <div style={{color:"var(--muted)",fontSize:13,marginTop:12,padding:"10px 0",textAlign:"center"}}>
+        <div style={{color:"var(--muted)",fontSize:"0.8125rem",marginTop:12,padding:"10px 0",textAlign:"center"}}>
           {misure.length===0?"":readOnly?"":t("misure.almeno2")}
         </div>
       ):(
@@ -206,7 +206,7 @@ export function MisureSection({readOnly=false, externalMisure=null, ptId=null, s
             })}
           </div>
           {chartLines.length===0?(
-            <div style={{color:"var(--muted)",fontSize:13,textAlign:"center",padding:"8px 0"}}>
+            <div style={{color:"var(--muted)",fontSize:"0.8125rem",textAlign:"center",padding:"8px 0"}}>
               {t("misure.selezionaMetrica")}
             </div>
           ):(

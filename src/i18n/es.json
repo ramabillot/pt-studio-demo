@@ -801,5 +801,11 @@
     "rifiutaRichiesta": "Rechazar solicitud",
     "rifiutaTesto": "Estás <b>rechazando</b> la solicitud de <b>{{nome}}</b>. Su cuenta se va a eliminar definitivamente.",
     "eliminaTesto": "Esta acción elimina a <b>{{nome}}</b>, todos sus atletas y todo el historial (rutinas, sesiones, medidas, turnos). <r>No se puede deshacer.</r>"
+  },
+  "impostazioni": {
+    "titolo": "Ajustes",
+    "testo": "Tamaño del texto",
+    "anteprima": "La última vez: 25 kg × 12",
+    "testoNota": "Se suma al tamaño de texto configurado en el celular. Vale solo en este dispositivo."
   }
 }

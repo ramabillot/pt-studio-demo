@@ -147,7 +147,7 @@ export default function LoginScreen({ruolo, onLogin}) {
 
   // ── Shared secondary link style ───────────────────────────────────────────
   const linkBtn = (onClick, label, color="var(--muted)") => (
-    <button onClick={onClick} style={{background:"none",border:"none",color,fontSize:13,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:0}}>
+    <button onClick={onClick} style={{background:"none",border:"none",color,fontSize:"0.8125rem",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",padding:0}}>
       {label}
     </button>
   );
@@ -205,7 +205,7 @@ export default function LoginScreen({ruolo, onLogin}) {
                 {linkBtn(()=>setShowForgotModal(true),t("login.dimenticata"))}
               </div>
             ):(
-              <div style={{textAlign:"center",marginTop:14,fontSize:13,color:"var(--muted)"}}>
+              <div style={{textAlign:"center",marginTop:14,fontSize:"0.8125rem",color:"var(--muted)"}}>
                 {t("login.notaAtleta")}
               </div>
             )}
@@ -255,13 +255,13 @@ export default function LoginScreen({ruolo, onLogin}) {
           {/* ── REGISTERED (success) ── */}
           {mode==="registered"&&(
             <div style={{textAlign:"center",padding:"8px 0 4px"}}>
-              <div style={{fontSize:48,marginBottom:16}}>🎉</div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,letterSpacing:1.5,marginBottom:10}}>{t("login.accountCreato")}</div>
-              <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.75,marginBottom:24}}>
+              <div style={{fontSize:"3rem",marginBottom:16}}>🎉</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.5rem",letterSpacing:1.5,marginBottom:10}}>{t("login.accountCreato")}</div>
+              <div style={{fontSize:"0.875rem",color:"var(--muted)",lineHeight:1.75,marginBottom:24}}>
                 {t("login.inAttesa1")}<br/>
                 {t("login.inAttesa2")}
               </div>
-              <button className="btn-ghost" onClick={goLogin} style={{width:"100%",padding:11,fontSize:14}}>
+              <button className="btn-ghost" onClick={goLogin} style={{width:"100%",padding:11,fontSize:"0.875rem"}}>
                 {t("login.tornaLogin")}
               </button>
             </div>
@@ -275,10 +275,10 @@ export default function LoginScreen({ruolo, onLogin}) {
           onClick={()=>setShowForgotModal(false)}>
           <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,padding:"28px 28px 24px",maxWidth:380,width:"100%",animation:"slideUp .2s ease"}}
             onClick={e=>e.stopPropagation()}>
-            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,marginBottom:12}}>
+            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"1.375rem",letterSpacing:2,marginBottom:12}}>
               {t("login.resetTitolo")}
             </div>
-            <div style={{fontSize:14,color:"var(--muted)",lineHeight:1.7,marginBottom:24}}>
+            <div style={{fontSize:"0.875rem",color:"var(--muted)",lineHeight:1.7,marginBottom:24}}>
               {t("login.resetTesto")}{" "}
               <strong style={{color:"var(--text)"}}>ptstudio.admin@proton.me</strong>.
               <br/>{t("login.resetTesto2")}

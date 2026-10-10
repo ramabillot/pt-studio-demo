@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { nomeEsercizio, fmtNum } from "../i18n/index.js";
 
 export function ProgressiMultiChart({lines, onPointClick, selected}) {
-  const W=560,H=190,padL=38,padR=14,padT=10,padB=26;
+  const W=560,H=210,padL=54,padR=14,padT=12,padB=38;   // etichette leggibili anche sul telefono (SVG ridotto ~60%)
   const cW=W-padL-padR, cH=H-padT-padB;
 
   const allDates=[...new Set(lines.flatMap(l=>l.points.map(p=>p.date)))].sort();
@@ -25,6 +25,7 @@ export function ProgressiMultiChart({lines, onPointClick, selected}) {
   const range=maxV-minV||1;
   const xOf=(i)=>padL+(n>1?i/(n-1):0.5)*cW;
   const yOf=(kg)=>padT+cH-((kg-minV)/range)*cH;
+  const passo=Math.ceil(n/8);   // al massimo ~8 date sotto il grafico, così non si sovrappongono
   const gridVals=Array.from({length:4},(_,i)=>Math.round(minV+(i/3)*range));
 
   return (
@@ -32,11 +33,11 @@ export function ProgressiMultiChart({lines, onPointClick, selected}) {
       {gridVals.map((v,i)=>(
         <g key={i}>
           <line x1={padL} y1={yOf(v)} x2={W-padR} y2={yOf(v)} stroke="#22223a" strokeWidth="1" strokeDasharray="5,4"/>
-          <text x={padL-4} y={yOf(v)+4} textAnchor="end" fill="#5a5a78" fontSize="10">{v}</text>
+          <text x={padL-4} y={yOf(v)+6} textAnchor="end" style={{fill:"var(--muted)"}} fontSize="19">{v}</text>
         </g>
       ))}
-      {allDates.map((d,i)=>(
-        <text key={i} x={xOf(i)} y={H-5} textAnchor="middle" fill="#5a5a78" fontSize="9">{d.slice(8)}/{d.slice(5,7)}</text>
+      {allDates.map((d,i)=>(i%passo===0||i===n-1)&&(
+        <text key={i} x={xOf(i)} y={H-9} textAnchor={n>1&&i===0?"start":n>1&&i===n-1?"end":"middle"} style={{fill:"var(--muted)"}} fontSize="18">{d.slice(8)}/{d.slice(5,7)}</text>
       ))}
       {lines.map(line=>{
         const pts=allDates.map((d,i)=>{const p=line.points.find(p=>p.date===d);return p?{i,kg:p.kg,date:d}:null;}).filter(Boolean);
@@ -77,7 +78,7 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
   });
   const conDati=Object.keys(perEsercizio).filter(nome=>perEsercizio[nome].some(x=>METRICHE.max.calcola(x.serie)!=null));
   const nomi=[...ordine.filter(n=>conDati.includes(n)), ...conDati.filter(n=>!ordine.includes(n)).sort()];
-  if(!nomi.length) return <div style={{color:"var(--muted)",fontSize:13,padding:"8px 0"}}>{vuoto||t("progressi.vuoto")}</div>;
+  if(!nomi.length) return <div style={{color:"var(--muted)",fontSize:"0.8125rem",padding:"8px 0"}}>{vuoto||t("progressi.vuoto")}</div>;
 
   const colore=Object.fromEntries(nomi.map((n,i)=>[n,LINE_COLORS[i%LINE_COLORS.length]]));
   const attivi=sel??nomi.slice(0,1);
@@ -114,19 +115,19 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
         <div className="prog-empty"><div className="prog-empty-icon">📈</div>{t("progressi.selezionaEsercizio")}</div>
       ):(
         <>
-          {ultimo&&<div style={{fontSize:12,color:"var(--muted)",marginBottom:6}}>{t("progressi.ultimoAllenamento",{metrica:t(M.label)})} <strong style={{color:"var(--text)"}}>{fmtNum(ultimo.kg)} {M.unita}</strong></div>}
+          {ultimo&&<div style={{fontSize:"0.75rem",color:"var(--muted)",marginBottom:6}}>{t("progressi.ultimoAllenamento",{metrica:t(M.label)})} <strong style={{color:"var(--text)"}}>{fmtNum(ultimo.kg)} {M.unita}</strong></div>}
           <div className="prog-chart-box">
             <ProgressiMultiChart lines={lines} selected={punto} onPointClick={(id,date)=>setPunto(punto&&punto.id===id&&punto.date===date?null:{id,date})}/>
           </div>
-          {lines.some(l=>l.points.length<2)&&<div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>{t("progressi.lineaDalSecondo")}</div>}
+          {lines.some(l=>l.points.length<2)&&<div style={{fontSize:"0.6875rem",color:"var(--muted)",marginTop:6}}>{t("progressi.lineaDalSecondo")}</div>}
           {dettaglio?(
-            <div style={{marginTop:10,padding:"10px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,fontSize:13}}>
+            <div style={{marginTop:10,padding:"10px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,fontSize:"0.8125rem"}}>
               <div style={{fontWeight:700,color:"var(--text)",marginBottom:4}}>{nomeEsercizio(punto.id)} · <span style={{textTransform:"capitalize"}}>{fmtDateShort(punto.date)}</span></div>
               <div style={{color:"var(--muted)"}}>{dettaglio.serie.map((s,i)=><span key={i} style={{marginRight:10,whiteSpace:"nowrap"}}>S{i+1}: <strong style={{color:"var(--text)"}}>{s.peso!=null?`${fmtNum(s.peso)} kg`:"—"}{s.reps!=null?` × ${s.reps}`:""}</strong></span>)}</div>
               {dettaglio.nota&&<div style={{marginTop:6,color:"var(--text)"}}>📝 {dettaglio.nota}</div>}
             </div>
           ):(
-            <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>{t("progressi.toccaPunto")}</div>
+            <div style={{fontSize:"0.6875rem",color:"var(--muted)",marginTop:6}}>{t("progressi.toccaPunto")}</div>
           )}
         </>
       )}

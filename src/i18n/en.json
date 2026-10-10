@@ -801,5 +801,11 @@
     "rifiutaRichiesta": "Reject request",
     "rifiutaTesto": "You are <b>rejecting</b> the request from <b>{{nome}}</b>. Their account will be permanently deleted.",
     "eliminaTesto": "This deletes <b>{{nome}}</b>, all their athletes and the whole history (plans, sessions, measurements, appointments). <r>It can't be undone.</r>"
+  },
+  "impostazioni": {
+    "titolo": "Settings",
+    "testo": "Text size",
+    "anteprima": "Last time: 25 kg × 12",
+    "testoNota": "Adds to the text size set on your phone. Applies to this device only."
   }
 }

@@ -111,7 +111,7 @@ function CalendarBase({
           </div>
           <div className="cal-header">
             <button className="cal-nav" onClick={calView==="month"?prevM:prevW}>‹</button>
-            <div className="cal-month" style={{fontSize:calView==="week"?"16px":"24px",letterSpacing:calView==="week"?"1px":"2px"}}>
+            <div className="cal-month" style={{fontSize:calView==="week"?"1rem":"1.5rem",letterSpacing:calView==="week"?"1px":"2px"}}>
               {calView==="month"?`${nomeMese(month)} ${year}`:weekLabel}
             </div>
             <button className="cal-nav" onClick={calView==="month"?nextM:nextW}>›</button>
@@ -154,7 +154,7 @@ function CalendarBase({
               const isToday=ds===todayStr;
               return (
                 <div key={i} className={`cal-week-header${isToday?" today-col":""}`}>
-                  {DAYS[i]}<br/><span style={{fontSize:14,fontWeight:700}}>{d.getDate()}</span>
+                  {DAYS[i]}<br/><span style={{fontSize:"0.875rem",fontWeight:700}}>{d.getDate()}</span>
                 </div>
               );
             })}
@@ -185,14 +185,14 @@ function CalendarBase({
         <div className="overlay" onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>
           <div className="day-modal" onClick={e=>e.stopPropagation()}>
             <div className="day-modal-header">
-              <div className="modal-title" style={{fontSize:16}}>
+              <div className="modal-title" style={{fontSize:"1rem"}}>
                 {maiuscola(new Date(dayModal+"T12:00").toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"}))}
               </div>
               <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>{setDayModal(null);setDeleteConfirm(null);}}>✕</button>
             </div>
             <div className="day-modal-body">
               {evsByDate(dayModal).length===0&&(
-                <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"20px 0"}}>{t("cal.nessuno")}</div>
+                <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"20px 0"}}>{t("cal.nessuno")}</div>
               )}
               {evsByDate(dayModal).map(ev=>(
                 <div key={ev.id}>
@@ -207,9 +207,9 @@ function CalendarBase({
                   </div>
                   {deleteConfirm===ev.id&&(
                     <div className="day-delete-confirm">
-                      <span style={{fontSize:13,color:"var(--text)"}}>{t("cal.eliminareConferma")}</span>
+                      <span style={{fontSize:"0.8125rem",color:"var(--text)"}}>{t("cal.eliminareConferma")}</span>
                       <div style={{display:"flex",gap:8}}>
-                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:12}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
+                        <button className="btn-ghost" style={{padding:"5px 12px",fontSize:"0.75rem"}} onClick={()=>setDeleteConfirm(null)}>{t("comune.annulla")}</button>
                         <button className="btn-danger" onClick={()=>deleteEvent(ev.id)}>{t("comune.elimina")}</button>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ function CalendarBase({
               <button className="modal-close" aria-label={t("comune.chiudi")} onClick={()=>setShowAddForm(null)}>✕</button>
             </div>
             <div className="form-modal-body">
-              <div style={{fontSize:13,color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
+              <div style={{fontSize:"0.8125rem",color:"var(--muted)",background:"var(--card2)",padding:"10px 14px",borderRadius:8}}>
                 📅 {new Date(showAddForm+"T12:00").toLocaleDateString(locale(),{weekday:"long",day:"numeric",month:"long"})}
               </div>
               <label className="field-label">

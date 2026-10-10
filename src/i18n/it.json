@@ -801,5 +801,11 @@
     "rifiutaRichiesta": "Rifiuta richiesta",
     "rifiutaTesto": "Stai <b>rifiutando</b> la richiesta di <b>{{nome}}</b>. Il loro account verrà eliminato definitivamente.",
     "eliminaTesto": "Questa azione elimina <b>{{nome}}</b>, tutti i suoi atleti e l'intero storico (schede, sessioni, misurazioni, appuntamenti). <r>Non è reversibile.</r>"
+  },
+  "impostazioni": {
+    "titolo": "Impostazioni",
+    "testo": "Dimensione del testo",
+    "anteprima": "Ultima volta: 25 kg × 12",
+    "testoNota": "Si aggiunge alla dimensione del testo impostata nel telefono. Vale solo su questo dispositivo."
   }
 }

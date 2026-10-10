@@ -72,13 +72,13 @@ export default function AdminPanel({ setView }) {
       </div>
 
       {loading&&(
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
+        <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"60px 0"}}>{t("comune.caricamento")}</div>
       )}
       {!loading&&err&&(
-        <div style={{color:"var(--danger)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
+        <div style={{color:"var(--danger)",fontSize:"0.875rem",textAlign:"center",padding:"60px 0"}}>{t("admin.errore")} {err}</div>
       )}
       {!loading&&!err&&pts.length===0&&(
-        <div style={{color:"var(--muted)",fontSize:14,textAlign:"center",padding:"60px 0"}}>{t("admin.nessunPT")}</div>
+        <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"60px 0"}}>{t("admin.nessunPT")}</div>
       )}
 
       {!loading&&!err&&pts.map(pt=>(
@@ -90,18 +90,18 @@ export default function AdminPanel({ setView }) {
           {/* Identità */}
           <div style={{flex:1,minWidth:180}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
-              <div style={{width:36,height:36,borderRadius:10,background:"var(--card2)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"var(--accent)",flexShrink:0}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"var(--card2)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.8125rem",fontWeight:700,color:"var(--accent)",flexShrink:0}}>
                 {(pt.nome?.[0]||pt.email?.[0]||"?").toUpperCase()}
               </div>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:15,fontWeight:700,color:"var(--text)",lineHeight:1.2}}>
+                <div style={{fontSize:"0.9375rem",fontWeight:700,color:"var(--text)",lineHeight:1.2}}>
                   {pt.nome||""} {pt.cognome||""}
                   {!pt.nome&&!pt.cognome&&<span style={{color:"var(--muted)"}}>—</span>}
                 </div>
-                <div style={{fontSize:12,color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pt.email}</div>
+                <div style={{fontSize:"0.75rem",color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pt.email}</div>
               </div>
             </div>
-            <div style={{fontSize:11,color:"var(--muted)"}}>
+            <div style={{fontSize:"0.6875rem",color:"var(--muted)"}}>
               {t("admin.registratoIl",{data:new Date(pt.created_at).toLocaleDateString(locale(),{day:"numeric",month:"long",year:"numeric"})})}
             </div>
           </div>
@@ -112,19 +112,19 @@ export default function AdminPanel({ setView }) {
             <select
               value={pt.piano}
               onChange={e=>save(pt.id,{piano:e.target.value})}
-              style={{background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,padding:"7px 12px",borderRadius:8,outline:"none",appearance:"none",cursor:"pointer"}}
+              style={{background:"var(--card2)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.8125rem",fontWeight:600,padding:"7px 12px",borderRadius:8,outline:"none",appearance:"none",cursor:"pointer"}}
             >
               {PIANI.map(p=><option key={p} value={p}>{p.charAt(0).toUpperCase()+p.slice(1)}</option>)}
             </select>
 
             {/* Max atleti */}
             <div style={{display:"flex",alignItems:"center",gap:6,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:8,padding:"5px 12px"}}>
-              <span style={{fontSize:11,color:"var(--muted)",fontWeight:600,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>{t("admin.maxAtleti")}</span>
+              <span style={{fontSize:"0.6875rem",color:"var(--muted)",fontWeight:600,textTransform:"uppercase",letterSpacing:.5,whiteSpace:"nowrap"}}>{t("admin.maxAtleti")}</span>
               <input
                 type="number" min={1} max={500}
                 value={pt.max_atleti}
                 onChange={e=>save(pt.id,{max_atleti:Number(e.target.value)})}
-                style={{background:"transparent",border:"none",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:700,width:64,textAlign:"center",outline:"none"}}
+                style={{background:"transparent",border:"none",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.875rem",fontWeight:700,width:64,textAlign:"center",outline:"none"}}
               />
             </div>
 
@@ -136,7 +136,7 @@ export default function AdminPanel({ setView }) {
                 background:pt.is_approved?"rgba(255,71,87,.1)":"rgba(71,255,232,.1)",
                 border:`1px solid ${pt.is_approved?"rgba(255,71,87,.3)":"rgba(71,255,232,.3)"}`,
                 color:pt.is_approved?"var(--danger)":"var(--accent2)",
-                fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,
+                fontFamily:"'DM Sans',sans-serif",fontSize:"0.8125rem",fontWeight:700,
                 padding:"7px 16px",borderRadius:8,cursor:saving[pt.id]?"default":"pointer",
                 opacity:saving[pt.id]?.5:1,transition:"opacity .15s",
               }}
@@ -146,7 +146,7 @@ export default function AdminPanel({ setView }) {
 
             {/* Badge stato */}
             <span style={{
-              fontSize:11,fontWeight:700,letterSpacing:.8,textTransform:"uppercase",
+              fontSize:"0.6875rem",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",
               padding:"4px 10px",borderRadius:100,
               background:pt.is_approved?"rgba(46,204,113,.12)":"rgba(255,159,71,.12)",
               color:pt.is_approved?"#2ecc71":"#ff9f47",
@@ -160,7 +160,7 @@ export default function AdminPanel({ setView }) {
               style={{
                 background:"none",border:"1px solid rgba(255,71,87,.2)",
                 color:"rgba(255,71,87,.7)",
-                fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                fontFamily:"'DM Sans',sans-serif",fontSize:"0.75rem",fontWeight:600,
                 padding:"7px 14px",borderRadius:8,cursor:"pointer",
                 transition:"all .15s",
               }}
@@ -181,16 +181,16 @@ export default function AdminPanel({ setView }) {
             borderRadius:16,padding:"28px 28px 24px",maxWidth:440,width:"100%",
             animation:"slideUp .2s ease",
           }} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:17,fontWeight:700,color:"var(--text)",marginBottom:10}}>
+            <div style={{fontSize:"1.0625rem",fontWeight:700,color:"var(--text)",marginBottom:10}}>
               {deleteModal.isPending?t("admin.rifiutaRichiesta"):t("admin.eliminaPT")}
             </div>
-            <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.65,marginBottom:18}}>
+            <div style={{fontSize:"0.8125rem",color:"var(--muted)",lineHeight:1.65,marginBottom:18}}>
               {deleteModal.isPending
                 ? <Trans i18nKey="admin.rifiutaTesto" values={{nome:ptLabel(deleteModal)}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
                 : <Trans i18nKey="admin.eliminaTesto" values={{nome:ptLabel(deleteModal)}} components={{b:<strong style={{color:"var(--text)"}}/>, r:<strong style={{color:"var(--danger)"}}/>}}/>
               }
             </div>
-            <div style={{fontSize:12,color:"var(--muted)",marginBottom:7}}>
+            <div style={{fontSize:"0.75rem",color:"var(--muted)",marginBottom:7}}>
               <Trans i18nKey="atleti.digita" values={{nome:deleteModal.email}} components={{b:<strong style={{color:"var(--text)"}}/>}}/>
             </div>
             <input
@@ -200,20 +200,20 @@ export default function AdminPanel({ setView }) {
               autoComplete="off"
               onChange={e=>{ setDeleteTyped(e.target.value); setDeleteErr(""); }}
               placeholder={deleteModal.email}
-              style={{marginBottom:14,fontSize:13,width:"100%"}}
+              style={{marginBottom:14,fontSize:"0.8125rem",width:"100%"}}
             />
-            {deleteErr&&<div style={{fontSize:12,color:"var(--danger)",marginBottom:10}}>{deleteErr}</div>}
+            {deleteErr&&<div style={{fontSize:"0.75rem",color:"var(--danger)",marginBottom:10}}>{deleteErr}</div>}
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <button
                 className="btn-ghost"
-                style={{fontSize:13,padding:"7px 16px"}}
+                style={{fontSize:"0.8125rem",padding:"7px 16px"}}
                 disabled={deleting}
                 onClick={()=>{ setDeleteModal(null); setDeleteTyped(""); setDeleteErr(""); }}
               >{t("comune.annulla")}</button>
               <button
                 className="btn-danger"
                 style={{
-                  fontSize:13,padding:"7px 18px",
+                  fontSize:"0.8125rem",padding:"7px 18px",
                   opacity:deleteTyped===deleteModal.email&&!deleting?1:.4,
                   cursor:deleteTyped===deleteModal.email&&!deleting?"pointer":"default",
                 }}

@@ -49,12 +49,12 @@ export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti
               onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.05)"}
               onMouseLeave={e=>e.currentTarget.style.background=""}
             >
-              <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>
+              <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.6875rem",fontWeight:700,color:"#07070d",flexShrink:0}}>
                 {getInitials(a.nome,a.cognome)}
               </div>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
-                {a.obiettivo&&<div style={{fontSize:11,color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)}</div>}
+                <div style={{fontSize:"0.8125rem",fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
+                {a.obiettivo&&<div style={{fontSize:"0.6875rem",color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)}</div>}
               </div>
             </div>
           ))}
@@ -325,13 +325,13 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
       <BackBtn setView={setView}/>
       <div className="page-head"><div className="page-title">{t("builder.titolo")}</div><div className="page-sub">{t("builder.eserciziTotali",{count:totalEx})}</div></div>
       {toast&&(
-        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--accent2)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
+        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:"0.8125rem",fontWeight:600,color:"var(--accent2)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
           <span>{toast}</span>
-          <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:16,lineHeight:1,padding:0,flexShrink:0,opacity:.7,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.7}>✕</button>
+          <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:"1rem",lineHeight:1,padding:0,flexShrink:0,opacity:.7,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.7}>✕</button>
         </div>
       )}
       {errore&&(
-        <div style={{background:"rgba(255,71,87,.08)",border:"1px solid rgba(255,71,87,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:13,fontWeight:600,color:"var(--danger)"}}>{errore}</div>
+        <div style={{background:"rgba(255,71,87,.08)",border:"1px solid rgba(255,71,87,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:"0.8125rem",fontWeight:600,color:"var(--danger)"}}>{errore}</div>
       )}
       <div className="builder">
         <div className="client-card">
@@ -357,14 +357,14 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
                     <div
                       key={a.id}
                       onMouseDown={()=>selectAtleta(a)}
-                      style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:14,borderBottom:"1px solid var(--border)"}}
+                      style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:"0.875rem",borderBottom:"1px solid var(--border)"}}
                       onMouseEnter={e=>e.currentTarget.style.background="var(--border)"}
                       onMouseLeave={e=>e.currentTarget.style.background=""}
                     >
-                      <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
+                      <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.6875rem",fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
                       <div>
                         <div style={{fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
-                        <div style={{fontSize:11,color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)} · {valore("livello",a.livello)}</div>
+                        <div style={{fontSize:"0.6875rem",color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)} · {valore("livello",a.livello)}</div>
                       </div>
                     </div>
                   ))}
@@ -377,12 +377,12 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
         </div>
 
         <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-          <label style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:"var(--muted)",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>
+          <label style={{display:"flex",alignItems:"center",gap:10,fontSize:"0.8125rem",color:"var(--muted)",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>
             {t("builder.giorni")}
             <select
               value={numDays}
               onChange={e=>handleNumDays(Number(e.target.value))}
-              style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:14,padding:"6px 12px",borderRadius:8,outline:"none",width:"auto",appearance:"none",cursor:"pointer"}}
+              style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.875rem",padding:"6px 12px",borderRadius:8,outline:"none",width:"auto",appearance:"none",cursor:"pointer"}}
             >
               {[1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{t("builder.nGiorni",{count:n})}</option>)}
             </select>
@@ -391,11 +391,11 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
           <div className="day-tabs">
             {activeDays.map(d=>(
               <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                {nomeGiorno(dayNames[d], d)}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:11}}>{(giorni[d]||[]).length}</span>}
+                {nomeGiorno(dayNames[d], d)}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:"0.6875rem"}}>{(giorni[d]||[]).length}</span>}
               </button>
             ))}
           </div>
-          <span style={{fontSize:13,color:"var(--muted)"}}>{scheda.length===0?t("builder.giornoVuoto"):t("libreria.nEsercizi",{count:scheda.length})}</span>
+          <span style={{fontSize:"0.8125rem",color:"var(--muted)"}}>{scheda.length===0?t("builder.giornoVuoto"):t("libreria.nEsercizi",{count:scheda.length})}</span>
         </div>
 
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -405,10 +405,10 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             placeholder={t("builder.phNomeGiorno")}
             value={dayNames[activeDay]||""}
             onChange={e=>setDayNames(prev=>({...prev,[activeDay]:e.target.value}))}
-            style={{maxWidth:320,fontSize:13,padding:"8px 12px"}}
+            style={{maxWidth:320,fontSize:"0.8125rem",padding:"8px 12px"}}
           />
           {dayNames[activeDay]&&(
-            <button onClick={()=>setDayNames(prev=>({...prev,[activeDay]:""}))} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:14,padding:"4px"}}>✕</button>
+            <button onClick={()=>setDayNames(prev=>({...prev,[activeDay]:""}))} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:"0.875rem",padding:"4px"}}>✕</button>
           )}
         </div>
 
@@ -437,7 +437,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
                 <div><span className="scheda-dot" style={{background:cc}}/>{nomeEsercizio(row.name, row.id)}</div>
                 <div><span className="badge">{row.sets}</span>{" × "}<span className="badge">{row.reps}</span></div>
                 <div><span className="badge badge2">{row.rest}s</span></div>
-                <div style={{fontSize:12,color:"var(--muted)"}}>{(muscoliEsercizio(row)||"").split(",")[0]||"—"}</div>
+                <div style={{fontSize:"0.75rem",color:"var(--muted)"}}>{(muscoliEsercizio(row)||"").split(",")[0]||"—"}</div>
                 <div><button className="del-btn" onClick={()=>del(row.uid)}>✕</button></div>
               </div>
             );})}</>
@@ -449,18 +449,18 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             <div className="summary-card"><div className="summary-label">{t("builder.serieTotali")}</div><div className="summary-val">{sum.totalSets}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
             <div className="summary-card"><div className="summary-label">{t("builder.tempoStimato")}</div><div className="summary-val">{sum.estMin}</div><div className="summary-sub">{t("builder.minuti")}</div></div>
             <div className="summary-card"><div className="summary-label">{t("progressi.esercizi")}</div><div className="summary-val">{sum.count}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
-            <div className="summary-card"><div className="summary-label">{t("builder.gruppi")}</div><div className="summary-val" style={{fontSize:15,paddingTop:4,lineHeight:1.5}}>{sum.cats.map(c=>valore("categoria",c)).join(", ")||"—"}</div></div>
+            <div className="summary-card"><div className="summary-label">{t("builder.gruppi")}</div><div className="summary-val" style={{fontSize:"0.9375rem",paddingTop:4,lineHeight:1.5}}>{sum.cats.map(c=>valore("categoria",c)).join(", ")||"—"}</div></div>
           </div>
         )}
 
-        {pdfState&&<div className="pdf-progress"><span style={{fontSize:18}}>⏳</span><div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfState.progress*100)}%`}}/></div><span className="prog-label">{pdfState.label}</span></div>}
+        {pdfState&&<div className="pdf-progress"><span style={{fontSize:"1.125rem"}}>⏳</span><div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfState.progress*100)}%`}}/></div><span className="prog-label">{pdfState.label}</span></div>}
 
         {showOverwriteConfirm&&(
           <div className="overwrite-confirm">
             <span className="overwrite-confirm-text">{t("builder.sovrascrivi")}</span>
             <div className="overwrite-confirm-actions">
-              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:13}} onClick={()=>setShowOverwriteConfirm(false)}>{t("comune.annulla")}</button>
-              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:13}} onClick={doAssegna} disabled={assegnaLoading}>
+              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:"0.8125rem"}} onClick={()=>setShowOverwriteConfirm(false)}>{t("comune.annulla")}</button>
+              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:"0.8125rem"}} onClick={doAssegna} disabled={assegnaLoading}>
                 {assegnaLoading?t("comune.salvataggio"):t("builder.siAggiorna")}
               </button>
             </div>

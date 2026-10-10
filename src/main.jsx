@@ -7,8 +7,10 @@ import { installaRaccoltaErrori } from './lib/erroriRecenti.js'
 import { preparaInstallazione } from './lib/installa.js'
 import { APP } from './lib/app.js'
 import { registraServiceWorker } from './lib/notifiche.js'
+import { avviaTesto } from './lib/testo.js'
 
 installaRaccoltaErrori()
+avviaTesto()   // dimensione del testo (rem) prima del primo render
 preparaInstallazione()   // prima possibile: il browser manda l'evento una volta sola
 if (APP === 'atleta') registraServiceWorker()   // solo notifiche del cronometro, nessuna cache
 // App PT: service worker vuoto, solo perché Android la installi come app (senza barra di Chrome)

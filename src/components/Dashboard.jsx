@@ -75,7 +75,7 @@ export default function Dashboard({user,setView}) {
             </div>
           ))}
         </div>
-        <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
+        <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:"0.8125rem",letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
         <div className="quick-nav" style={{gridTemplateColumns:"1fr 1fr"}}>
           {adminNav.map((q,i)=>(
             <div className="quick-card" key={q.id} onClick={()=>setView(q.id)} style={{animationDelay:`${i*.07+.2}s`}}>
@@ -117,7 +117,7 @@ export default function Dashboard({user,setView}) {
           </div>
         ))}
       </div>
-      <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:13,letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
+      <div style={{marginBottom:16}}><div className="page-sub" style={{fontSize:"0.8125rem",letterSpacing:1,textTransform:"uppercase",fontWeight:600}}>{t("dash.vaiA")}</div></div>
       <div className="quick-nav">
         {quickNav.map((q,i)=>(
           <div className="quick-card" key={q.id} onClick={()=>setView(q.id)} style={{animationDelay:`${i*.07+.2}s`}}>

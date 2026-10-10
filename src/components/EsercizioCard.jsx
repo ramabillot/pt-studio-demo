@@ -93,7 +93,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                 <Campo label={t("card.peso")} value={stato.peso} onChange={v=>set({peso:v})} unita="kg"/>
                 <span className="ex-per">×</span>
                 <Campo label={t("card.ripetizioni")} value={stato.reps} onChange={v=>set({reps:v})} unita={secTempo?"s":t("allenamento.rip")} decimale={false}/>
-                <span className="ex-per" style={{fontSize:12}}>{t("card.perSerie")}</span>
+                <span className="ex-per" style={{fontSize:"0.75rem"}}>{t("card.perSerie")}</span>
               </div>
             ):(
               <div className="ex-serie-list">
