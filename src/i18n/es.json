@@ -466,7 +466,13 @@
     "assegnataIl": "Asignada el {{data}}",
     "sessioneSalvata": "¡Sesión guardada!",
     "giaSalvatoOggi": "Entrenamiento de hoy ya guardado — podés modificarlo y volver a guardar",
-    "giaSalvatoDel": "Entrenamiento del {{data}} ya guardado — podés modificarlo y volver a guardar"
+    "giaSalvatoDel": "Entrenamiento del {{data}} ya guardado — podés modificarlo y volver a guardar",
+    "fattiDi": "{{n}}/{{tot}} hechos",
+    "nonFatti_one": "1 ejercicio no está marcado como hecho:",
+    "nonFatti_other": "{{count}} ejercicios no están marcados como hechos:",
+    "salvaSoloFatti_one": "Guardar solo el que hice",
+    "salvaSoloFatti_other": "Guardar solo los {{count}} hechos",
+    "eranoTuttiFatti": "Los hice todos, guardar"
   },
   "valori": {
     "categoria": {
@@ -544,7 +550,12 @@
     "stessoPeso": "Mismo peso en todas",
     "nota": "Nota",
     "cercaVideo": "Buscar video",
-    "phNota": "Ej.: no terminé la última serie, empecé con 10 kg y terminé con 15…"
+    "phNota": "Ej.: no terminé la última serie, empecé con 10 kg y terminé con 15…",
+    "segnaFatto": "Hecho",
+    "fattoChiudi": "Hecho · cerrar",
+    "nonFatto": "Todavía no lo hice",
+    "modifica": "Editar",
+    "ariaRiapri": "{{nome}}: hecho. Tocá para editar"
   },
   "progressi": {
     "esercizi": "Ejercicios",

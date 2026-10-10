@@ -94,6 +94,7 @@ export function statoIniziale(ex, salvate, ultima) {
     serie,
     nota: salvate.length ? (salvate.find(r => r.nota)?.nota || "") : "",
     salta: false,
+    fatto: salvate.length > 0,   // già nella sessione salvata = fatto
   };
 }
 

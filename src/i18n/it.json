@@ -466,7 +466,13 @@
     "assegnataIl": "Assegnata il {{data}}",
     "sessioneSalvata": "Sessione salvata con successo!",
     "giaSalvatoOggi": "Allenamento di oggi già salvato — puoi modificarlo e risalvare",
-    "giaSalvatoDel": "Allenamento del {{data}} già salvato — puoi modificarlo e risalvare"
+    "giaSalvatoDel": "Allenamento del {{data}} già salvato — puoi modificarlo e risalvare",
+    "fattiDi": "{{n}}/{{tot}} fatti",
+    "nonFatti_one": "1 esercizio non è segnato come fatto:",
+    "nonFatti_other": "{{count}} esercizi non sono segnati come fatti:",
+    "salvaSoloFatti_one": "Salva solo quello fatto",
+    "salvaSoloFatti_other": "Salva solo i {{count}} fatti",
+    "eranoTuttiFatti": "Li ho fatti tutti, salva"
   },
   "valori": {
     "categoria": {
@@ -544,7 +550,12 @@
     "stessoPeso": "Stesso peso per tutte",
     "nota": "Nota",
     "cercaVideo": "Cerca video",
-    "phNota": "Es. non ho chiuso l'ultima serie, inizio 10 kg finisco 15…"
+    "phNota": "Es. non ho chiuso l'ultima serie, inizio 10 kg finisco 15…",
+    "segnaFatto": "Fatto",
+    "fattoChiudi": "Fatto · chiudi",
+    "nonFatto": "Non ancora fatto",
+    "modifica": "Modifica",
+    "ariaRiapri": "{{nome}}: fatto. Tocca per modificare"
   },
   "progressi": {
     "esercizi": "Esercizi",

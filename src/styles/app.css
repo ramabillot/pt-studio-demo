@@ -454,6 +454,25 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .ex-peso-input:focus { border-color:var(--accent); }
 .ex-peso-unit { font-size:12px; color:var(--muted); font-weight:600; }
 .ex-atleta-card.saltato { opacity:.45; }
+/* Esercizio fatto: card chiusa in una riga (tocco = riapre) + bottone in fondo alla card */
+.ex-atleta-card.fatto { border-color:rgba(var(--accent2-rgb),.35); }
+.ex-fatto-riga { width:100%; display:flex; align-items:center; gap:12px; padding:12px 16px; text-align:left; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--text); background:rgba(var(--accent2-rgb),.06); }
+.ex-fatto-check { flex-shrink:0; width:28px; height:28px; border-radius:50%; background:var(--accent2); color:var(--accent-fg); display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; }
+.ex-fatto-testo { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.ex-fatto-nome { font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ex-fatto-riassunto { font-size:13px; color:var(--accent2); }
+.ex-fatto-modifica { flex-shrink:0; font-size:13px; font-weight:600; color:var(--text); opacity:.6; }
+.ex-fatto-btn { display:block; width:100%; margin-top:14px; padding:13px; border-radius:11px; border:1.5px solid var(--accent2); background:transparent; color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+.ex-fatto-btn.attivo { background:var(--accent2); color:var(--accent-fg); }
+.fatti-contatore { display:flex; align-items:center; gap:12px; margin:0 2px 12px; font-size:13px; font-weight:700; color:var(--accent2); }
+.fatti-barra { flex:1; height:4px; border-radius:2px; background:var(--border); overflow:hidden; }
+.fatti-barra > span { display:block; height:100%; background:var(--accent2); transform-origin:left; transition:transform .3s; }
+.conferma-salva { background:var(--card); border:1px solid rgba(var(--accent-rgb),.35); border-radius:var(--radius); padding:16px; margin-top:8px; display:flex; flex-direction:column; gap:10px; }
+.conferma-salva .save-session-btn { margin-top:0; }
+.conferma-salva-testo { font-size:14px; font-weight:600; color:var(--text); line-height:1.4; }
+.conferma-salva-nomi { font-size:13px; font-weight:500; color:var(--muted); margin-top:4px; }
+.conferma-salva-btn, .conferma-salva-btn:hover { width:100%; padding:14px; font-size:14px; font-weight:700; border-color:rgba(var(--accent-rgb),.5); color:var(--accent); }
+.conferma-salva-annulla { align-self:center; }
 .ex-ultima { font-size:13px; color:var(--muted); margin:10px 0 8px; }
 .ex-ultima strong { color:var(--text); }
 .ex-input-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap; }

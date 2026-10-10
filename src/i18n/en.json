@@ -466,7 +466,13 @@
     "assegnataIl": "Assigned on {{data}}",
     "sessioneSalvata": "Session saved!",
     "giaSalvatoOggi": "Today's workout already saved — you can edit it and save again",
-    "giaSalvatoDel": "Workout of {{data}} already saved — you can edit it and save again"
+    "giaSalvatoDel": "Workout of {{data}} already saved — you can edit it and save again",
+    "fattiDi": "{{n}}/{{tot}} done",
+    "nonFatti_one": "1 exercise is not marked as done:",
+    "nonFatti_other": "{{count}} exercises are not marked as done:",
+    "salvaSoloFatti_one": "Save only the one done",
+    "salvaSoloFatti_other": "Save only the {{count}} done",
+    "eranoTuttiFatti": "I did them all, save"
   },
   "valori": {
     "categoria": {
@@ -544,7 +550,12 @@
     "stessoPeso": "Same weight for all",
     "nota": "Note",
     "cercaVideo": "Find video",
-    "phNota": "E.g. didn't finish the last set, started at 10 kg, ended at 15…"
+    "phNota": "E.g. didn't finish the last set, started at 10 kg, ended at 15…",
+    "segnaFatto": "Done",
+    "fattoChiudi": "Done · close",
+    "nonFatto": "Not done yet",
+    "modifica": "Edit",
+    "ariaRiapri": "{{nome}}: done. Tap to edit"
   },
   "progressi": {
     "esercizi": "Exercises",

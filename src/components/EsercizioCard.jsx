@@ -1,8 +1,9 @@
-// ── Card esercizio lato atleta: peso/ripetizioni precompilati, serie diverse, nota, salta ──
+// ── Card esercizio lato atleta: peso/ripetizioni precompilati, serie diverse, nota, salta, fatto ──
+// Fatto → la card si chiude in una riga (nome + riassunto); un tocco la riapre.
 import { useState } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES } from "../data.js";
 import { VideoModal } from "./Library.jsx";
-import { riassuntoSerie } from "../lib/allenamento.js";
+import { riassuntoSerie, righeDaStato } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
 import { useTranslation } from "react-i18next";
 import { nomeEsercizio, valore, ytCerca } from "../i18n/index.js";
@@ -27,6 +28,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const [imgOk, setImgOk] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
   const [notaAperta, setNotaAperta] = useState(!!stato.nota);
+  const [aperta, setAperta] = useState(false);   // card "fatto" riaperta per correggere
   const cc = CAT_COLORS[ex.cat] || "#e8ff47";
   const slug = EX_IMAGES[ex.id];
   const exFull = EXERCISES.find(e => e.id === ex.id);
@@ -40,16 +42,32 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const unisci = () => set({modo:"fisso", peso:stato.serie[0]?.peso ?? stato.peso, reps:stato.serie[0]?.reps ?? stato.reps});
   const setSerie = (i, patch) => set({serie: stato.serie.map((s,j)=>j===i?{...s,...patch}:s)});
 
+  // Fatto e chiusa: una riga sola
+  if (stato.fatto && !stato.salta && !aperta) {
+    return (
+      <button className="ex-atleta-card fatto ex-fatto-riga" onClick={()=>setAperta(true)} aria-label={t("card.ariaRiapri",{nome})}>
+        <span className="ex-fatto-check" aria-hidden="true">✓</span>
+        <span className="ex-fatto-testo">
+          <span className="ex-fatto-nome">{nome}</span>
+          <span className="ex-fatto-riassunto">{riassuntoSerie(righeDaStato(ex, stato))}</span>
+        </span>
+        <span className="ex-fatto-modifica">{t("card.modifica")}</span>
+      </button>
+    );
+  }
+
+  const segnaFatto = () => { set({fatto:true}); setAperta(false); };
+
   return (
     <>
-      <div className={`ex-atleta-card${stato.salta?" saltato":""}`}>
+      <div className={`ex-atleta-card${stato.salta?" saltato":""}${stato.fatto?" fatto":""}`}>
         {!stato.salta&&(imgOk && slug
           ? <img className="ex-atleta-thumb" src={`/exercises-custom/${slug}.jpg`} alt={nome} onError={()=>setImgOk(false)}/>
           : <div className="ex-atleta-thumb-ph">💪</div>)}
         <div className="ex-atleta-body">
           <div className="ex-atleta-top">
             {ex.cat?<span className="ex-cat" style={{color:cc,background:`${cc}16`}}>{valore("categoria",ex.cat)}</span>:<span/>}
-            <button className="ex-link" onClick={()=>set({salta:!stato.salta})}>{stato.salta?`↩ ${t("card.loFaccio")}`:t("card.salta")}</button>
+            <button className="ex-link" onClick={()=>set({salta:!stato.salta, fatto:false})}>{stato.salta?`↩ ${t("card.loFaccio")}`:t("card.salta")}</button>
           </div>
           <div className="ex-cliente-name">{nome}</div>
           <div className="ex-cliente-meta">
@@ -95,6 +113,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                 ? <button className="ex-link" onClick={dividi}>{t("card.serieDiverse")}</button>
                 : <button className="ex-link" onClick={unisci}>{t("card.stessoPeso")}</button>}
               {!notaAperta&&<button className="ex-link" onClick={()=>setNotaAperta(true)}>＋ {t("card.nota")}</button>}
+              {stato.fatto&&<button className="ex-link" onClick={()=>set({fatto:false})}>↩ {t("card.nonFatto")}</button>}
               {exFull?.yt
                 ? <button className="ex-link" onClick={()=>setShowVideo(true)}>▶ Video</button>
                 : <a className="ex-link" href={ytCerca(nome)} target="_blank" rel="noopener noreferrer">▶ {t("card.cercaVideo")}</a>}
@@ -104,6 +123,10 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
               <textarea className="field-input ex-nota" rows={2} placeholder={t("card.phNota")}
                 value={stato.nota} onChange={e=>set({nota:e.target.value})}/>
             )}
+
+            <button className={`ex-fatto-btn${stato.fatto?" attivo":""}`} onClick={segnaFatto}>
+              ✓ {t(stato.fatto?"card.fattoChiudi":"card.segnaFatto")}
+            </button>
           </>}
         </div>
       </div>

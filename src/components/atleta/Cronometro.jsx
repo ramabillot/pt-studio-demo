@@ -1,6 +1,6 @@
 // ── Pillola del cronometro in basso: tempo, +15, chiudi. Appare solo quando è attivo ──
 import { useEffect, useRef, useState } from "react";
-import { leggi, scrivi, ascolta, bip, vibra, fmtMMSS } from "../../lib/cronometro.js";
+import { leggi, scrivi, ascolta, bip, suonoFine, vibra, fmtMMSS } from "../../lib/cronometro.js";
 import { appInSecondoPiano, appASchermo } from "../../lib/notifiche.js";
 import { useTranslation } from "react-i18next";
 
@@ -41,14 +41,14 @@ export default function Cronometro() {
 
     if (t.tipo === "tempo" && ora < t.inizio) {
       const n = Math.ceil((t.inizio - ora) / 1000);
-      una(`p${n}`, () => visibile && bip(660, 0.1));
+      una(`p${n}`, () => visibile && bip(1200, 0.1));
       return;
     }
-    if (t.tipo === "tempo") una("via", () => visibile && ora - t.inizio < APPENA_MS && bip(990, 0.25));
+    if (t.tipo === "tempo") una("via", () => visibile && ora - t.inizio < APPENA_MS && bip(1900, 0.3));
 
     if (ora >= t.fine) {
       una("fine", () => {
-        if (visibile && ora - t.fine < APPENA_MS) { bip(880, 0.18, 3); vibra([200, 100, 200, 100, 300]); }
+        if (visibile && ora - t.fine < APPENA_MS) { suonoFine(); vibra([300, 120, 300, 120, 300, 120, 600]); }
         if (t.tipo === "tempo" && t.recupero > 0)
           scrivi({ tipo: "recupero", nome: t.nome, inizio: t.fine, fine: t.fine + t.recupero * 1000 });
       });

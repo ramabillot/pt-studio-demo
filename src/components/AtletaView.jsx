@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EXERCISES } from "../data.js";
-import { fmtDate, fmtDateShort, fmtDateLong, buildPDF } from "../utils.js";
+import { fmtDate, fmtDateShort, fmtDateLong, buildPDF, store } from "../utils.js";
 import { ultimaVolta, righeEsercizio, statoIniziale, righeDaStato } from "../lib/allenamento.js";
 import EsercizioCard from "./EsercizioCard.jsx";
 import * as api from "../api/atleta.js";
@@ -10,7 +10,24 @@ import MonthCalendar from "./atleta/MonthCalendar.jsx";
 import Cronometro from "./atleta/Cronometro.jsx";
 import SelettoreLingua from "./SelettoreLingua.jsx";
 import { useTranslation } from "react-i18next";
-import { nomeGiorno, valore } from "../i18n/index.js";
+import { nomeGiorno, valore, nomeEsercizio } from "../i18n/index.js";
+
+// ── Bozza dell'allenamento in corso ──────────────────────────────────────────
+// Quello che l'atleta inserisce resta salvato sul telefono finché non salva la sessione:
+// se l'app si chiude (iPhone in background, aggiornamento automatico…) lo ritrova.
+// Una chiave per atleta, dentro una voce per "data|giorno". Voci più vecchie di 3 giorni → via.
+const BOZZA_MAX_MS = 3 * 24 * 3600 * 1000;
+const chiaveBozze = id => `ptstudio_bozza_${id}`;
+function leggiBozze(id) {
+  try { return JSON.parse(store.get(chiaveBozze(id)) || "{}") || {}; } catch { return {}; }
+}
+function scriviBozza(id, voce, stati) {
+  const tutte = leggiBozze(id), ora = Date.now();
+  Object.keys(tutte).forEach(k => { if (!(ora - tutte[k]?.ts < BOZZA_MAX_MS)) delete tutte[k]; });
+  if (stati) tutte[voce] = { ts: ora, stati }; else delete tutte[voce];
+  if (Object.keys(tutte).length) store.set(chiaveBozze(id), JSON.stringify(tutte));
+  else store.del(chiaveBozze(id));
+}
 
 // ── AtletaView ────────────────────────────────────────────────────────────────
 // Dati via token di sessione atleta (src/api/atleta.js). Se il token non è più
@@ -29,6 +46,8 @@ export default function AtletaView({user, onLogout}) {
   const [saved, setSaved] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [chiediConferma, setChiediConferma] = useState(false);   // esercizi non segnati "fatto" al salvataggio
+  const bozzaDaScrivere = useRef(false);   // true solo dopo una modifica dell'atleta
   const [saveErr, setSaveErr] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
   const [pdfStateAtleta, setPdfStateAtleta] = useState(null);
@@ -101,27 +120,53 @@ export default function AtletaView({user, onLogout}) {
       if(sess && !salvate.length) st.salta=true;   // nella sessione salvata non c'era
       nuovi[ex.exKey]=st;
     });
+    // Allenamento in corso non ancora salvato → si riprende da lì
+    const bozza=leggiBozze(user.id)[`${selectedDate}|${activeDay}`];
+    if(bozza) Object.keys(nuovi).forEach(k=>{ if(bozza.stati?.[k]) nuovi[k]={...nuovi[k], ...bozza.stati[k]}; });
+    bozzaDaScrivere.current=false;
     setStati(nuovi); setSaved(!!sess);
   },[activeDay, selectedDate, supaSessions, schedaMeta, scheda]);
 
-  // Cambio giorno/data: via i messaggi del salvataggio precedente
-  useEffect(()=>{ setJustSaved(false); setSaveErr(null); },[activeDay, selectedDate]);
+  // Ogni modifica dell'atleta → bozza sul telefono
+  useEffect(()=>{
+    if(!bozzaDaScrivere.current||!activeDay) return;
+    scriviBozza(user.id, `${selectedDate}|${activeDay}`, stati);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[stati]);
 
-  const handleSave = async ()=>{
+  const cambiaStato = (exKey, st) => {
+    bozzaDaScrivere.current=true;
+    setChiediConferma(false);
+    setStati(p=>({...p,[exKey]:st}));
+  };
+
+  // Cambio giorno/data: via i messaggi del salvataggio precedente
+  useEffect(()=>{ setJustSaved(false); setSaveErr(null); setChiediConferma(false); },[activeDay, selectedDate]);
+
+  // modo: undefined = controlla prima i "fatto" · "soloFatti" · "tutti" (= erano tutti fatti)
+  const handleSave = async (modo)=>{
     if(saving) return;
     setSaveErr(null);
     if(selectedDate>todayStr){ setSaveErr("errFuturo"); return; }
     const gid=schedaMeta?.giornoIds[activeDay];
     const esercizi=scheda?.giorni[activeDay]||[];
-    const serie=esercizi.flatMap(ex=>stati[ex.exKey]?righeDaStato(ex,stati[ex.exKey]):[]);
+    const nonFatti=esercizi.filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta&&!stati[ex.exKey].fatto);
+    if(!modo&&nonFatti.length){ setChiediConferma(true); return; }
+    setChiediConferma(false);
+    // Si salva solo ciò che è stato fatto: i pesi precompilati di un esercizio non fatto non finiscono nello storico
+    const daSalvare=ex=>{ const st=stati[ex.exKey]; return st&&!st.salta&&(st.fatto||modo==="tutti"); };
+    if(modo==="tutti") setStati(p=>Object.fromEntries(Object.entries(p).map(([k,st])=>[k,st.salta?st:{...st,fatto:true}])));
+    const serie=esercizi.filter(daSalvare).flatMap(ex=>righeDaStato(ex,stati[ex.exKey]));
     if(!serie.length){ setSaveErr("errTuttiSaltati"); return; }
     const note=esercizi
-      .filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta&&stati[ex.exKey].nota?.trim())
+      .filter(ex=>daSalvare(ex)&&stati[ex.exKey].nota?.trim())
       .map(ex=>({scheda_esercizio_id:ex.exDbId, nome_esercizio:ex.name, nota:stati[ex.exKey].nota.trim()}));
     setSaving(true);
     try {
       const idSessione=await api.saveSessione(gid, selectedDate, serie);
       if(note.length) await api.setNote(idSessione, note);
+      scriviBozza(user.id, `${selectedDate}|${activeDay}`, null);   // salvata: la bozza non serve più
+      bozzaDaScrivere.current=false;
       const nuove=await api.getSessioni();
       setSupaSessions(nuove||[]);
       setSaved(true); setJustSaved(true);
@@ -240,6 +285,9 @@ export default function AtletaView({user, onLogout}) {
     (sessionsByDate[s.data] = sessionsByDate[s.data] || []).push({giornoKey, dayLabel});
   });
 
+  const nDaFare = esercizi.filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta).length;
+  const nFatti = esercizi.filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta&&stati[ex.exKey].fatto).length;
+
   const saveBtnLabel = saving ? t("comune.salvataggio") : isToday
     ? t(saved ? "atleta.aggiornaSessione" : "atleta.salvaSessione", {giorno:activeDayLabel})
     : t(saved ? "atleta.aggiornaSessioneDel" : "atleta.salvaSessioneDel", {data:fmtDateShort(selectedDate), giorno:activeDayLabel});
@@ -318,19 +366,40 @@ export default function AtletaView({user, onLogout}) {
           </div>
         )}
 
+        {nDaFare>0&&(
+          <div className="fatti-contatore" role="status">
+            <span>{t("atleta.fattiDi",{n:nFatti,tot:nDaFare})}</span>
+            <span className="fatti-barra"><span style={{transform:`scaleX(${nFatti/nDaFare})`}}/></span>
+          </div>
+        )}
+
         {esercizi.map(ex=>stati[ex.exKey]&&(
           <EsercizioCard
             key={`${ex.exKey}-${selectedDate}`}
             ex={ex}
             stato={stati[ex.exKey]}
             ultima={ultimaVolta(_rawSupa, ex, selectedDate)}
-            onChange={st=>setStati(p=>({...p,[ex.exKey]:st}))}
+            onChange={st=>cambiaStato(ex.exKey, st)}
           />
         ))}
 
-        <button className="save-session-btn" onClick={handleSave} disabled={saving} style={saving?{opacity:.6}:undefined}>
-          {saveBtnLabel}
-        </button>
+        {chiediConferma?(
+          <div className="conferma-salva">
+            <div className="conferma-salva-testo">
+              {t("atleta.nonFatti",{count:nDaFare-nFatti})}
+              <div className="conferma-salva-nomi">
+                {esercizi.filter(ex=>stati[ex.exKey]&&!stati[ex.exKey].salta&&!stati[ex.exKey].fatto).map(ex=>nomeEsercizio(ex.name, ex.id)).join(" · ")}
+              </div>
+            </div>
+            {nFatti>0&&<button className="save-session-btn" onClick={()=>handleSave("soloFatti")} disabled={saving}>{t("atleta.salvaSoloFatti",{count:nFatti})}</button>}
+            <button className={nFatti>0?"btn-ghost conferma-salva-btn":"save-session-btn"} onClick={()=>handleSave("tutti")} disabled={saving}>{t("atleta.eranoTuttiFatti")}</button>
+            <button className="ex-link conferma-salva-annulla" onClick={()=>setChiediConferma(false)}>{t("comune.annulla")}</button>
+          </div>
+        ):(
+          <button className="save-session-btn" onClick={()=>handleSave()} disabled={saving} style={saving?{opacity:.6}:undefined}>
+            {saveBtnLabel}
+          </button>
+        )}
       </div>}
       <Cronometro/>
     </div>

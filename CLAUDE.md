@@ -150,7 +150,7 @@ pt-studio-demo/
 - `lib/cronometro.js` (logica, audio, localStorage `ptstudio_cronometro`) + `components/atleta/Cronometro.jsx` (pillola in basso, montata in `AtletaView`).
 - Chip ⏱ (recupero `rest_sec`) e ▶ Ns (se `reps` = "30s") nella riga meta di `EsercizioCard`. Un solo cronometro alla volta.
 - Si salva l'**ora di fine**, non i secondi rimasti: a schermo bloccato / ricaricamento il tempo resta giusto; dopo la fine mostra `+m:ss` e sparisce dopo 10 min.
-- Suona/vibra solo se la fine avviene con l'app visibile (audio sbloccato dal tocco sul chip; iPhone non vibra). Niente notifiche (servirebbe il service worker).
+- Suona/vibra solo se la fine avviene con l'app visibile (audio sbloccato dal tocco sul chip; iPhone non vibra). Suono: onda quadra ~1,4–1,9 kHz + compressore (volume dei MEDIA); `navigator.audioSession.type = "transient"` solo durante il bip (iPhone: abbassa la musica un attimo), contesto audio sospeso tra un bip e l'altro.
 
 ---
 
@@ -174,7 +174,8 @@ pt-studio-demo/
 - **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
 - **Note del PT:** `scheda_esercizi.note` arriva all'atleta (`atleta_get_scheda`, migration 022) e si vede nella card sotto serie/recupero (`.ex-nota-pt`). Testo libero: non si traduce, scriverlo nella lingua dell'atleta.
 - **Ripetizioni:** `reps` è testo (accetta intervalli "8-10" e secondi "30s" per gli esercizi a tempo).
-- **Sessioni:** si salvano tutti gli esercizi del giorno (anche corpo libero, peso null), una riga per serie, con `esercizio_id` = id `scheda_esercizi`.
+- **Sessioni:** una riga per serie (anche corpo libero, peso null), con `esercizio_id` = id `scheda_esercizi`. Si salvano **solo gli esercizi segnati "✓ Fatto"** (`stato.fatto` in `EsercizioCard`); se ce ne sono di non segnati, prima del salvataggio l'atleta sceglie "solo i fatti" o "li ho fatti tutti". Sessione già salvata → esercizi presenti = fatto.
+- **Bozza allenamento:** `AtletaView` salva le card in `localStorage` `ptstudio_bozza_<atletaId>` (voci `data|giorno`, max 3 giorni) a ogni modifica dell'atleta e la riprende all'apertura; cancellata dopo il salvataggio. Così un ricaricamento (iPhone in background, aggiornamento automatico) non fa perdere i pesi inseriti.
 - **PIN atleta:** `inputMode="numeric"` per tastiera numerica automatica su mobile. Reset PIN dal pannello PT.
 - **Mobile:** layout già fixati a 2x2 (dashboard PT, sezione "VAI A"). Testare sempre su viewport stretto.
 
