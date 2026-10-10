@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { EXERCISES } from "../data.js";
 import { fmtDate, fmtDateShort, fmtDateLong, buildPDF, store } from "../utils.js";
-import { ultimaVolta, righeEsercizio, statoIniziale, righeDaStato, costanzaSettimanale } from "../lib/allenamento.js";
+import { ultimaVolta, righeEsercizio, righeOrfane, statoIniziale, righeDaStato, costanzaSettimanale } from "../lib/allenamento.js";
 import EsercizioCard from "./EsercizioCard.jsx";
 import * as api from "../api/atleta.js";
 import { typeColor, typeBg } from "../lib/appuntamenti.js";
@@ -88,7 +88,14 @@ export default function AtletaView({user, onLogout}) {
       });
       setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:user.ptNome||"", obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
       setSchedaMeta({id:data.id, giornoIds});
-      if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
+      // Allenamento di oggi già iniziato (bozza) → si riapre quel giorno, non il primo della scheda
+      // (es. iPhone che chiude l'app in background, aggiornamento automatico a metà allenamento)
+      const oggi=fmtDate(new Date());
+      const bozzaOggi=Object.entries(leggiBozze(user.id))
+        .filter(([k])=>k.startsWith(`${oggi}|`)&&giorni[k.slice(oggi.length+1)])
+        .sort((a,b)=>(b[1]?.ts||0)-(a[1]?.ts||0))[0];
+      if(bozzaOggi) setActiveDay(bozzaOggi[0].slice(oggi.length+1));
+      else if(sortedG.length) setActiveDay(sortedG[0].giorno_key||Object.keys(giorni)[0]);
     }).catch(e=>{ setSchedaCaricata(true); gestisciErrore(e); });
 
     api.getAppuntamenti().then(data=>{
@@ -106,6 +113,28 @@ export default function AtletaView({user, onLogout}) {
         fcRiposo:r.fc_riposo?String(r.fc_riposo):"",
       })));
     }).catch(gestisciErrore);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user.id]);
+
+  // App lasciata aperta da ieri (resta in memoria sul telefono) e riaperta oggi: se l'atleta era su
+  // "oggi", si passa al nuovo oggi e si ricaricano i dati. Altrimenti l'allenamento finirebbe su ieri.
+  const oggiVisto = useRef(todayStr);
+  useEffect(()=>{
+    const alRitorno=()=>{
+      if(document.visibilityState!=="visible") return;
+      const oggi=fmtDate(new Date()), prima=oggiVisto.current;
+      if(oggi===prima) return;
+      oggiVisto.current=oggi;
+      setSelectedDate(d=>d===prima?oggi:d);
+      const n=new Date(); setCalMonth({year:n.getFullYear(),month:n.getMonth()});
+      api.getSessioni().then(data=>setSupaSessions(data||[])).catch(gestisciErrore);
+      api.getAppuntamenti().then(data=>{
+        setCalEvents((data||[]).map(r=>({id:r.id,date:r.data,time:(r.ora_inizio||"00:00").slice(0,5),clientName:user.name,type:r.tipo||"Allenamento"})));
+      }).catch(gestisciErrore);
+    };
+    document.addEventListener("visibilitychange", alRitorno);
+    window.addEventListener("focus", alRitorno);
+    return ()=>{ document.removeEventListener("visibilitychange", alRitorno); window.removeEventListener("focus", alRitorno); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user.id]);
 
@@ -157,11 +186,19 @@ export default function AtletaView({user, onLogout}) {
     // Si salva solo ciò che è stato fatto: i pesi precompilati di un esercizio non fatto non finiscono nello storico
     const daSalvare=ex=>{ const st=stati[ex.exKey]; return st&&!st.salta&&(st.fatto||modo==="tutti"); };
     if(modo==="tutti") setStati(p=>Object.fromEntries(Object.entries(p).map(([k,st])=>[k,st.salta?st:{...st,fatto:true}])));
-    const serie=esercizi.filter(daSalvare).flatMap(ex=>righeDaStato(ex,stati[ex.exKey]));
-    if(!serie.length){ setSaveErr("errTuttiSaltati"); return; }
+    // Risalvataggio di una sessione già salvata: le righe di esercizi che il PT ha tolto o spostato
+    // dopo (non più in questo giorno, quindi senza card) restano come erano, non si cancellano
+    const giaSalvata=supaSessions?.find(s=>s.data===selectedDate&&s.giorno_id===gid);
+    const orfane=giaSalvata?righeOrfane(giaSalvata, esercizi):[];
+    const serie=[
+      ...esercizi.filter(daSalvare).flatMap(ex=>righeDaStato(ex,stati[ex.exKey])),
+      ...orfane.map(r=>({scheda_esercizio_id:r.esercizio_id, nome_esercizio:r.nome_esercizio, serie_numero:r.serie_numero, reps:r.reps, peso:r.peso})),
+    ];
+    if(serie.length===orfane.length){ setSaveErr("errTuttiSaltati"); return; }
     const note=esercizi
       .filter(ex=>daSalvare(ex)&&stati[ex.exKey].nota?.trim())
-      .map(ex=>({scheda_esercizio_id:ex.exDbId, nome_esercizio:ex.name, nota:stati[ex.exKey].nota.trim()}));
+      .map(ex=>({scheda_esercizio_id:ex.exDbId, nome_esercizio:ex.name, nota:stati[ex.exKey].nota.trim()}))
+      .concat(orfane.filter(r=>r.nota&&!esercizi.some(ex=>ex.name===r.nome_esercizio)).map(r=>({scheda_esercizio_id:null, nome_esercizio:r.nome_esercizio, nota:r.nota})));
     setSaving(true);
     try {
       const idSessione=await api.saveSessione(gid, selectedDate, serie);

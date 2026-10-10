@@ -26,12 +26,31 @@ export function serieDiSessione(sessione) {
   return out;
 }
 
-// Righe di un esercizio della scheda in una sessione (per id della scheda o, in mancanza, per nome)
-export function righeEsercizio(sessione, ex) {
-  const rows = (sessione?.sessione_serie || []).filter(r =>
+const perSerie = (a, b) => (a.serie_numero || 0) - (b.serie_numero || 0);
+
+// Righe di un esercizio della scheda in una sessione (per id della scheda o, se la riga non ha id, per nome).
+// perNome = true → se per id non c'è niente, cerca anche per nome tra le righe con un id diverso
+// (sessioni di una scheda vecchia o di un esercizio tolto e rimesso): stesso nome = stesso esercizio,
+// come nei grafici. Se più esercizi con quel nome, si prende il primo. Solo per "ultima volta":
+// per la sessione del giorno aperto resta il collegamento stretto (niente righe prese da un altro esercizio).
+export function righeEsercizio(sessione, ex, perNome = false) {
+  const tutte = sessione?.sessione_serie || [];
+  const rows = tutte.filter(r =>
     r.esercizio_id ? r.esercizio_id === ex.exDbId : r.nome_esercizio === ex.name
   );
-  return rows.sort((a, b) => (a.serie_numero || 0) - (b.serie_numero || 0));
+  if (rows.length || !perNome) return rows.sort(perSerie);
+  const stessoNome = tutte.filter(r => r.esercizio_id && r.nome_esercizio === ex.name);
+  if (!stessoNome.length) return [];
+  const primo = stessoNome[0].esercizio_id;
+  return stessoNome.filter(r => r.esercizio_id === primo).sort(perSerie);
+}
+
+// Righe di una sessione salvata che non appartengono a nessuno degli esercizi indicati
+// (es. esercizio tolto o spostato dal PT dopo il salvataggio): vanno conservate se si risalva.
+export function righeOrfane(sessione, esercizi) {
+  const prese = new Set();
+  (esercizi || []).forEach(ex => righeEsercizio(sessione, ex).forEach(r => prese.add(r)));
+  return (sessione?.sessione_serie || []).filter(r => !prese.has(r)).sort(perSerie);
 }
 
 // Ultima volta che l'esercizio è stato fatto PRIMA di una certa data → { data, serie:[{peso,reps}], nota } | null
@@ -40,7 +59,7 @@ export function ultimaVolta(sessioni, ex, primaDi) {
     .filter(s => s.data < primaDi)
     .sort((a, b) => b.data.localeCompare(a.data));
   for (const s of prec) {
-    const rows = righeEsercizio(s, ex);
+    const rows = righeEsercizio(s, ex, true);
     if (rows.length) {
       return {
         data: s.data,

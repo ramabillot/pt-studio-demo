@@ -14,7 +14,11 @@ const VAPID_PUBLIC = "BFI972uXOycwek6RYUc457YMkwLPccodxkuYmGT7taYR_enIA6va2Mwjx3
 const KEY_ISCRITTO = "ptstudio_push_endpoint";
 const SW_URL = "/atleta/sw.js";
 
-let programmate = false;   // abbiamo avvisi in attesa sul server?
+// Avvisi in attesa sul server? Salvato sul telefono, non solo in memoria: se iPhone chiude l'app in
+// background e l'atleta la riapre prima della fine, l'annullamento deve partire lo stesso.
+const KEY_PROGRAMMATE = "ptstudio_push_programmate";
+const programmate = () => store.get(KEY_PROGRAMMATE) === "1";
+const segnaProgrammate = (si) => (si ? store.set(KEY_PROGRAMMATE, "1") : store.del(KEY_PROGRAMMATE));
 
 export const notificheSupportate = () =>
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
@@ -93,13 +97,13 @@ export function appInSecondoPiano(t) {
   if (!pronte()) return;
   const avvisi = avvisiPer(t);
   if (!avvisi.length) return;
-  programmate = true;
+  segnaProgrammate(true);
   rpc("atleta_programma_push", { p_token: getToken(), p_avvisi: avvisi });
 }
 
 export async function appASchermo() {
   if (!pronte()) return;
-  if (programmate) { programmate = false; rpc("atleta_annulla_push", { p_token: getToken() }); }
+  if (programmate()) { segnaProgrammate(false); rpc("atleta_annulla_push", { p_token: getToken() }); }
   try {   // via le notifiche del cronometro già comparse: c'è la pillola
     const reg = await navigator.serviceWorker.getRegistration("/atleta/");
     (await reg?.getNotifications({ tag: "cronometro" }))?.forEach((n) => n.close());
@@ -109,5 +113,5 @@ export async function appASchermo() {
 // Cronometro chiuso o cambiato mentre l'app è a schermo: niente da annullare sul server
 // (si programma solo in secondo piano), ma se qualcosa era rimasto in attesa lo togliamo.
 export function cronometroFermato() {
-  if (programmate && pronte()) { programmate = false; rpc("atleta_annulla_push", { p_token: getToken() }); }
+  if (programmate() && pronte()) { segnaProgrammate(false); rpc("atleta_annulla_push", { p_token: getToken() }); }
 }
