@@ -106,7 +106,9 @@ export async function appASchermo() {
   if (programmate()) { segnaProgrammate(false); rpc("atleta_annulla_push", { p_token: getToken() }); }
   try {   // via le notifiche del cronometro già comparse: c'è la pillola
     const reg = await navigator.serviceWorker.getRegistration("/atleta/");
-    (await reg?.getNotifications({ tag: "cronometro" }))?.forEach((n) => n.close());
+    for (const tag of ["cronometro", "cronometro-info"]) {
+      (await reg?.getNotifications({ tag }))?.forEach((n) => n.close());
+    }
   } catch { /* ignora */ }
 }
 

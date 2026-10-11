@@ -82,8 +82,9 @@ export default function MonthCalendar({year, month, onPrev, onNext, sessionsByDa
               {/* Session label + overflow badge */}
               {hasSession&&(
                 <div style={{position:"relative",width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-                  <span style={{fontSize:"0.5625rem",fontWeight:700,color:"var(--accent)",textAlign:"center",width:"100%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",letterSpacing:.2,padding:"0 2px",lineHeight:1.25}}>
-                    {firstLabel.length>9?firstLabel.slice(0,9)+"…":firstLabel}
+                  {/* Etichetta breve (solo la parte che distingue i giorni, vedi etichetteBrevi): fino a 2 righe */}
+                  <span style={{fontSize:firstLabel.length<=3?"0.8125rem":"0.5625rem",fontWeight:700,color:"var(--accent)",textAlign:"center",width:"100%",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflowWrap:"anywhere",letterSpacing:.2,padding:"0 2px",lineHeight:1.2}}>
+                    {firstLabel}
                   </span>
                   {extra>0&&(
                     <span style={{fontSize:"0.5rem",fontWeight:700,color:"var(--muted)",background:"var(--card2)",borderRadius:3,padding:"1px 4px",lineHeight:1.4}}>+{extra}</span>

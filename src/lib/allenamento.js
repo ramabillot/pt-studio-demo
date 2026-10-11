@@ -175,3 +175,16 @@ export function costanzaSettimanale(sessioni, obiettivo, oggiStr) {
   if (fatti >= ob) diFila++;
   return { fatti, obiettivo: ob, diFila };
 }
+
+// ── Etichette brevi dei giorni per il calendario ─────────────────────────────
+// Nella cella c'è poco posto: se i nomi dei giorni iniziano con le stesse parole
+// ("Full Body A" / "Full Body B", "Día 1" / "Día 2") si mostra solo la parte che cambia ("A", "B").
+// nomi: { chiave: nome a schermo } → { chiave: etichetta breve }. Nomi diversi o un giorno solo → invariati.
+export function etichetteBrevi(nomi) {
+  const chiavi = Object.keys(nomi || {});
+  if (chiavi.length < 2) return { ...nomi };
+  const parole = chiavi.map(k => String(nomi[k] || "").trim().split(/\s+/));
+  let comuni = 0;
+  while (parole.every(p => p.length > comuni + 1 && p[comuni].toLowerCase() === parole[0][comuni].toLowerCase())) comuni++;
+  return Object.fromEntries(chiavi.map((k, i) => [k, comuni ? parole[i].slice(comuni).join(" ") : nomi[k]]));
+}

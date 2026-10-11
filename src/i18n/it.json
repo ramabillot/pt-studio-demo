@@ -554,7 +554,8 @@
     "fattoChiudi": "Fatto · chiudi",
     "nonFatto": "Non ancora fatto",
     "modifica": "Modifica",
-    "ariaRiapri": "{{nome}}: fatto. Tocca per modificare"
+    "ariaRiapri": "{{nome}}: fatto. Tocca per modificare",
+    "notaScorsa": "Nota della volta scorsa"
   },
   "progressi": {
     "esercizi": "Esercizi",
@@ -805,6 +806,11 @@
     "titolo": "Impostazioni",
     "testo": "Dimensione del testo",
     "anteprima": "Ultima volta: 25 kg × 12",
-    "testoNota": "Si aggiunge alla dimensione del testo impostata nel telefono. Vale solo su questo dispositivo."
+    "testoNota": "Si aggiunge alla dimensione del testo impostata nel telefono. Vale solo su questo dispositivo.",
+    "volume": "Volume del bip",
+    "volAlto": "Alto",
+    "volMedio": "Medio",
+    "volBasso": "Basso",
+    "volumeNota": "Il bip a fine recupero: toccando senti una prova. Conta anche il volume dei media del telefono."
   }
 }

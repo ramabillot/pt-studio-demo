@@ -16,7 +16,31 @@ export const PREPARAZIONE_MS = 3000;   // 3-2-1 prima di un esercizio a tempo
 // prima di suonare chiediamo una sessione "transient" (abbassa la musica un attimo, come un
 // navigatore), poi la rimettiamo com'era. Tra un suono e l'altro il contesto resta sospeso,
 // così la musica non viene toccata durante il recupero.
-let ctx = null, ingresso = null, timerSospendi = null;
+let ctx = null, ingresso = null, uscita = null, timerSospendi = null;
+
+// Volume del bip scelto dall'atleta (⚙ Impostazioni), salvato su questo telefono.
+// Moltiplica l'uscita DOPO il compressore: alto = com'era (massimo), medio ≈ −9 dB, basso ≈ −18 dB.
+const KEY_VOLUME = "ptstudio_volume_bip";
+export const VOLUMI = [
+  { id: "alto", guadagno: 1 },
+  { id: "medio", guadagno: 0.35 },
+  { id: "basso", guadagno: 0.12 },
+];
+export function volumeBip() {
+  const v = store.get(KEY_VOLUME);
+  return VOLUMI.some(x => x.id === v) ? v : "alto";
+}
+const guadagnoVolume = () => VOLUMI.find(x => x.id === volumeBip()).guadagno;
+export function cambiaVolumeBip(id) {
+  if (!VOLUMI.some(x => x.id === id)) return;
+  store.set(KEY_VOLUME, id);
+  if (uscita) uscita.gain.value = guadagnoVolume();
+}
+// Bip di prova corto (dentro il tocco sul bottone del volume)
+export function bipProva() {
+  sbloccaAudio();
+  bip(1400, 0.15);
+}
 
 function contesto() {
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -28,7 +52,7 @@ function contesto() {
     comp.attack.value = 0.002; comp.release.value = 0.1;
     const filtro = ctx.createBiquadFilter();          // smussa gli acuti della quadra
     filtro.type = "lowpass"; filtro.frequency.value = 5000;
-    const uscita = ctx.createGain(); uscita.gain.value = 1;   // il compressore ha già il suo guadagno automatico
+    uscita = ctx.createGain(); uscita.gain.value = guadagnoVolume();   // volume scelto (il compressore porta già al massimo)
     filtro.connect(comp).connect(uscita).connect(ctx.destination);
     ingresso = filtro;
   }

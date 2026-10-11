@@ -554,7 +554,8 @@
     "fattoChiudi": "Done · close",
     "nonFatto": "Not done yet",
     "modifica": "Edit",
-    "ariaRiapri": "{{nome}}: done. Tap to edit"
+    "ariaRiapri": "{{nome}}: done. Tap to edit",
+    "notaScorsa": "Last time’s note"
   },
   "progressi": {
     "esercizi": "Exercises",
@@ -805,6 +806,11 @@
     "titolo": "Settings",
     "testo": "Text size",
     "anteprima": "Last time: 25 kg × 12",
-    "testoNota": "Adds to the text size set on your phone. Applies to this device only."
+    "testoNota": "Adds to the text size set on your phone. Applies to this device only.",
+    "volume": "Beep volume",
+    "volAlto": "High",
+    "volMedio": "Medium",
+    "volBasso": "Low",
+    "volumeNota": "The beep at the end of rest: tap to hear a test. Your phone’s media volume also applies."
   }
 }

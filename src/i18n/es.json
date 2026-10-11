@@ -554,7 +554,8 @@
     "fattoChiudi": "Hecho · cerrar",
     "nonFatto": "Todavía no lo hice",
     "modifica": "Editar",
-    "ariaRiapri": "{{nome}}: hecho. Tocá para editar"
+    "ariaRiapri": "{{nome}}: hecho. Tocá para editar",
+    "notaScorsa": "Nota de la última vez"
   },
   "progressi": {
     "esercizi": "Ejercicios",
@@ -805,6 +806,11 @@
     "titolo": "Ajustes",
     "testo": "Tamaño del texto",
     "anteprima": "La última vez: 25 kg × 12",
-    "testoNota": "Se suma al tamaño de texto configurado en el celular. Vale solo en este dispositivo."
+    "testoNota": "Se suma al tamaño de texto configurado en el celular. Vale solo en este dispositivo.",
+    "volume": "Volumen del pitido",
+    "volAlto": "Alto",
+    "volMedio": "Medio",
+    "volBasso": "Bajo",
+    "volumeNota": "El pitido al final del descanso: al tocar escuchás una prueba. También cuenta el volumen multimedia del celular."
   }
 }

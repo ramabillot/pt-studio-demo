@@ -7,6 +7,11 @@ import { riassuntoSerie, righeDaStato } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
 import { useTranslation } from "react-i18next";
 import { nomeEsercizio, valore, ytCerca } from "../i18n/index.js";
+import { store } from "../utils.js";
+
+// Nota della volta scorsa: chiusa di default (una riga), si apre con un tocco.
+// La scelta aperta/chiusa resta su questo telefono e vale per tutte le card.
+const KEY_NOTE_SCORSE = "ptstudio_note_scorse";
 
 const soloNum = v => v.replace(/[^0-9.,]/g, "");
 const soloInt = v => v.replace(/\D/g, "").slice(0, 3);
@@ -29,6 +34,8 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const [showVideo, setShowVideo] = useState(false);
   const [notaAperta, setNotaAperta] = useState(!!stato.nota);
   const [aperta, setAperta] = useState(false);   // card "fatto" riaperta per correggere
+  const [notaScorsaAperta, setNotaScorsaAperta] = useState(()=>store.get(KEY_NOTE_SCORSE)==="aperte");
+  const toggleNotaScorsa = () => setNotaScorsaAperta(v => { store.set(KEY_NOTE_SCORSE, v ? "chiuse" : "aperte"); return !v; });
   const cc = CAT_COLORS[ex.cat] || "#e8ff47";
   const slug = EX_IMAGES[ex.id];
   const exFull = EXERCISES.find(e => e.id === ex.id);
@@ -85,6 +92,14 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
             {ultima&&(
               <div className="ex-ultima">
                 {t("card.ultimaVolta")} <strong>{riassuntoSerie(ultima.serie)}</strong>
+              </div>
+            )}
+            {ultima?.nota&&(
+              <div className="ex-nota-scorsa">
+                <button type="button" className="ex-link ex-nota-scorsa-btn" onClick={toggleNotaScorsa} aria-expanded={notaScorsaAperta}>
+                  📝 {t("card.notaScorsa")} {notaScorsaAperta?"▴":"▾"}
+                </button>
+                {notaScorsaAperta&&<div className="ex-nota-scorsa-testo">{ultima.nota}</div>}
               </div>
             )}
 

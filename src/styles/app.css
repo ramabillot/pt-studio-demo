@@ -479,6 +479,9 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .conferma-salva-annulla { align-self:center; }
 .ex-ultima { font-size:0.8125rem; color:var(--muted); margin:10px 0 8px; }
 .ex-ultima strong { color:var(--text); }
+.ex-nota-scorsa { margin:-2px 0 10px; }
+.ex-nota-scorsa-btn { font-size:0.8125rem; padding:2px 0; }
+.ex-nota-scorsa-testo { margin-top:6px; padding:8px 10px; border-left:2px solid rgba(var(--accent-rgb),.5); background:var(--surface); border-radius:0 8px 8px 0; font-size:0.875rem; color:var(--text); line-height:1.45; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere; }
 .ex-input-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
 .ex-campo { display:flex; flex-direction:row; align-items:center; gap:5px; }
 .ex-per { color:var(--muted); font-size:0.875rem; }

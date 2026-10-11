@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { EXERCISES } from "../data.js";
 import { fmtDate, fmtDateShort, fmtDateLong, buildPDF, store } from "../utils.js";
-import { ultimaVolta, righeEsercizio, righeOrfane, statoIniziale, righeDaStato, costanzaSettimanale } from "../lib/allenamento.js";
+import { ultimaVolta, righeEsercizio, righeOrfane, statoIniziale, righeDaStato, costanzaSettimanale, etichetteBrevi } from "../lib/allenamento.js";
 import EsercizioCard from "./EsercizioCard.jsx";
 import * as api from "../api/atleta.js";
 import { typeColor, typeBg } from "../lib/appuntamenti.js";
@@ -311,11 +311,13 @@ export default function AtletaView({user, onLogout}) {
   const _giornoIdToKey = schedaMeta
     ? Object.fromEntries(Object.entries(schedaMeta.giornoIds).map(([k,v])=>[v,k]))
     : {};
+  // Nel calendario solo la parte del nome che distingue i giorni ("Full Body A" → "A")
+  const etichetteCal = etichetteBrevi(Object.fromEntries(giorni.map(k=>[k, nomeGiorno(dayNamesScheda[k], k)])));
   const sessionsByDate = {};
   _rawSupa.forEach(s=>{
     const giornoKey=_giornoIdToKey[s.giorno_id];
     if(!giornoKey) return;
-    const dayLabel = nomeGiorno(scheda?.dayNames?.[giornoKey], giornoKey);
+    const dayLabel = etichetteCal[giornoKey];
     (sessionsByDate[s.data] = sessionsByDate[s.data] || []).push({giornoKey, dayLabel});
   });
 
