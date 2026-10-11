@@ -65,6 +65,14 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
 
   const segnaFatto = () => { set({fatto:true}); setAperta(false); };
 
+  // Contatore delle serie fatte (idea di Marta: "sono alla 3ª o alla 4ª?"). Solo un aiuto durante
+  // l'allenamento: resta nella bozza sul telefono, non cambia cosa si salva. Ogni tocco +1,
+  // dopo l'ultima torna a 0 (così un tocco di troppo si corregge). Arrivati in fondo si illumina ✓ Fatto.
+  const totSerie = ex.sets || 3;
+  const serieFatte = Math.min(stato.serieFatte ?? (stato.fatto ? totSerie : 0), totSerie);
+  const tuttiFatti = serieFatte >= totSerie;
+  const contaSerie = () => set({serieFatte: tuttiFatti ? 0 : serieFatte + 1});
+
   return (
     <>
       <div className={`ex-atleta-card${stato.salta?" saltato":""}${stato.fatto?" fatto":""}`}>
@@ -78,7 +86,12 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
           </div>
           <div className="ex-cliente-name">{nome}</div>
           <div className="ex-cliente-meta">
-            {t("card.serie",{count:ex.sets})} × {secTempo?`${secTempo}s`:`${ex.reps} ${t("allenamento.rip")}`} ·{" "}
+            {stato.salta
+              ? t("card.serie",{count:ex.sets})
+              : <button type="button" className={`serie-chip${serieFatte>0?" iniziato":""}${tuttiFatti?" completo":""}`} onClick={contaSerie}
+                  aria-label={t("card.ariaSerieFatte",{n:serieFatte,tot:totSerie})}>
+                  {t("card.serieFatte",{n:serieFatte,tot:totSerie})}
+                </button>} × {secTempo?`${secTempo}s`:`${ex.reps} ${t("allenamento.rip")}`} ·{" "}
             {stato.salta
               ? <>{t("card.recupero")} {ex.rest}s</>
               : <>
@@ -139,7 +152,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                 value={stato.nota} onChange={e=>set({nota:e.target.value})}/>
             )}
 
-            <button className={`ex-fatto-btn${stato.fatto?" attivo":""}`} onClick={segnaFatto}>
+            <button className={`ex-fatto-btn${stato.fatto?" attivo":""}${tuttiFatti&&!stato.fatto?" pronto":""}`} onClick={segnaFatto}>
               ✓ {t(stato.fatto?"card.fattoChiudi":"card.segnaFatto")}
             </button>
           </>}

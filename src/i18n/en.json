@@ -555,7 +555,9 @@
     "nonFatto": "Not done yet",
     "modifica": "Edit",
     "ariaRiapri": "{{nome}}: done. Tap to edit",
-    "notaScorsa": "Last time’s note"
+    "notaScorsa": "Last time’s note",
+    "serieFatte": "Set {{n}}/{{tot}}",
+    "ariaSerieFatte": "Sets done: {{n}} of {{tot}}. Tap to add one"
   },
   "progressi": {
     "esercizi": "Exercises",

@@ -468,6 +468,7 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .ex-fatto-modifica { flex-shrink:0; font-size:0.8125rem; font-weight:600; color:var(--text); opacity:.6; }
 .ex-fatto-btn { display:block; width:100%; margin-top:14px; padding:13px; border-radius:11px; border:1.5px solid var(--accent2); background:transparent; color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:0.9375rem; font-weight:700; cursor:pointer; }
 .ex-fatto-btn.attivo { background:var(--accent2); color:var(--accent-fg); }
+.ex-fatto-btn.pronto { background:rgba(var(--accent2-rgb),.18); box-shadow:0 0 0 3px rgba(var(--accent2-rgb),.18); }
 .fatti-contatore { display:flex; align-items:center; gap:12px; margin:0 2px 12px; font-size:0.8125rem; font-weight:700; color:var(--accent2); }
 .fatti-barra { flex:1; height:4px; border-radius:2px; background:var(--border); overflow:hidden; }
 .fatti-barra > span { display:block; height:100%; background:var(--accent2); transform-origin:left; transition:transform .3s; }
@@ -649,6 +650,11 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 /* ── Cronometro recupero / esercizi a tempo (atleta) ── */
 .crono-chip { background:rgba(var(--accent2-rgb),.08); border:1px solid rgba(var(--accent2-rgb),.25); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:700; padding:2px 9px; border-radius:999px; cursor:pointer; margin-right:6px; font-variant-numeric:tabular-nums; vertical-align:baseline; }
 .crono-chip:active { transform:scale(.96); }
+/* Contatore serie fatte nella card atleta: grigio a 0, giallo in corso, verde (accent2) completo */
+.serie-chip { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:700; padding:2px 10px; border-radius:999px; cursor:pointer; font-variant-numeric:tabular-nums; vertical-align:baseline; min-height:1.75rem; }
+.serie-chip.iniziato { border-color:rgba(var(--accent-rgb),.5); color:var(--accent); background:rgba(var(--accent-rgb),.08); }
+.serie-chip.completo { border-color:var(--accent2); color:var(--accent2); background:rgba(var(--accent2-rgb),.12); }
+.serie-chip:active { transform:scale(.96); }
 .crono { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); z-index:290; display:flex; align-items:center; gap:10px; padding:6px 6px 6px 16px; background:var(--card2); border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow); overflow:hidden; max-width:calc(100vw - 128px); }
 .crono-label { font-size:0.75rem; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
 .crono-tempo { font-family:'Bebas Neue',sans-serif; font-size:1.625rem; line-height:1; letter-spacing:.5px; color:var(--text); font-variant-numeric:tabular-nums; min-width:44px; text-align:center; }

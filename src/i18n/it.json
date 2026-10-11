@@ -555,7 +555,9 @@
     "nonFatto": "Non ancora fatto",
     "modifica": "Modifica",
     "ariaRiapri": "{{nome}}: fatto. Tocca per modificare",
-    "notaScorsa": "Nota della volta scorsa"
+    "notaScorsa": "Nota della volta scorsa",
+    "serieFatte": "Serie {{n}}/{{tot}}",
+    "ariaSerieFatte": "Serie fatte: {{n}} di {{tot}}. Tocca per segnarne un’altra"
   },
   "progressi": {
     "esercizi": "Esercizi",

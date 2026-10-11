@@ -555,7 +555,9 @@
     "nonFatto": "Todavía no lo hice",
     "modifica": "Editar",
     "ariaRiapri": "{{nome}}: hecho. Tocá para editar",
-    "notaScorsa": "Nota de la última vez"
+    "notaScorsa": "Nota de la última vez",
+    "serieFatte": "Serie {{n}}/{{tot}}",
+    "ariaSerieFatte": "Series hechas: {{n}} de {{tot}}. Tocá para sumar otra"
   },
   "progressi": {
     "esercizi": "Ejercicios",
