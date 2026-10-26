@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { LINGUE, cambiaLingua } from "../i18n/index.js";
 import SceltaTesto from "./SceltaTesto.jsx";
 
-export default function AccountSettings({ setView, user }) {
+export default function AccountSettings({ setView, user, onLogout }) {
   const { t, i18n } = useTranslation();
   const [curPass, setCurPass]         = useState("");
   const [newPass, setNewPass]         = useState("");
@@ -127,6 +127,12 @@ export default function AccountSettings({ setView, user }) {
             {t("account.nota")}
           </div>
         </div>
+        {onLogout&&(
+          <div className="account-esci">
+            <span>{user.email}</span>
+            <button className="btn-ghost" onClick={onLogout}>↩ {t("comune.esci")}</button>
+          </div>
+        )}
       </div>
     </div>
   );

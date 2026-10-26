@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import { EXERCISES, CATEGORIES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from "../data.js";
-import { buildPDF, calcSummary, fmtDate, getInitials } from "../utils.js";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { EXERCISES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from "../data.js";
+import { buildPDF, fmtDate, getInitials, parseNum } from "../utils.js";
 import { supabase } from "../supabase.js";
-import { BackBtn } from "./Sidebar.jsx";
 import { useTranslation } from "react-i18next";
-import { nomeEsercizio, muscoliEsercizio, valore, nomeGiorno } from "../i18n/index.js";
-import { caricaSchedaAttiva, schedaToPreload, contaEsercizi } from "../lib/scheda.js";
+import { nomeEsercizio, valore, nomeGiorno, fmtNum } from "../i18n/index.js";
+import { caricaSchedaAttiva } from "../lib/scheda.js";
+import { modelloDaDB, modelloVuoto, nuovaRiga, nuovoUid, differenze, salvaScheda, copiaInModello, payloadModello, modelloDaPayload, prossimaLettera, perPDF } from "../lib/builder.js";
+import RicercaEsercizi from "./builder/RicercaEsercizi.jsx";
+import EditorRiga from "./builder/EditorRiga.jsx";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
 export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti}) {
@@ -65,465 +67,338 @@ export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti
   );
 }
 
-// ── Builder ───────────────────────────────────────────────────────────────────
-export default function Builder({setView, preload=null, setPreload=null, user}) {
+// ── Builder 2.0 ───────────────────────────────────────────────────────────────
+// PC (uso principale): ricerca esercizi a sinistra, giorni affiancati, editor sotto la riga, trascinamento.
+// Telefono (correzioni piccole): linguette dei giorni, ricerca a tutto schermo, ↑ ↓ e "Sposta in".
+// Salvataggio sul posto (lib/builder.js): giorni mai cancellati (nascosti, B7), esercizi per dbId.
+// B24/B19: la scheda si carica appena si sceglie l'atleta; finché non è caricata Salva è spento.
+// B12: dopo il salvataggio si ricarica dal DB.
+export default function Builder({preload=null, setPreload=null, user}) {
   const { t } = useTranslation();
-  const [selectedAtleta,setSelectedAtleta]=useState(null);
-  const [searchQ,setSearchQ]=useState("");
-  const [showDrop,setShowDrop]=useState(false);
-  const [obiettivo,setObiettivo]=useState("");
-  const [livello,setLivello]=useState("");
-  const [numDays,setNumDays]=useState(3);
-  const [activeDay,setActiveDay]=useState("A");
-  const [giorni,setGiorni]=useState({A:[],B:[],C:[],D:[],E:[],F:[],G:[]});
-  const [dayNames,setDayNames]=useState({A:"",B:"",C:"",D:"",E:"",F:"",G:""});
-  const [selId,setSelId]=useState(String(EXERCISES[0].id));
-  const [sets,setSets]=useState(3); const [reps,setReps]=useState("10"); const [rest,setRest]=useState(90);
-  const [customExercises,setCustomExercises]=useState([]);
-  const [pdfState,setPdfState]=useState(null);
+  const oggi = fmtDate(new Date());
+  const [atleti,setAtleti]=useState([]);
+  const [atleta,setAtleta]=useState(null);
+  const [stato,setStato]=useState("vuoto");          // vuoto | carica | pronto | errore
+  const [orig,setOrig]=useState(()=>modelloVuoto());  // come è nel DB
+  const [mod,setMod]=useState(()=>modelloVuoto());    // come è nel Builder
+  const [attivo,setAttivo]=useState("A");
+  const [aperta,setAperta]=useState(null);            // uid della riga in modifica
+  const [sostituisci,setSostituisci]=useState(null);  // uid della riga di cui si cambia l'esercizio
+  const [ricercaTel,setRicercaTel]=useState(false);   // ricerca a tutto schermo (telefono)
+  const [menuGiorno,setMenuGiorno]=useState(null);
+  const [custom,setCustom]=useState([]);
+  const [conferma,setConferma]=useState(false);
+  const [salvando,setSalvando]=useState(false);
   const [toast,setToast]=useState(null);
-  const [assigned,setAssigned]=useState(false);
-  const [showOverwriteConfirm,setShowOverwriteConfirm]=useState(false);
-  // Supabase: UUID della scheda esistente (null = nuova)
-  const [schedaId,setSchedaId]=useState(null);
   const [errore,setErrore]=useState(null);
-  const [assegnaLoading,setAssegnaLoading]=useState(false);
-  // Atleti reali da Supabase
-  const [realAtleti,setRealAtleti]=useState([]);
-  // Caricamento della scheda dell'atleta scelto (B24): finché carica (o se fallisce) non si salva (B19)
-  const [carica,setCarica]=useState(false);
-  const [erroreCarica,setErroreCarica]=useState(false);
-  const [schedaAltra,setSchedaAltra]=useState(null);   // scheda esistente non caricata perché il Builder non era vuoto
+  const [cambioAtleta,setCambioAtleta]=useState(null);   // atleta scelto con modifiche non salvate
+  const [copia,setCopia]=useState(null);                 // pannello "Copia da…"
+  const [modelli,setModelli]=useState([]);
+  const [salvaModello,setSalvaModello]=useState(null);   // {nome, conCarichi}
+  const [pdfState,setPdfState]=useState(null);
   const richiesta=useRef(0);
+  const trascina=useRef(null);
+  const [sopra,setSopra]=useState(null);
 
-  // Carica esercizi custom del PT
+  const caricaCustom=()=>supabase.from("esercizi_custom").select("*").order("created_at",{ascending:false}).then(({data})=>setCustom(data||[]));
+  const caricaModelli=()=>supabase.from("modelli_scheda").select("*").is("archiviato_at",null).order("created_at",{ascending:false}).then(({data,error})=>{ if(!error) setModelli(data||[]); });
   useEffect(()=>{
-    supabase.from("esercizi_custom").select("*").order("created_at",{ascending:false})
-      .then(({data})=>setCustomExercises(data||[]));
+    supabase.from("atleti").select("*").eq("pt_id",user.supabaseId).is("archived_at",null).order("created_at",{ascending:true})
+      .then(({data})=>setAtleti(data||[]));
+    caricaCustom();
+    caricaModelli();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[user?.supabaseId]);
 
-  // Carica atleti reali da Supabase
-  useEffect(()=>{
-    supabase.from("atleti").select("*").eq("pt_id",user.supabaseId)
-      .order("created_at",{ascending:true})
-      .then(({data})=>{
-        setRealAtleti((data||[]).map(r=>({
-          id:r.id, nome:r.nome, cognome:r.cognome,
-          obiettivo:r.obiettivo||"", livello:r.livello||"",
-          color:r.color||"#e8ff47",
-        })));
-      });
-  },[user?.supabaseId]);
+  const diff = useMemo(()=>differenze(orig,mod),[orig,mod]);
+  const sporco = diff.totale>0;
+  const visibili = mod.giorni.filter(g=>!g.nascosto);
+  const nascosti = mod.giorni.filter(g=>g.nascosto);
+  const totEs = visibili.reduce((s,g)=>s+g.righe.length,0);
 
-  const allAtleti = realAtleti;
-
-  // Riempie il Builder con una scheda già preparata (preload da "Modifica nel Builder" o scheda caricata qui)
-  const applica=(pre)=>{
-    if(pre.schedaId) setSchedaId(pre.schedaId);
-    if(pre.obiettivo) setObiettivo(pre.obiettivo);
-    if(pre.livello) setLivello(pre.livello);
-    // Solo i giorni che hanno esercizi (il preload contiene sempre A…G, anche vuoti)
-    const giorniKeys = ALL_DAYS.filter(d=>(pre.giorni?.[d]||[]).length>0);
-    const numD = giorniKeys.length ? ALL_DAYS.indexOf(giorniKeys[giorniKeys.length-1])+1 : 3;
-    setNumDays(numD);
-    if(giorniKeys.length>0) setActiveDay(giorniKeys[0]);
-    const newGiorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
-    giorniKeys.forEach(d=>{
-      newGiorni[d]=(pre.giorni[d]||[]).map((ex,idx)=>({...ex,uid:`${d}-${idx}-${Date.now()}`}));
-    });
-    setGiorni(newGiorni);
-    setDayNames({A:"",B:"",C:"",D:"",E:"",F:"",G:"",...(pre.dayNames||{})});
-  };
-
-  // B24: scelto un atleta, si carica subito la sua scheda completa (con gli id del DB).
-  // Prima si caricava solo l'id: il Builder restava vuoto e "Salva" sostituiva la scheda intera.
-  // Se il PT aveva già messo esercizi nel Builder, non li si butta: si avvisa e si lascia scegliere.
-  const caricaPerAtleta=async(a, forza=false)=>{
+  // ── Atleta e caricamento ──
+  const carica=async(a)=>{
     const mia=++richiesta.current;
-    setCarica(true); setErroreCarica(false); setSchedaAltra(null); setSchedaId(null);
+    setAtleta(a); setStato("carica"); setErrore(null); setToast(null); setAperta(null); setConferma(false); setCopia(null);
     try {
-      const scheda=await caricaSchedaAttiva(supabase, a.id);
-      if(mia!==richiesta.current) return;   // nel frattempo è stato scelto un altro atleta
-      const vuoto=!Object.values(giorni).some(d=>d.length>0);
-      if(scheda && (vuoto||forza)) applica(schedaToPreload(scheda,a));
-      else if(scheda) { setSchedaId(scheda.id); setSchedaAltra({id:scheda.id, n:contaEsercizi(scheda), scheda}); }
+      const scheda=await caricaSchedaAttiva(supabase,a.id);
+      if(mia!==richiesta.current) return;
+      const m=scheda?modelloDaDB(scheda):{...modelloVuoto(), obiettivo:a.obiettivo||"", livello:a.livello||""};
+      setOrig(scheda?m:{...modelloVuoto(0), obiettivo:m.obiettivo, livello:m.livello}); setMod(m);
+      setAttivo(m.giorni.find(g=>!g.nascosto)?.key||"A");
+      setStato("pronto");
     } catch(e) {
       if(mia!==richiesta.current) return;
-      console.error("[builder carica scheda]",e);
-      setErroreCarica(true);
-    } finally {
-      if(mia===richiesta.current) setCarica(false);
+      console.error("[builder carica]",e); setStato("errore");
     }
   };
+  const scegliAtleta=(a)=>{ if(!a) return; if(sporco && atleta && a.id!==atleta.id){ setCambioAtleta(a); return; } setCambioAtleta(null); carica(a); };
 
-  // Preload (da "Modifica nel Builder" in Atleti.jsx)
   useEffect(()=>{
     if(!preload) return;
-    richiesta.current++;   // un eventuale caricamento in corso non deve sovrascrivere il preload
-    setCarica(false); setErroreCarica(false); setSchedaAltra(null);
-    // Supporta preload.atleta (oggetto completo) per utenti reali
-    if(preload.atleta) {
-      setSelectedAtleta(preload.atleta);
-      setSearchQ(`${preload.atleta.nome} ${preload.atleta.cognome}`);
-    } else {
-      const atleta = allAtleti.find(a=>a.id===preload.atletaId)||null;
-      if(atleta) {
-        setSelectedAtleta(atleta);
-        setSearchQ(`${atleta.nome} ${atleta.cognome}`);
-      } else if(preload.nome||preload.cognome) {
-        setSearchQ(`${preload.nome} ${preload.cognome}`.trim());
-      }
-    }
-    setSchedaId(preload.schedaId||null);
-    applica(preload);
+    if(preload.atleta) carica(preload.atleta);
     if(setPreload) setPreload(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[preload]);
 
-  const filtered = allAtleti.filter(a=>{
-    if(!searchQ.trim()) return true;
-    const q=searchQ.toLowerCase();
-    return a.nome.toLowerCase().includes(q)||a.cognome.toLowerCase().includes(q);
-  }).slice(0,5);
+  // ── Modifiche al modello ──
+  const aggiorna=fn=>setMod(m=>{ const c=structuredClone(m); fn(c); return c; });
+  const giornoDi=(m,key)=>m.giorni.find(g=>g.key===key);
+  const aggiungi=(ex, key=attivo, pos=null)=>{
+    if(sostituisci){ aggiorna(m=>{ for(const g of m.giorni){ const r=g.righe.find(x=>x.uid===sostituisci); if(r){ r.id=ex.id||null; r.nome=ex.name||ex.nome; } } }); setSostituisci(null); setRicercaTel(false); return; }
+    const r=nuovaRiga(ex);
+    aggiorna(m=>{ const g=giornoDi(m,key)||m.giorni.find(x=>!x.nascosto); if(!g) return; if(pos==null) g.righe.push(r); else g.righe.splice(pos,0,r); });
+    setAperta(r.uid); setRicercaTel(false);
+  };
+  const creaEsercizio=async(nome,categoria)=>{
+    const {data,error}=await supabase.from("esercizi_custom").insert({pt_id:user.supabaseId, nome, categoria, descrizione:null, immagine_url:null}).select().single();
+    if(error){ setErrore(t("builder2.errCrea",{msg:error.message})); return; }
+    setCustom(c=>[data,...c]);
+    aggiungi({id:null, nome:data.nome, cat:data.categoria});
+  };
+  const cambiaRiga=(key,nuova)=>aggiorna(m=>{ const g=giornoDi(m,key); const i=g.righe.findIndex(r=>r.uid===nuova.uid); g.righe[i]=nuova; });
+  const muovi=(key,uid,d)=>aggiorna(m=>{ const g=giornoDi(m,key); const i=g.righe.findIndex(r=>r.uid===uid), j=i+d; if(j<0||j>=g.righe.length) return; [g.righe[i],g.righe[j]]=[g.righe[j],g.righe[i]]; });
+  const sposta=(da,uid,a,pos=null)=>aggiorna(m=>{ const g=giornoDi(m,da), h=giornoDi(m,a); const i=g.righe.findIndex(r=>r.uid===uid); const [r]=g.righe.splice(i,1); if(pos==null||pos>h.righe.length) h.righe.push(r); else h.righe.splice(pos,0,r); });
+  const duplica=(key,uid)=>{ const n=nuovoUid(); aggiorna(m=>{ const g=giornoDi(m,key); const i=g.righe.findIndex(r=>r.uid===uid); g.righe.splice(i+1,0,{...structuredClone(g.righe[i]), uid:n, dbId:null}); }); setAperta(n); };
+  const elimina=(key,uid)=>{ aggiorna(m=>{ const g=giornoDi(m,key); g.righe=g.righe.filter(r=>r.uid!==uid); }); setAperta(null); };
+  const nascondi=key=>{ aggiorna(m=>{ const g=giornoDi(m,key); if(g.dbId) g.nascosto=true; else m.giorni=m.giorni.filter(x=>x.key!==key); }); setMenuGiorno(null); const altro=visibili.find(g=>g.key!==key); if(altro) setAttivo(altro.key); };
+  const rimetti=key=>{ aggiorna(m=>{ giornoDi(m,key).nascosto=false; }); setAttivo(key); };
+  const nuovoGiorno=()=>{ const k=prossimaLettera(mod.giorni); if(!k) return; aggiorna(m=>{ m.giorni.push({key:k, nome:"", dbId:null, nascosto:false, righe:[]}); }); setAttivo(k); };
 
-  const selectAtleta=(a)=>{
-    setSelectedAtleta(a);
-    setSearchQ(`${a.nome} ${a.cognome}`);
-    setShowDrop(false);
-    if(a.obiettivo) setObiettivo(a.obiettivo);
-    if(a.livello) setLivello(a.livello);
-    caricaPerAtleta(a);
+  // ── Trascinamento (PC) ──
+  const dragRiga=(ev,key,uid)=>{ trascina.current={tipo:"riga",key,uid}; ev.dataTransfer.effectAllowed="move"; try{ ev.dataTransfer.setData("text/plain",uid); }catch{ /* Safari vecchio */ } };
+  const dragLib=(ev,ex)=>{ trascina.current={tipo:"lib",ex}; ev.dataTransfer.effectAllowed="copy"; try{ ev.dataTransfer.setData("text/plain",ex.nome); }catch{ /* idem */ } };
+  const lascia=(ev,key,pos)=>{
+    ev.preventDefault(); setSopra(null);
+    const d=trascina.current; trascina.current=null; if(!d) return;
+    if(d.tipo==="lib") return aggiungi(d.ex,key,pos);
+    if(d.key===key){ aggiorna(m=>{ const g=giornoDi(m,key); const i=g.righe.findIndex(r=>r.uid===d.uid); const [r]=g.righe.splice(i,1); const p=pos==null?g.righe.length:(i<pos?pos-1:pos); g.righe.splice(p,0,r); }); }
+    else sposta(d.key,d.uid,key,pos);
   };
 
-  const clearAtleta=()=>{ richiesta.current++; setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); setSchedaId(null); setCarica(false); setErroreCarica(false); setSchedaAltra(null); };
-
-  const activeDays=ALL_DAYS.slice(0,numDays);
-  const scheda=giorni[activeDay]||[];
-
-  const handleNumDays=(n)=>{
-    const newDays=ALL_DAYS.slice(0,n);
-    const removedDays=ALL_DAYS.slice(n,numDays);
-    const hasContent=removedDays.some(d=>(giorni[d]||[]).length>0);
-    if(hasContent){
-      const names=removedDays.filter(d=>(giorni[d]||[]).length>0).map(d=>nomeGiorno(dayNames[d], d)).join(", ");
-      if(!window.confirm(t("builder.confermaRimuovi",{giorni:names}))) return;
-    }
-    setNumDays(n);
-    if(!newDays.includes(activeDay)) setActiveDay(newDays[newDays.length-1]);
-  };
-
-  const add=()=>{
-    let exObj;
-    if(String(selId).startsWith("c:")){
-      const raw=customExercises.find(e=>e.id===String(selId).slice(2));
-      if(raw) exObj={id:null,name:raw.nome,cat:raw.categoria,muscles:raw.descrizione||""};
-    } else {
-      exObj=EXERCISES.find(e=>e.id===Number(selId));
-    }
-    if(!exObj) return;
-    setGiorni(prev=>({...prev,[activeDay]:[...(prev[activeDay]||[]),{...exObj,sets,reps:String(reps||"10"),rest,uid:Date.now()}]}));
-  };
-  const del=(uid)=>setGiorni(prev=>({...prev,[activeDay]:(prev[activeDay]||[]).filter(r=>r.uid!==uid)}));
-  const clear=()=>setGiorni(prev=>({...prev,[activeDay]:[]}));
-
-  const activeGiorni=Object.fromEntries(activeDays.map(d=>[d,giorni[d]||[]]));
-  const totalEx=Object.values(activeGiorni).reduce((s,d)=>s+d.length,0);
-  const sum=calcSummary(scheda);
-
-  const handlePDF=async()=>{
-    if(!Object.values(activeGiorni).some(d=>d.length>0)) return;
-    const nome=selectedAtleta?.nome||"";
-    const cognome=selectedAtleta?.cognome||"";
-    setPdfState({progress:0,label:t("pdf.preparazione")});
-    try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,dayNames,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
-    catch(e){console.error(e);}
-    finally{setPdfState(null);}
-  };
-
-  // ── Assegna / aggiorna scheda su Supabase ──────────────────────────────────
-  // Se la scheda esiste la aggiorna SUL POSTO: i giorni (scheda_giorni) restano gli
-  // stessi, così le sessioni passate dell'atleta restano collegate e visibili nel
-  // calendario. Prima la scheda veniva cancellata e ricreata (storico "sparito").
-  const eserciziRow=(ex,giornoId,ordine)=>({
-    giorno_id:        giornoId,
-    pt_id:            user.supabaseId,
-    nome:             ex.name,
-    esercizio_id_int: ex.id||null,
-    serie:            ex.sets,
-    reps:             String(ex.reps||"10"),
-    rest_sec:         ex.rest,
-    ordine,
-  });
-
-  const doAssegna=async()=>{
-    if(!selectedAtleta) return;
-    setAssegnaLoading(true); setErrore(null);
+  // ── Copia / modelli ──
+  const apriCopia=()=>setCopia({da:"", conCarichi:true, carica:false});
+  const eseguiCopia=async()=>{
+    if(!copia?.da) return;
+    setCopia(c=>({...c,carica:true}));
     try {
-      let sid=schedaId;
-      if(sid){
-        const {error:upErr}=await supabase.from("schede").update({obiettivo,livello}).eq("id",sid);
-        if(upErr) throw upErr;
-      } else {
-        const {data:nuova,error:insErr}=await supabase.from("schede").insert({
-          pt_id:user.supabaseId, atleta_id:selectedAtleta.id,
-          nome:`${selectedAtleta.nome} ${selectedAtleta.cognome}`.trim(),
-          obiettivo, livello, attiva:true, assegnata_il:fmtDate(new Date()),
-        }).select().single();
-        if(insErr) throw insErr;
-        sid=nuova.id;
-      }
+      let sorgente;
+      if(copia.da.startsWith("m:")){ const md=modelli.find(x=>x.id===copia.da.slice(2)); sorgente=modelloDaPayload(md.payload,{obiettivo:md.obiettivo,livello:md.livello}); }
+      else sorgente=modelloDaDB(await caricaSchedaAttiva(supabase,copia.da));
+      setMod(m=>copiaInModello(m,sorgente,{conCarichi:copia.conCarichi}));
+      setAttivo("A"); setAperta(null); setCopia(null);
+      setToast(t("builder2.copiata"));
+    } catch(e){ console.error("[copia]",e); setErrore(t("builder2.errCopia")); setCopia(c=>({...c,carica:false})); }
+  };
+  const eseguiSalvaModello=async()=>{
+    const nome=(salvaModello?.nome||"").trim(); if(!nome) return;
+    const {error}=await supabase.from("modelli_scheda").insert({pt_id:user.supabaseId, nome, obiettivo:mod.obiettivo||"", livello:mod.livello||"", payload:payloadModello(mod,{conCarichi:salvaModello.conCarichi})});
+    if(error){ setErrore(t("builder2.errModello",{msg:error.message})); return; }
+    setSalvaModello(null); setToast(t("builder2.modelloSalvato",{nome})); caricaModelli();
+  };
 
-      // Giorni esistenti, abbinati per lettera (A, B, C…)
-      const {data:esistenti,error:gErr}=await supabase.from("scheda_giorni").select("id,giorno_key").eq("scheda_id",sid);
-      if(gErr) throw gErr;
-      const idByKey=Object.fromEntries((esistenti||[]).map(g=>[g.giorno_key,g.id]));
-
-      for(const [ordine,key] of activeDays.entries()){
-        if(idByKey[key]){
-          const {error}=await supabase.from("scheda_giorni").update({nome:dayNames[key]||"",ordine}).eq("id",idByKey[key]);
-          if(error) throw error;
-        } else {
-          const {data:g,error}=await supabase.from("scheda_giorni").insert({
-            scheda_id:sid, pt_id:user.supabaseId, giorno_key:key, nome:dayNames[key]||"", ordine,
-          }).select("id").single();
-          if(error) throw error;
-          idByKey[key]=g.id;
-        }
-      }
-      // Giorni tolti dalla scheda (le loro sessioni restano nello storico, senza giorno)
-      const giorniTolti=(esistenti||[]).filter(g=>!activeDays.includes(g.giorno_key)).map(g=>g.id);
-      if(giorniTolti.length){
-        const {error}=await supabase.from("scheda_giorni").delete().in("id",giorniTolti);
-        if(error) throw error;
-      }
-
-      // Esercizi: aggiorna quelli esistenti, aggiunge i nuovi, toglie quelli rimossi
-      const giornoIdsAttivi=activeDays.map(k=>idByKey[k]);
-      const {data:exEsistenti,error:eErr}=await supabase.from("scheda_esercizi").select("id").in("giorno_id",giornoIdsAttivi);
-      if(eErr) throw eErr;
-      const tenuti=new Set();
-      const nuovi=[];
-      for(const key of activeDays){
-        for(const [ordine,ex] of (giorni[key]||[]).entries()){
-          const row=eserciziRow(ex,idByKey[key],ordine);
-          if(ex.dbId && (exEsistenti||[]).some(e=>e.id===ex.dbId)){
-            tenuti.add(ex.dbId);
-            const {error}=await supabase.from("scheda_esercizi").update(row).eq("id",ex.dbId);
-            if(error) throw error;
-          } else {
-            nuovi.push(row);
-          }
-        }
-      }
-      const daTogliere=(exEsistenti||[]).map(e=>e.id).filter(id=>!tenuti.has(id));
-      if(daTogliere.length){
-        const {error}=await supabase.from("scheda_esercizi").delete().in("id",daTogliere);
-        if(error) throw error;
-      }
-      if(nuovi.length){
-        const {error}=await supabase.from("scheda_esercizi").insert(nuovi);
-        if(error) throw error;
-      }
-
-      setSchedaId(sid);
-      setShowOverwriteConfirm(false);
-      // B12: ricarica dal DB, così gli esercizi appena creati hanno il loro id e un nuovo salvataggio li aggiorna
-      try {
-        const fresca=await caricaSchedaAttiva(supabase, selectedAtleta.id);
-        if(fresca) applica(schedaToPreload(fresca,selectedAtleta));
-      } catch(e){ console.error("[builder ricarica]",e); }
-      setSchedaAltra(null);
-      setToast(`✓ ${t(schedaId?"builder.toastAggiornata":"builder.toastAssegnata",{nome:`${selectedAtleta.nome} ${selectedAtleta.cognome}`})}`);
-      setAssigned(true);
-      setTimeout(()=>setAssigned(false),2000);
+  // ── Salvataggio ──
+  const puoSalvare = !!atleta && stato==="pronto" && sporco && !salvando && totEs>0;
+  const salva=async()=>{
+    if(!puoSalvare) return;
+    setSalvando(true); setErrore(null);
+    try {
+      await salvaScheda(supabase,{modello:mod, atleta, ptId:user.supabaseId, oggi});
+      const fresca=await caricaSchedaAttiva(supabase,atleta.id);   // B12
+      const m=modelloDaDB(fresca); setOrig(m); setMod(m); setAperta(null);
+      setConferma(false); setToast(t("builder2.salvata",{nome:`${atleta.nome} ${atleta.cognome}`}));
     } catch(e){
-      console.error("[assegna scheda]",e);
+      console.error("[builder salva]",e);
       setErrore(t("builder.errSalvataggio",{msg:e.message||t("builder.erroreRete")}));
-    } finally {
-      setAssegnaLoading(false);
-    }
+    } finally { setSalvando(false); }
   };
 
-  const handleAssegna=()=>{
-    if(!selectedAtleta||totalEx===0||carica||erroreCarica) return;
-    if(schedaId){ setShowOverwriteConfirm(true); return; }
-    doAssegna();
+  const pdf=async()=>{
+    const {giorni,dayNames}=perPDF(mod);
+    setPdfState({progress:0,label:t("pdf.preparazione")});
+    try{ await buildPDF({nome:atleta?.nome||"",cognome:atleta?.cognome||"",obiettivo:mod.obiettivo,livello:mod.livello,giorni,dayNames,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
+    catch(e){ console.error(e); } finally { setPdfState(null); }
   };
 
-  const canAssegna = !!selectedAtleta;
-  const bloccato = carica || erroreCarica;
+  // ── Righe e colonne ──
+  const kg=v=>fmtNum(parseNum(String(v??"")));   // nel Builder i numeri sono testo con la virgola
+  const rigaMeta=r=>{
+    if(r.tipo==="cardio") return [r.durata?`${kg(r.durata)} min`:"—", r.velocita&&`${kg(r.velocita)} km/h`, r.inclinazione&&`${kg(r.inclinazione)} %`, r.livello&&`${t("builder2.liv")} ${r.livello}`].filter(Boolean).join(" · ");
+    const car=r.carichi?`${r.carichi.map(k=>k===""?"—":kg(k)).join("·")} kg`:(r.pesoIniziale!==""?`${kg(r.pesoIniziale)} kg`:"");
+    return [`${r.sets} × ${r.reps}`, String(r.rest)==="0"?t("card.senzaPausa"):`${r.rest}s`, car].filter(Boolean).join(" · ");
+  };
+  const colonna=(g)=>{
+    const sopraQui=sopra?.key===g.key;
+    return (
+      <section key={g.key} className={`b2-col${attivo===g.key?" attivo":""}${sopraQui?" sopra":""}`} aria-label={nomeGiorno(g.nome,g.key)}
+        onDragOver={e=>{ if(trascina.current){ e.preventDefault(); if(!sopraQui) setSopra({key:g.key}); } }}
+        onDrop={e=>lascia(e,g.key,null)} onClick={()=>setAttivo(g.key)}>
+        <div className="b2-col-testa">
+          <input className="b2-nome-giorno" value={g.nome} placeholder={nomeGiorno("",g.key)} aria-label={t("builder2.nomeGiorno")}
+            onChange={e=>aggiorna(m=>{ giornoDi(m,g.key).nome=e.target.value; })}/>
+          <span className="b2-conta">{g.righe.length}</span>
+          <button type="button" className="b2-menu" aria-label={t("builder2.menuGiorno")} aria-expanded={menuGiorno===g.key} onClick={e=>{ e.stopPropagation(); setMenuGiorno(menuGiorno===g.key?null:g.key); }}>⋯</button>
+        </div>
+        {menuGiorno===g.key&&(
+          <div className="b2-menu-giorno">
+            <button type="button" onClick={()=>nascondi(g.key)}>{t("builder2.nascondiGiorno")}</button>
+            <p>{g.dbId?t("builder2.nascondiAiuto"):t("builder2.togliAiuto")}</p>
+          </div>
+        )}
+        <div className="b2-righe">
+          {g.righe.map((r,i)=>{
+            const nomeTec=r.id?nomeEsercizio(r.nome,r.id):r.nome;
+            const cat=r.tipo==="cardio"?null:(EXERCISES.find(e=>e.id===r.id)?.cat||custom.find(c=>c.nome===r.nome)?.categoria);
+            const open=aperta===r.uid;
+            return (
+              <div key={r.uid} className={`b2-riga${open?" aperta":""}`} draggable={!open}
+                onDragStart={e=>dragRiga(e,g.key,r.uid)} onDragEnd={()=>{ trascina.current=null; setSopra(null); }}
+                onDragOver={e=>{ if(trascina.current){ e.preventDefault(); e.stopPropagation(); setSopra({key:g.key,pos:i}); } }}
+                onDrop={e=>{ e.stopPropagation(); lascia(e,g.key,i); }}>
+                {sopraQui&&sopra.pos===i&&<div className="b2-segno" aria-hidden="true"/>}
+                <button type="button" className="b2-riga-testa" aria-expanded={open} onClick={e=>{ e.stopPropagation(); setAttivo(g.key); setAperta(open?null:r.uid); setSostituisci(null); }}>
+                  <span className="b2-grip" aria-hidden="true">⋮⋮</span>
+                  <span className="b2-pallino" style={{background:r.tipo==="cardio"?"var(--warn)":(CAT_COLORS[cat]||"var(--muted)")}}/>
+                  <span className="b2-riga-nome">
+                    {r.alias||nomeTec}
+                    {r.alias&&<small>{nomeTec}</small>}
+                    <span className="b2-riga-meta">{rigaMeta(r)}{r.nota?" · 📝":""}{r.propostiIl?" · ★":""}</span>
+                  </span>
+                </button>
+                {open&&(
+                  <EditorRiga riga={r} giorni={mod.giorni} giornoKey={g.key} indice={i} totale={g.righe.length} oggi={oggi}
+                    onCambia={nuova=>cambiaRiga(g.key,nuova)} onSu={()=>muovi(g.key,r.uid,-1)} onGiu={()=>muovi(g.key,r.uid,1)}
+                    onSposta={a=>{ sposta(g.key,r.uid,a); setAttivo(a); }} onDuplica={()=>duplica(g.key,r.uid)} onElimina={()=>elimina(g.key,r.uid)}
+                    onSostituisci={()=>{ setSostituisci(r.uid); setRicercaTel(true); setTimeout(()=>document.getElementById("b2-cerca")?.focus(),0); }}
+                    onChiudi={()=>setAperta(null)}/>
+                )}
+              </div>
+            );
+          })}
+          {!g.righe.length&&<div className="b2-vuoto">{t("builder2.giornoVuoto")}</div>}
+          <button type="button" className="b2-aggiungi-tel" onClick={e=>{ e.stopPropagation(); setAttivo(g.key); setSostituisci(null); setRicercaTel(true); }}>＋ {t("builder2.esercizio")}</button>
+        </div>
+      </section>
+    );
+  };
+
+  const atletaNome = a => `${a.nome} ${a.cognome}`.trim();
+  const statoTesto = !atleta ? t("builder2.scegliAtleta")
+    : stato==="carica" ? t("builder.caricamentoScheda")
+    : stato==="errore" ? t("builder.erroreCaricamento")
+    : orig.schedaId ? t("builder2.schedaAttiva",{g:visibili.length, e:totEs}) : t("builder2.nuovaScheda");
 
   return (
-    <div>
-      <BackBtn setView={setView}/>
-      <div className="page-head"><div className="page-title">{t("builder.titolo")}</div><div className="page-sub">{t("builder.eserciziTotali",{count:totalEx})}</div></div>
-      {toast&&(
-        <div style={{background:"rgba(71,255,232,.1)",border:"1px solid rgba(71,255,232,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:"0.8125rem",fontWeight:600,color:"var(--accent2)",display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12}}>
-          <span>{toast}</span>
-          <button onClick={()=>setToast(null)} style={{background:"none",border:"none",color:"var(--accent2)",cursor:"pointer",fontSize:"1rem",lineHeight:1,padding:0,flexShrink:0,opacity:.7,transition:"opacity .15s"}} onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=.7}>✕</button>
-        </div>
-      )}
-      {errore&&(
-        <div style={{background:"rgba(255,71,87,.08)",border:"1px solid rgba(255,71,87,.3)",borderRadius:10,padding:"12px 18px",marginBottom:16,fontSize:"0.8125rem",fontWeight:600,color:"var(--danger)"}}>{errore}</div>
-      )}
-      <div className="builder">
-        <div className="client-card">
-          <div className="card-section-title">{t("builder.datiAtleta")}</div>
-          <div className="client-grid">
-            <div style={{gridColumn:"1 / span 2",position:"relative"}}>
-              <label className="field-label">
-                {t("comune.atleta")}
-                <input
-                  className="field-input"
-                  type="text"
-                  placeholder={t("builder.phCercaAtleta")}
-                  value={searchQ}
-                  onChange={e=>{setSearchQ(e.target.value);setShowDrop(true);if(!e.target.value)clearAtleta();}}
-                  onFocus={()=>setShowDrop(true)}
-                  onBlur={()=>setTimeout(()=>setShowDrop(false),150)}
-                  autoComplete="off"
-                />
-              </label>
-              {showDrop&&filtered.length>0&&(
-                <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:50,background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,.4)"}}>
-                  {filtered.map(a=>(
-                    <div
-                      key={a.id}
-                      onMouseDown={()=>selectAtleta(a)}
-                      style={{padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,fontSize:"0.875rem",borderBottom:"1px solid var(--border)"}}
-                      onMouseEnter={e=>e.currentTarget.style.background="var(--border)"}
-                      onMouseLeave={e=>e.currentTarget.style.background=""}
-                    >
-                      <div style={{width:28,height:28,borderRadius:7,background:a.color||"#e8ff47",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.6875rem",fontWeight:700,color:"#07070d",flexShrink:0}}>{getInitials(a.nome,a.cognome)}</div>
-                      <div>
-                        <div style={{fontWeight:600,color:"var(--text)"}}>{a.nome} {a.cognome}</div>
-                        <div style={{fontSize:"0.6875rem",color:"var(--muted)"}}>{valore("obiettivo",a.obiettivo)} · {valore("livello",a.livello)}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <label className="field-label">{t("comune.obiettivo")}<select className="field-select" value={obiettivo} onChange={e=>setObiettivo(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}</select></label>
-            <label className="field-label">{t("comune.livello")}<select className="field-select" value={livello} onChange={e=>setLivello(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}</select></label>
-            {selectedAtleta&&(carica||erroreCarica||schedaAltra)&&(
-              <div className={`builder-stato${erroreCarica?" errore":""}`} style={{gridColumn:"1 / -1"}} role="status">
-                {carica&&<span>{t("builder.caricamentoScheda")}</span>}
-                {erroreCarica&&<><span>{t("builder.erroreCaricamento")}</span><button className="btn-ghost" onClick={()=>caricaPerAtleta(selectedAtleta)}>{t("builder.riprova")}</button></>}
-                {schedaAltra&&!carica&&<><span>{t("builder.haGiaScheda",{count:schedaAltra.n})}</span><button className="btn-ghost" onClick={()=>caricaPerAtleta(selectedAtleta,true)}>{t("builder.caricaLaSua")}</button></>}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-          <label style={{display:"flex",alignItems:"center",gap:10,fontSize:"0.8125rem",color:"var(--muted)",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>
-            {t("builder.giorni")}
-            <select
-              value={numDays}
-              onChange={e=>handleNumDays(Number(e.target.value))}
-              style={{background:"var(--card)",border:"1px solid var(--border)",color:"var(--text)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.875rem",padding:"6px 12px",borderRadius:8,outline:"none",width:"auto",appearance:"none",cursor:"pointer"}}
-            >
-              {[1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{t("builder.nGiorni",{count:n})}</option>)}
+    <div className="b2">
+      <div className="b2-barra">
+        <label className="b2-atleta">{t("comune.atleta")}
+          <select className="field-select" value={atleta?.id||""} onChange={e=>scegliAtleta(atleti.find(a=>a.id===e.target.value))}>
+            <option value="">— {t("comune.seleziona")} —</option>
+            {atleti.map(a=><option key={a.id} value={a.id}>{atletaNome(a)}</option>)}
+          </select>
+        </label>
+        <span className={`b2-stato ${stato}`} role="status">{stato==="carica"&&<span className="b2-spin" aria-hidden="true"/>}{statoTesto}</span>
+        {stato==="errore"&&<button type="button" className="btn-ghost" onClick={()=>carica(atleta)}>{t("builder.riprova")}</button>}
+        <span className="b2-spazio"/>
+        {atleta&&stato==="pronto"&&<>
+          <label className="b2-sel-mini">{t("comune.obiettivo")}
+            <select className="field-select" value={mod.obiettivo} onChange={e=>aggiorna(m=>{ m.obiettivo=e.target.value; })}>
+              <option value="">—</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}
             </select>
           </label>
-
-          <div className="day-tabs">
-            {activeDays.map(d=>(
-              <button key={d} className={`day-tab${activeDay===d?" active":""}`} onClick={()=>setActiveDay(d)}>
-                {nomeGiorno(dayNames[d], d)}{(giorni[d]||[]).length>0&&<span style={{marginLeft:6,background:"rgba(0,0,0,.2)",borderRadius:"100px",padding:"1px 7px",fontSize:"0.6875rem"}}>{(giorni[d]||[]).length}</span>}
-              </button>
-            ))}
-          </div>
-          <span style={{fontSize:"0.8125rem",color:"var(--muted)"}}>{scheda.length===0?t("builder.giornoVuoto"):t("libreria.nEsercizi",{count:scheda.length})}</span>
-        </div>
-
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-          <input
-            className="field-input"
-            type="text"
-            placeholder={t("builder.phNomeGiorno")}
-            value={dayNames[activeDay]||""}
-            onChange={e=>setDayNames(prev=>({...prev,[activeDay]:e.target.value}))}
-            style={{maxWidth:320,fontSize:"0.8125rem",padding:"8px 12px"}}
-          />
-          {dayNames[activeDay]&&(
-            <button onClick={()=>setDayNames(prev=>({...prev,[activeDay]:""}))} style={{background:"none",border:"none",color:"var(--muted)",cursor:"pointer",fontSize:"0.875rem",padding:"4px"}}>✕</button>
-          )}
-        </div>
-
-        <div className="builder-top">
-          <label>{t("builder.esercizio")}
-            <select value={selId} onChange={e=>setSelId(e.target.value)}>
-              {CATEGORIES.slice(1).filter(cat=>EXERCISES.some(e=>e.cat===cat)||customExercises.some(e=>e.categoria===cat)).map(cat=>(
-                <optgroup key={cat} label={`── ${valore("categoria",cat)} ──`}>
-                  {EXERCISES.filter(e=>e.cat===cat).map(ex=><option key={ex.id} value={String(ex.id)}>{nomeEsercizio(ex.name, ex.id)}</option>)}
-                  {customExercises.filter(e=>e.categoria===cat).map(ex=><option key={ex.id} value={`c:${ex.id}`}>{ex.nome}</option>)}
-                </optgroup>
-              ))}
+          <label className="b2-sel-mini">{t("comune.livello")}
+            <select className="field-select" value={mod.livello} onChange={e=>aggiorna(m=>{ m.livello=e.target.value; })}>
+              <option value="">—</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}
             </select>
           </label>
-          <label>{t("builder.serie")}<input type="number" min={1} max={20} value={sets} onChange={e=>setSets(Number(e.target.value))}/></label>
-          <label>{t("builder.rip")}<input type="text" placeholder="10, 8-10, 30s" title={t("builder.ripTitle")} value={reps} onChange={e=>setReps(e.target.value.replace(/[^0-9sS-]/g,"").toLowerCase())}/></label>
-          <label>{t("builder.rec")}<input type="number" min={0} max={600} step={15} value={rest} onChange={e=>setRest(Number(e.target.value))}/></label>
-          <button className="add-btn" onClick={add} style={{marginTop:22}}>+ {t("builder.aggiungi")}</button>
-        </div>
-
-        <div className="scheda-wrap">
-          {scheda.length===0?<div className="empty-state"><div className="empty-icon">📋</div><div>{t("builder.vuoto1",{giorno:nomeGiorno(dayNames[activeDay], activeDay)})}<br/>{t("builder.vuoto2")}</div></div>:(
-            <><div className="scheda-head"><div>{t("builder.esercizio")}</div><div>{t("builder.serieXRip")}</div><div>{t("builder.recupero")}</div><div>{t("builder.muscoli")}</div><div/></div>
-            {scheda.map(row=>{const cc=CAT_COLORS[row.cat]||"#e8ff47"; return(
-              <div className="scheda-row" key={row.uid}>
-                <div><span className="scheda-dot" style={{background:cc}}/>{nomeEsercizio(row.name, row.id)}</div>
-                <div><span className="badge">{row.sets}</span>{" × "}<span className="badge">{row.reps}</span></div>
-                <div><span className="badge badge2">{row.rest}s</span></div>
-                <div style={{fontSize:"0.75rem",color:"var(--muted)"}}>{(muscoliEsercizio(row)||"").split(",")[0]||"—"}</div>
-                <div><button className="del-btn" onClick={()=>del(row.uid)}>✕</button></div>
-              </div>
-            );})}</>
-          )}
-        </div>
-
-        {scheda.length>0&&(
-          <div className="summary-grid">
-            <div className="summary-card"><div className="summary-label">{t("builder.serieTotali")}</div><div className="summary-val">{sum.totalSets}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
-            <div className="summary-card"><div className="summary-label">{t("builder.tempoStimato")}</div><div className="summary-val">{sum.estMin}</div><div className="summary-sub">{t("builder.minuti")}</div></div>
-            <div className="summary-card"><div className="summary-label">{t("progressi.esercizi")}</div><div className="summary-val">{sum.count}</div><div className="summary-sub">{nomeGiorno(dayNames[activeDay], activeDay)}</div></div>
-            <div className="summary-card"><div className="summary-label">{t("builder.gruppi")}</div><div className="summary-val" style={{fontSize:"0.9375rem",paddingTop:4,lineHeight:1.5}}>{sum.cats.map(c=>valore("categoria",c)).join(", ")||"—"}</div></div>
-          </div>
-        )}
-
-        {pdfState&&<div className="pdf-progress"><span style={{fontSize:"1.125rem"}}>⏳</span><div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfState.progress*100)}%`}}/></div><span className="prog-label">{pdfState.label}</span></div>}
-
-        {showOverwriteConfirm&&(
-          <div className="overwrite-confirm">
-            <span className="overwrite-confirm-text">{t("builder.sovrascrivi")}</span>
-            <div className="overwrite-confirm-actions">
-              <button className="btn-ghost" style={{padding:"7px 14px",fontSize:"0.8125rem"}} onClick={()=>setShowOverwriteConfirm(false)}>{t("comune.annulla")}</button>
-              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:"0.8125rem"}} onClick={doAssegna} disabled={assegnaLoading||bloccato}>
-                {assegnaLoading?t("comune.salvataggio"):t("builder.siAggiorna")}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {totalEx>0&&!pdfState&&(
-          <div className="actions-row">
-            {scheda.length>0&&<button className="btn-ghost" onClick={clear}>{t("builder.svuota",{giorno:nomeGiorno(dayNames[activeDay], activeDay)})}</button>}
-            <button className="btn-primary" onClick={handlePDF}>⬇ {t("builder.esportaPDF")}</button>
-            {canAssegna&&(
-              <button
-                className="btn-primary"
-                style={{background:assigned?"var(--accent2)":"var(--accent2)",color:"#07070d",cursor:assigned?"default":"pointer",transition:"all .2s"}}
-                disabled={assigned||assegnaLoading||bloccato}
-                onClick={handleAssegna}
-              >
-                {assegnaLoading?t("comune.salvataggio"):assigned?`✓ ${t("builder.salvata")}`:schedaId?`💾 ${t("comune.salvaModifiche")}`:`📲 ${t("builder.assegna")}`}
-              </button>
-            )}
-          </div>
-        )}
+          <button type="button" className="btn-ghost" onClick={apriCopia}>{t("builder2.copiaDa")}</button>
+          <button type="button" className="btn-ghost" disabled={!totEs} onClick={()=>setSalvaModello({nome:"",conCarichi:false})}>{t("builder2.salvaModello")}</button>
+          <button type="button" className="btn-ghost" disabled={!totEs||!!pdfState} onClick={pdf}>⬇ PDF</button>
+        </>}
+        <button type="button" className="btn-primary b2-salva" disabled={!puoSalvare} onClick={()=>setConferma(true)}>
+          {salvando?t("comune.salvataggio"):sporco?t("builder2.salvaN",{count:diff.totale}):t("builder2.salva")}
+        </button>
       </div>
+
+      {cambioAtleta&&(
+        <div className="b2-avviso" role="alert"><span>{t("builder2.modificheNonSalvate",{nome:atletaNome(atleta)})}</span>
+          <button type="button" className="btn-ghost" onClick={()=>setCambioAtleta(null)}>{t("comune.annulla")}</button>
+          <button type="button" className="btn-primary" onClick={()=>{ const a=cambioAtleta; setCambioAtleta(null); carica(a); }}>{t("builder2.cambiaComunque",{nome:atletaNome(cambioAtleta)})}</button>
+        </div>
+      )}
+      {toast&&<div className="b2-toast" role="status"><span>✓ {toast}</span><button type="button" className="b2-x" onClick={()=>setToast(null)} aria-label={t("comune.chiudi")}>✕</button></div>}
+      {errore&&<div className="b2-errore" role="alert">{errore}</div>}
+      {pdfState&&<div className="pdf-progress"><span>⏳</span><div className="prog-wrap"><div className="prog-fill" style={{width:`${Math.round(pdfState.progress*100)}%`}}/></div><span className="prog-label">{pdfState.label}</span></div>}
+
+      {conferma&&(
+        <div className="b2-conferma" role="dialog" aria-label={t("builder2.primaDiSalvare")}>
+          <b>{t("builder2.primaDiSalvare")}</b>
+          <ul>
+            {diff.tolti.length>0&&<li className="b2-rischio">{t("builder2.diffTolti",{count:diff.tolti.length, nomi:diff.tolti.join(", ")})}</li>}
+            {diff.giorniNascosti.length>0&&<li>{t("builder2.diffNascosti",{nomi:diff.giorniNascosti.join(", ")})}</li>}
+            {diff.nuovi.length>0&&<li>{t("builder2.diffNuovi",{count:diff.nuovi.length})}</li>}
+            {diff.cambiati+diff.riordinati>0&&<li>{t("builder2.diffCambiati",{count:diff.cambiati+diff.riordinati})}</li>}
+            {diff.spostati>0&&<li>{t("builder2.diffSpostati",{count:diff.spostati})}</li>}
+            {diff.giorniNuovi.length+diff.giorniRimessi.length>0&&<li>{t("builder2.diffGiorni",{nomi:[...diff.giorniNuovi,...diff.giorniRimessi].join(", ")})}</li>}
+          </ul>
+          <p className="b2-aiuto">{t("builder2.storicoResta")}</p>
+          <div className="b2-conferma-btn">
+            <button type="button" className="btn-ghost" onClick={()=>setConferma(false)}>{t("comune.annulla")}</button>
+            <button type="button" className="btn-primary" disabled={salvando} onClick={salva}>{salvando?t("comune.salvataggio"):t("builder2.siSalva")}</button>
+          </div>
+        </div>
+      )}
+
+      {copia&&(
+        <div className="b2-pannello" role="dialog" aria-label={t("builder2.copiaDa")}>
+          <b>{t("builder2.copiaDa")}</b>
+          <select className="field-select" value={copia.da} onChange={e=>setCopia(c=>({...c,da:e.target.value}))} aria-label={t("builder2.copiaDa")}>
+            <option value="">— {t("comune.seleziona")} —</option>
+            <optgroup label={t("builder2.altriAtleti")}>{atleti.filter(a=>a.id!==atleta?.id).map(a=><option key={a.id} value={a.id}>{atletaNome(a)}</option>)}</optgroup>
+            {modelli.length>0&&<optgroup label={t("builder2.modelli")}>{modelli.map(m=><option key={m.id} value={`m:${m.id}`}>{m.nome}</option>)}</optgroup>}
+          </select>
+          <label className="b2-check"><input type="checkbox" checked={copia.conCarichi} onChange={e=>setCopia(c=>({...c,conCarichi:e.target.checked}))}/> {t("builder2.conCarichi")}</label>
+          <p className="b2-aiuto">{t("builder2.copiaAiuto")}</p>
+          <div className="b2-conferma-btn">
+            <button type="button" className="btn-ghost" onClick={()=>setCopia(null)}>{t("comune.annulla")}</button>
+            <button type="button" className="btn-primary" disabled={!copia.da||copia.carica} onClick={eseguiCopia}>{copia.carica?t("comune.caricamento"):t("builder2.copia")}</button>
+          </div>
+        </div>
+      )}
+      {salvaModello&&(
+        <div className="b2-pannello" role="dialog" aria-label={t("builder2.salvaModello")}>
+          <b>{t("builder2.salvaModello")}</b>
+          <input className="field-input" value={salvaModello.nome} placeholder={t("builder2.nomeModelloPh")} onChange={e=>setSalvaModello(s=>({...s,nome:e.target.value}))} aria-label={t("builder2.nomeModello")}/>
+          <label className="b2-check"><input type="checkbox" checked={salvaModello.conCarichi} onChange={e=>setSalvaModello(s=>({...s,conCarichi:e.target.checked}))}/> {t("builder2.conCarichi")}</label>
+          <div className="b2-conferma-btn">
+            <button type="button" className="btn-ghost" onClick={()=>setSalvaModello(null)}>{t("comune.annulla")}</button>
+            <button type="button" className="btn-primary" disabled={!salvaModello.nome.trim()} onClick={eseguiSalvaModello}>{t("builder2.salvaModello")}</button>
+          </div>
+        </div>
+      )}
+
+      {!atleta&&<div className="b2-inizio">{t("builder2.inizio")}</div>}
+      {atleta&&stato==="carica"&&<div className="b2-griglia"><div/><div className="b2-giorni b2-scheletro">{[0,1,2].map(i=><div key={i} className="b2-col"><div className="b2-skel"/><div className="b2-skel"/><div className="b2-skel"/></div>)}</div></div>}
+      {atleta&&stato==="pronto"&&(
+        <div className={`b2-griglia${ricercaTel?" ricerca-aperta":""}`}>
+          <aside className="b2-lato">
+            <RicercaEsercizi custom={custom} onAggiungi={aggiungi} onCrea={creaEsercizio} onDragStart={dragLib}
+              sostituisci={!!sostituisci} onChiudi={(ricercaTel||sostituisci)?()=>{ setRicercaTel(false); setSostituisci(null); }:null}/>
+          </aside>
+          <div className="b2-centro">
+            <div className="b2-linguette" role="tablist">
+              {visibili.map(g=><button key={g.key} type="button" role="tab" aria-selected={attivo===g.key} onClick={()=>setAttivo(g.key)}>{nomeGiorno(g.nome,g.key)} <span>{g.righe.length}</span></button>)}
+            </div>
+            <div className="b2-giorni" style={{"--n":Math.max(1,visibili.length)}}>
+              {visibili.map(colonna)}
+            </div>
+            <div className="b2-piede">
+              {mod.giorni.length<ALL_DAYS.length&&<button type="button" className="btn-ghost" onClick={nuovoGiorno}>＋ {t("builder2.giorno")}</button>}
+              {nascosti.length>0&&<span className="b2-nascosti">{t("builder2.giorniNascosti")} {nascosti.map(g=><span key={g.key}>{nomeGiorno(g.nome,g.key)} <button type="button" className="btn-ghost" onClick={()=>rimetti(g.key)}>{t("builder2.rimetti")}</button></span>)}</span>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

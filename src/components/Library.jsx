@@ -71,7 +71,7 @@ function ExCard({ex,onVideo,onDelete}) {
   );
 }
 
-export default function Library({setView,user}) {
+export default function Library({setView,user,incorporata=false}) {
   const { t } = useTranslation();
   const [filter,setFilter]=useState("Tutte");
   const [search,setSearch]=useState("");
@@ -123,8 +123,10 @@ export default function Library({setView,user}) {
 
   return (
     <div>
-      <BackBtn setView={setView}/>
-      <div className="page-head"><div className="page-title">{t("libreria.titolo")}</div><div className="page-sub">{t("libreria.nEsercizi",{count:list.length})}</div></div>
+      {!incorporata&&<BackBtn setView={setView}/>}
+      {incorporata
+        ? <div className="page-sub" style={{marginBottom:12}}>{t("libreria.nEsercizi",{count:list.length})}</div>
+        : <div className="page-head"><div className="page-title">{t("libreria.titolo")}</div><div className="page-sub">{t("libreria.nEsercizi",{count:list.length})}</div></div>}
       <div className="library-controls">
         <div className="search-wrap">
           <span className="search-icon">🔍</span>

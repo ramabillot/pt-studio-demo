@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 
+// Menu PT a 4 voci (decisione 2026-10-26): Home · Atleti · Schede · Account.
+// Libreria → dentro Schede; Calendario appuntamenti parcheggiato (vista ancora nel codice, nessun dato cancellato).
 const NAV_TRAINER = [
-  { id:"dashboard", icon:"⚡", label:"nav.dashboard" },
-  { id:"library",   icon:"📚", label:"nav.libreria" },
-  { id:"builder",   icon:"📋", label:"nav.builder" },
+  { id:"dashboard", icon:"⚡", label:"nav.home" },
   { id:"atleti",    icon:"👥", label:"nav.atleti" },
-  { id:"calendar",  icon:"📅", label:"nav.calendario" },
+  { id:"builder",   icon:"📋", label:"nav.schede" },
 ];
 
 const NAV_ADMIN = [
@@ -29,7 +29,7 @@ export function Sidebar({user,view,setView,onLogout}) {
       </div>
       <nav className="sidebar-nav">
         {items.map(item=>(
-          <div key={item.id} className={`sidebar-item${view===item.id?" active":""}`} onClick={()=>setView(item.id)}>
+          <div key={item.id} className={`sidebar-item${view===item.id||(item.id==="builder"&&view==="library")?" active":""}`} onClick={()=>setView(item.id)}>
             <span className="sidebar-icon">{item.icon}</span>{t(item.label)}
           </div>
         ))}
@@ -41,22 +41,18 @@ export function Sidebar({user,view,setView,onLogout}) {
   );
 }
 
-export function MobileNav({user,view,setView,onLogout}) {
+export function MobileNav({user,view,setView}) {
   const { t } = useTranslation();
   const baseItems = (user.role==="admin" || user.is_admin) ? NAV_ADMIN : NAV_TRAINER;
   const items = [...baseItems, NAV_ACCOUNT];
   return (
     <nav className="mobile-nav">
-      <div className="mobile-nav-logout-bar">
-        <button className="mobile-nav-logout-btn" onClick={onLogout}>
-          ↩ {t("comune.esci")}
-        </button>
-      </div>
+      {/* "Esci" è in Account: niente barra fissa sopra il menu (si toccava per sbaglio) */}
       <div className="mobile-nav-inner">
         {items.map(item=>(
           <button
             key={item.id}
-            className={`mobile-nav-item${view===item.id?" active":""}`}
+            className={`mobile-nav-item${view===item.id||(item.id==="builder"&&view==="library")?" active":""}`}
             onClick={()=>setView(item.id)}
           >
             <span className="mobile-nav-item-icon">{item.icon}</span>
@@ -72,7 +68,7 @@ export function BackBtn({setView}) {
   const { t } = useTranslation();
   return (
     <button className="back-btn" onClick={()=>setView("dashboard")}>
-      ← {t("nav.dashboard")}
+      ← {t("nav.home")}
     </button>
   );
 }

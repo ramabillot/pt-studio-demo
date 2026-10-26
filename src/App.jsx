@@ -13,8 +13,7 @@ import { APP } from "./lib/app.js";
 
 // Viste caricate solo quando servono: l'atleta non scarica il codice del PT e viceversa
 const Dashboard       = lazy(()=>import("./components/Dashboard.jsx"));
-const Library         = lazy(()=>import("./components/Library.jsx"));
-const Builder         = lazy(()=>import("./components/Builder.jsx"));
+const Schede          = lazy(()=>import("./components/Schede.jsx"));
 const Atleti          = lazy(()=>import("./components/Atleti.jsx"));
 const CalendarView    = lazy(()=>import("./components/Calendar.jsx").then(m=>({default:m.CalendarView})));
 const AdminStats      = lazy(()=>import("./components/AdminStats.jsx"));
@@ -103,15 +102,15 @@ export default function App() {
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content"><Suspense fallback={null}>
             {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
-            {view==="library"&&!isAdmin&&<Library setView={setView} user={user}/>}
-            {view==="builder"&&!isAdmin&&<Builder setView={setView} preload={builderPreload} setPreload={setBuilderPreload} user={user}/>}
+            {/* "Schede" = Builder + Modelli + Esercizi (la Libreria non è più una voce di menu) */}
+            {(view==="builder"||view==="library")&&!isAdmin&&<Schede key={view} setView={setView} preload={builderPreload} setPreload={setBuilderPreload} user={user} tabIniziale={view==="library"?"esercizi":"atleti"}/>}
             {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
             {view==="calendar"&&!isAdmin&&<CalendarView setView={setView} user={user}/>}
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&isAdmin&&<AdminPanel setView={setView}/>}
-            {view==="account"&&<AccountSettings setView={setView} user={user}/>}
+            {view==="account"&&<AccountSettings setView={setView} user={user} onLogout={handleLogout}/>}
           </Suspense></div>
-          <MobileNav user={user} view={view} setView={setView} onLogout={handleLogout}/>
+          <MobileNav user={user} view={view} setView={setView}/>
         </div>
       )}
       {phase==="app"&&<SegnalaBug user={user} view={user?.role==="atleta"?null:view}/>}
