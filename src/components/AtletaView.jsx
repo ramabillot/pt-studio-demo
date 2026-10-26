@@ -92,7 +92,9 @@ export default function AtletaView({user, onLogout}) {
         });
       });
       setScheda({id:data.id, nome:data.nome||"", cognome:"", pt:user.ptNome||"", obiettivo:data.obiettivo||"", livello:data.livello||"", assegnataIl:data.assegnata_il||"", giorni, dayNames});
-      setSchedaMeta({id:data.id, giornoIds});
+      // Giorni nascosti dal PT (B7): non sono linguette, ma le loro sessioni restano nel calendario col loro nome
+      const nascosti=Object.fromEntries((data.giorni_nascosti||[]).map(g=>[g.id,{key:g.giorno_key||g.id, nome:g.nome||""}]));
+      setSchedaMeta({id:data.id, giornoIds, nascosti});
       // Allenamento di oggi già iniziato (bozza) → si riapre quel giorno, non il primo della scheda
       // (es. iPhone che chiude l'app in background, aggiornamento automatico a metà allenamento)
       const oggi=fmtDate(new Date());
@@ -313,11 +315,16 @@ export default function AtletaView({user, onLogout}) {
   const activeDayLabel = nomeGiorno(dayNamesScheda[activeDay], activeDay);
 
   // Mappa data → sessioni per il calendario (giorno_id → lettera del giorno)
+  const nascostiMeta = schedaMeta?.nascosti || {};
   const _giornoIdToKey = schedaMeta
-    ? Object.fromEntries(Object.entries(schedaMeta.giornoIds).map(([k,v])=>[v,k]))
+    ? {...Object.fromEntries(Object.values(nascostiMeta).length?Object.entries(nascostiMeta).map(([id,g])=>[id,g.key]):[]),
+       ...Object.fromEntries(Object.entries(schedaMeta.giornoIds).map(([k,v])=>[v,k]))}
     : {};
-  // Nel calendario solo la parte del nome che distingue i giorni ("Full Body A" → "A")
-  const etichetteCal = etichetteBrevi(Object.fromEntries(giorni.map(k=>[k, nomeGiorno(dayNamesScheda[k], k)])));
+  // Nel calendario solo la parte del nome che distingue i giorni ("Full Body A" → "A"); anche i giorni nascosti
+  const etichetteCal = etichetteBrevi(Object.fromEntries([
+    ...Object.values(nascostiMeta).map(g=>[g.key, nomeGiorno(g.nome, g.key)]),
+    ...giorni.map(k=>[k, nomeGiorno(dayNamesScheda[k], k)]),
+  ]));
   const sessionsByDate = {};
   _rawSupa.forEach(s=>{
     const giornoKey=_giornoIdToKey[s.giorno_id];
@@ -381,7 +388,7 @@ export default function AtletaView({user, onLogout}) {
           onNext={()=>setCalMonth(({year:y,month:m})=>m===11?{year:y+1,month:0}:{year:y,month:m+1})}
           sessionsByDate={sessionsByDate}
           selectedDate={selectedDate}
-          onDaySelect={(dateStr,giornoKey)=>{setSelectedDate(dateStr);if(giornoKey)setActiveDay(giornoKey);}}
+          onDaySelect={(dateStr,giornoKey)=>{setSelectedDate(dateStr);if(giornoKey&&scheda.giorni[giornoKey])setActiveDay(giornoKey);}}
           todayStr={todayStr}
         />
         <div style={{textAlign:"center",fontSize:"0.75rem",fontWeight:600,color:isToday?"var(--muted)":"var(--accent2)",marginBottom:12,letterSpacing:.3}}>
