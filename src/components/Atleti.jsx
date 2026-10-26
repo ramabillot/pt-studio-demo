@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { OBIETTIVI, LIVELLI, EXERCISES } from "../data.js";
+import { OBIETTIVI, LIVELLI } from "../data.js";
 import { getInitials, calcEta } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { linkAtleta } from "../lib/app.js";
@@ -8,6 +8,7 @@ import { MisureSection } from "./MisureSection.jsx";
 import AllenamentiAtletaPT from "./AllenamentiAtletaPT.jsx";
 import { useTranslation, Trans } from "react-i18next";
 import { valore, nomeGiorno } from "../i18n/index.js";
+import { schedaToPreload } from "../lib/scheda.js";
 
 const COLORS=["#e8ff47","#47ffe8","#ff9f47","#ff47a3","#a47ffe","#47a3ff"];
 
@@ -167,48 +168,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
       .maybeSingle()
       .then(({data})=>{ setAtletaScheda(data||null); setLoadingScheda(false); });
   },[selected?.id]);
-
-  const schedaToPreload=(scheda,atleta)=>{
-    const giorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
-    const dayNames={A:"",B:"",C:"",D:"",E:"",F:"",G:""};
-    const giornoIds={};
-    (scheda.scheda_giorni||[])
-      .sort((a,b)=>a.ordine-b.ordine)
-      .forEach(g=>{
-        const key=g.giorno_key||String.fromCharCode(65+g.ordine);
-        dayNames[key]=g.nome||"";
-        giornoIds[key]=g.id;
-        giorni[key]=(g.scheda_esercizi||[])
-          .sort((a,b)=>a.ordine-b.ordine)
-          .map((ex,i)=>{
-            const exFull=EXERCISES.find(e=>e.id===ex.esercizio_id_int)||{};
-            return {
-              ...exFull,
-              id:ex.esercizio_id_int||null,
-              dbId:ex.id,                       // id scheda_esercizi → aggiornamento sul posto
-              name:ex.nome||exFull.name||"",
-              muscles:exFull.muscles||"",
-              sets:ex.serie||3,
-              reps:ex.reps||"10",               // testo: conserva intervalli tipo "8-10"
-              rest:ex.rest_sec||90,
-              uid:`${g.id}-${i}`,
-            };
-          });
-      });
-    return {
-      schedaId:scheda.id,
-      atleta,
-      atletaId:atleta.id,
-      nome:atleta.nome,
-      cognome:atleta.cognome,
-      obiettivo:scheda.obiettivo||"",
-      livello:scheda.livello||"",
-      giorni,
-      dayNames,
-      giornoIds,
-      schedaNome:scheda.nome||"",
-    };
-  };
 
   const savePINChange=async()=>{
     if(!/^\d{4}$/.test(changePIN.pin)){ setChangePIN(p=>({...p,err:t("atleti.errPin")})); return; }

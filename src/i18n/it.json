@@ -714,7 +714,13 @@
     "svuota": "Svuota {{giorno}}",
     "esportaPDF": "Esporta PDF completo",
     "salvata": "Salvata!",
-    "assegna": "Assegna all'atleta"
+    "assegna": "Assegna all'atleta",
+    "caricamentoScheda": "Caricamento della scheda dell'atleta…",
+    "erroreCaricamento": "Non riesco a caricare la scheda di questo atleta. Salva è bloccato per non sovrascriverla.",
+    "riprova": "Riprova",
+    "haGiaScheda_one": "Questo atleta ha già una scheda (1 esercizio). Se salvi, la sostituisci con quella qui sotto.",
+    "haGiaScheda_other": "Questo atleta ha già una scheda ({{count}} esercizi). Se salvi, la sostituisci con quella qui sotto.",
+    "caricaLaSua": "Carica la sua scheda"
   },
   "atleti": {
     "errUsername": "Username obbligatorio",

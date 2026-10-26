@@ -714,7 +714,13 @@
     "svuota": "Vaciar {{giorno}}",
     "esportaPDF": "Exportar PDF completo",
     "salvata": "¡Guardada!",
-    "assegna": "Asignar al atleta"
+    "assegna": "Asignar al atleta",
+    "caricamentoScheda": "Cargando la rutina del atleta…",
+    "erroreCaricamento": "No puedo cargar la rutina de este atleta. Guardar está bloqueado para no pisarla.",
+    "riprova": "Reintentar",
+    "haGiaScheda_one": "Este atleta ya tiene una rutina (1 ejercicio). Si guardás, la reemplazás con la de abajo.",
+    "haGiaScheda_other": "Este atleta ya tiene una rutina ({{count}} ejercicios). Si guardás, la reemplazás con la de abajo.",
+    "caricaLaSua": "Cargar su rutina"
   },
   "atleti": {
     "errUsername": "El usuario es obligatorio",

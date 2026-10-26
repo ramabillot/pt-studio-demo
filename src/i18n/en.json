@@ -714,7 +714,13 @@
     "svuota": "Clear {{giorno}}",
     "esportaPDF": "Export full PDF",
     "salvata": "Saved!",
-    "assegna": "Assign to athlete"
+    "assegna": "Assign to athlete",
+    "caricamentoScheda": "Loading the athlete's plan…",
+    "erroreCaricamento": "Can't load this athlete's plan. Save is blocked so it isn't overwritten.",
+    "riprova": "Retry",
+    "haGiaScheda_one": "This athlete already has a plan (1 exercise). Saving replaces it with the one below.",
+    "haGiaScheda_other": "This athlete already has a plan ({{count}} exercises). Saving replaces it with the one below.",
+    "caricaLaSua": "Load their plan"
   },
   "atleti": {
     "errUsername": "Username is required",

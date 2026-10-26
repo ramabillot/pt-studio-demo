@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EXERCISES, CATEGORIES, OBIETTIVI, LIVELLI, CAT_COLORS, ALL_DAYS } from "../data.js";
 import { buildPDF, calcSummary, fmtDate, getInitials } from "../utils.js";
 import { supabase } from "../supabase.js";
 import { BackBtn } from "./Sidebar.jsx";
 import { useTranslation } from "react-i18next";
 import { nomeEsercizio, muscoliEsercizio, valore, nomeGiorno } from "../i18n/index.js";
+import { caricaSchedaAttiva, schedaToPreload, contaEsercizi } from "../lib/scheda.js";
 
 // ── Atleta search dropdown (also used by Calendar) ────────────────────────────
 export function AtletaSearchField({value, onChange, onSelect, atleti: propAtleti}) {
@@ -89,6 +90,11 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   const [assegnaLoading,setAssegnaLoading]=useState(false);
   // Atleti reali da Supabase
   const [realAtleti,setRealAtleti]=useState([]);
+  // Caricamento della scheda dell'atleta scelto (B24): finché carica (o se fallisce) non si salva (B19)
+  const [carica,setCarica]=useState(false);
+  const [erroreCarica,setErroreCarica]=useState(false);
+  const [schedaAltra,setSchedaAltra]=useState(null);   // scheda esistente non caricata perché il Builder non era vuoto
+  const richiesta=useRef(0);
 
   // Carica esercizi custom del PT
   useEffect(()=>{
@@ -111,18 +117,50 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
   const allAtleti = realAtleti;
 
-  // Quando atleta selezionato (utenti reali): carica schedaId esistente
-  useEffect(()=>{
-    if(!selectedAtleta) { setSchedaId(null); return; }
-    supabase.from("schede").select("id").eq("atleta_id",selectedAtleta.id)
-      .eq("attiva",true).order("created_at",{ascending:false}).limit(1)
-      .maybeSingle()
-      .then(({data})=>setSchedaId(data?.id||null));
-  },[selectedAtleta?.id]);
+  // Riempie il Builder con una scheda già preparata (preload da "Modifica nel Builder" o scheda caricata qui)
+  const applica=(pre)=>{
+    if(pre.schedaId) setSchedaId(pre.schedaId);
+    if(pre.obiettivo) setObiettivo(pre.obiettivo);
+    if(pre.livello) setLivello(pre.livello);
+    // Solo i giorni che hanno esercizi (il preload contiene sempre A…G, anche vuoti)
+    const giorniKeys = ALL_DAYS.filter(d=>(pre.giorni?.[d]||[]).length>0);
+    const numD = giorniKeys.length ? ALL_DAYS.indexOf(giorniKeys[giorniKeys.length-1])+1 : 3;
+    setNumDays(numD);
+    if(giorniKeys.length>0) setActiveDay(giorniKeys[0]);
+    const newGiorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
+    giorniKeys.forEach(d=>{
+      newGiorni[d]=(pre.giorni[d]||[]).map((ex,idx)=>({...ex,uid:`${d}-${idx}-${Date.now()}`}));
+    });
+    setGiorni(newGiorni);
+    setDayNames({A:"",B:"",C:"",D:"",E:"",F:"",G:"",...(pre.dayNames||{})});
+  };
+
+  // B24: scelto un atleta, si carica subito la sua scheda completa (con gli id del DB).
+  // Prima si caricava solo l'id: il Builder restava vuoto e "Salva" sostituiva la scheda intera.
+  // Se il PT aveva già messo esercizi nel Builder, non li si butta: si avvisa e si lascia scegliere.
+  const caricaPerAtleta=async(a, forza=false)=>{
+    const mia=++richiesta.current;
+    setCarica(true); setErroreCarica(false); setSchedaAltra(null); setSchedaId(null);
+    try {
+      const scheda=await caricaSchedaAttiva(supabase, a.id);
+      if(mia!==richiesta.current) return;   // nel frattempo è stato scelto un altro atleta
+      const vuoto=!Object.values(giorni).some(d=>d.length>0);
+      if(scheda && (vuoto||forza)) applica(schedaToPreload(scheda,a));
+      else if(scheda) { setSchedaId(scheda.id); setSchedaAltra({id:scheda.id, n:contaEsercizi(scheda), scheda}); }
+    } catch(e) {
+      if(mia!==richiesta.current) return;
+      console.error("[builder carica scheda]",e);
+      setErroreCarica(true);
+    } finally {
+      if(mia===richiesta.current) setCarica(false);
+    }
+  };
 
   // Preload (da "Modifica nel Builder" in Atleti.jsx)
   useEffect(()=>{
     if(!preload) return;
+    richiesta.current++;   // un eventuale caricamento in corso non deve sovrascrivere il preload
+    setCarica(false); setErroreCarica(false); setSchedaAltra(null);
     // Supporta preload.atleta (oggetto completo) per utenti reali
     if(preload.atleta) {
       setSelectedAtleta(preload.atleta);
@@ -136,23 +174,10 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
         setSearchQ(`${preload.nome} ${preload.cognome}`.trim());
       }
     }
-    if(preload.schedaId) setSchedaId(preload.schedaId);
-    if(preload.obiettivo) setObiettivo(preload.obiettivo);
-    if(preload.livello) setLivello(preload.livello);
-    // Solo i giorni che hanno esercizi (il preload contiene sempre A…G, anche vuoti)
-    const giorniKeys = ALL_DAYS.filter(d=>(preload.giorni?.[d]||[]).length>0);
-    const numD = giorniKeys.length ? ALL_DAYS.indexOf(giorniKeys[giorniKeys.length-1])+1 : 3;
-    setNumDays(numD);
-    if(giorniKeys.length>0) setActiveDay(giorniKeys[0]);
-    const newGiorni={A:[],B:[],C:[],D:[],E:[],F:[],G:[]};
-    giorniKeys.forEach(d=>{
-      newGiorni[d]=(preload.giorni[d]||[]).map((ex,idx)=>({...ex,uid:`${d}-${idx}-${Date.now()}`}));
-    });
-    setGiorni(newGiorni);
-    if(preload.dayNames) {
-      setDayNames(prev=>({...prev,...preload.dayNames}));
-    }
+    setSchedaId(preload.schedaId||null);
+    applica(preload);
     if(setPreload) setPreload(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[preload]);
 
   const filtered = allAtleti.filter(a=>{
@@ -167,9 +192,10 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     setShowDrop(false);
     if(a.obiettivo) setObiettivo(a.obiettivo);
     if(a.livello) setLivello(a.livello);
+    caricaPerAtleta(a);
   };
 
-  const clearAtleta=()=>{ setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); setSchedaId(null); };
+  const clearAtleta=()=>{ richiesta.current++; setSelectedAtleta(null); setSearchQ(""); setObiettivo(""); setLivello(""); setSchedaId(null); setCarica(false); setErroreCarica(false); setSchedaAltra(null); };
 
   const activeDays=ALL_DAYS.slice(0,numDays);
   const scheda=giorni[activeDay]||[];
@@ -301,6 +327,12 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
 
       setSchedaId(sid);
       setShowOverwriteConfirm(false);
+      // B12: ricarica dal DB, così gli esercizi appena creati hanno il loro id e un nuovo salvataggio li aggiorna
+      try {
+        const fresca=await caricaSchedaAttiva(supabase, selectedAtleta.id);
+        if(fresca) applica(schedaToPreload(fresca,selectedAtleta));
+      } catch(e){ console.error("[builder ricarica]",e); }
+      setSchedaAltra(null);
       setToast(`✓ ${t(schedaId?"builder.toastAggiornata":"builder.toastAssegnata",{nome:`${selectedAtleta.nome} ${selectedAtleta.cognome}`})}`);
       setAssigned(true);
       setTimeout(()=>setAssigned(false),2000);
@@ -313,12 +345,13 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
   };
 
   const handleAssegna=()=>{
-    if(!selectedAtleta||totalEx===0) return;
+    if(!selectedAtleta||totalEx===0||carica||erroreCarica) return;
     if(schedaId){ setShowOverwriteConfirm(true); return; }
     doAssegna();
   };
 
   const canAssegna = !!selectedAtleta;
+  const bloccato = carica || erroreCarica;
 
   return (
     <div>
@@ -373,6 +406,13 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             </div>
             <label className="field-label">{t("comune.obiettivo")}<select className="field-select" value={obiettivo} onChange={e=>setObiettivo(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{OBIETTIVI.map(o=><option key={o} value={o}>{valore("obiettivo",o)}</option>)}</select></label>
             <label className="field-label">{t("comune.livello")}<select className="field-select" value={livello} onChange={e=>setLivello(e.target.value)}><option value="">— {t("comune.seleziona")} —</option>{LIVELLI.map(l=><option key={l} value={l}>{valore("livello",l)}</option>)}</select></label>
+            {selectedAtleta&&(carica||erroreCarica||schedaAltra)&&(
+              <div className={`builder-stato${erroreCarica?" errore":""}`} style={{gridColumn:"1 / -1"}} role="status">
+                {carica&&<span>{t("builder.caricamentoScheda")}</span>}
+                {erroreCarica&&<><span>{t("builder.erroreCaricamento")}</span><button className="btn-ghost" onClick={()=>caricaPerAtleta(selectedAtleta)}>{t("builder.riprova")}</button></>}
+                {schedaAltra&&!carica&&<><span>{t("builder.haGiaScheda",{count:schedaAltra.n})}</span><button className="btn-ghost" onClick={()=>caricaPerAtleta(selectedAtleta,true)}>{t("builder.caricaLaSua")}</button></>}
+              </div>
+            )}
           </div>
         </div>
 
@@ -460,7 +500,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
             <span className="overwrite-confirm-text">{t("builder.sovrascrivi")}</span>
             <div className="overwrite-confirm-actions">
               <button className="btn-ghost" style={{padding:"7px 14px",fontSize:"0.8125rem"}} onClick={()=>setShowOverwriteConfirm(false)}>{t("comune.annulla")}</button>
-              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:"0.8125rem"}} onClick={doAssegna} disabled={assegnaLoading}>
+              <button className="btn-primary" style={{background:"var(--accent2)",color:"#07070d",padding:"7px 14px",fontSize:"0.8125rem"}} onClick={doAssegna} disabled={assegnaLoading||bloccato}>
                 {assegnaLoading?t("comune.salvataggio"):t("builder.siAggiorna")}
               </button>
             </div>
@@ -475,7 +515,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
               <button
                 className="btn-primary"
                 style={{background:assigned?"var(--accent2)":"var(--accent2)",color:"#07070d",cursor:assigned?"default":"pointer",transition:"all .2s"}}
-                disabled={assigned||assegnaLoading}
+                disabled={assigned||assegnaLoading||bloccato}
                 onClick={handleAssegna}
               >
                 {assegnaLoading?t("comune.salvataggio"):assigned?`✓ ${t("builder.salvata")}`:schedaId?`💾 ${t("comune.salvaModifiche")}`:`📲 ${t("builder.assegna")}`}
