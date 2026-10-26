@@ -69,10 +69,17 @@ pt-studio-demo/
     ├── api/atleta.js      ← client RPC atleta (token di sessione)
     ├── lib/allenamento.js ← logica registrazione allenamento (ultima volta, serie, riepiloghi)
     ├── lib/appuntamenti.js← colori per tipo appuntamento
+    ├── lib/scheda.js      ← carica la scheda attiva di un atleta (lato PT)
+    ├── lib/builder.js     ← Builder 2.0: modello della scheda, differenze, salvataggio sul posto, copia/modelli, PDF (puro)
+    ├── lib/settimana.js   ← stato degli atleti per il PT: settimana, fermo/sotto/in regola, saltati, fuori scala (puro)
+    ├── lib/panoramica.js  ← 3 query: atleti + schede attive + sessioni recenti del PT
     ├── i18n/              ← multilingua: index.js (setup, helper) + it.json / es.json / en.json
     └── components/
         ├── Home, LoginScreen, WelcomeScreen, PendingApproval, Sidebar (Sidebar, MobileNav, BackBtn), InvitoInstalla
-        ├── Dashboard, Library (VideoModal), Builder (AtletaSearchField), Atleti, Calendar (CalendarView)
+        ├── Dashboard (admin) → HomePT (feed della settimana), Atleti (lista + dettaglio), Calendar (parcheggiato, fuori dal menu)
+        ├── Schede (linguette Builder · Modelli · Esercizi) → Builder (+ AtletaSearchField per Calendar), Library (VideoModal)
+        ├── builder/           ← RicercaEsercizi, EditorRiga
+        ├── pt/Pezzi.jsx       ← Avatar, PillolaStato, UltimoAllenamento
         ├── AdminStats, AdminPanel, AccountSettings
         ├── AtletaView         ← vista atleta (scheda, registrazione, calendario)
         ├── atleta/            ← AtletaProgressi, MonthCalendar, Cronometro
@@ -90,7 +97,10 @@ pt-studio-demo/
 |---|---|
 | **users / PT** | email + password (Supabase Auth). Si registra da solo. |
 | **atleti** | username + PIN 4 cifre numerico. Creato e gestito dal PT. Profilo esteso: altezza, data nascita, sesso, note PT. |
-| **schede** | giorni con nomi personalizzabili (Push, Gambe, Pull…). Default `Giorno A/B/C`. Payload include i nomi giorno. |
+| **schede** | giorni con nomi personalizzabili (Push, Gambe, Pull…). Default `Giorno A/B/C`. Payload include i nomi giorno. Giorni **nascosti** (`scheda_giorni.nascosto_at`), mai cancellati. |
+| **scheda_esercizi** (023) | + `nome_atleta` (nome per l'atleta), `carichi_serie` jsonb `[{"kg":100},…]` (domani `{"pct":75}`), `carichi_proposti_il` ("consiglia questi pesi" fino al prossimo allenamento), `tipo` forza/cardio, `durata_min`, `velocita`, `inclinazione`, `livello`. `peso_iniziale` = carico della 1ª serie. Cardio: anche `serie 1`, `reps "900s"` per le app vecchie |
+| **sessione_serie** (023) | + `durata_sec`, `velocita`, `inclinazione`, `livello` (scritti da `atleta_set_cardio`) |
+| **modelli_scheda** (024) | modelli del PT (`payload` jsonb), "Elimina" = `archiviato_at` (niente delete via API) |
 | **sessioni** | log allenamenti. Pesi esercizi: ogni entry ha una data, si accumula nel tempo. |
 | **misurazioni** | tracker temporale: peso, vita + avanzati (fianchi, petto, braccio, grasso %, FC). Ogni entry datata. |
 | **appuntamenti** | calendario del PT, collegati all'atleta (`atleta_id`). L'atleta vede solo i propri. |
@@ -175,12 +185,20 @@ pt-studio-demo/
 - Grigio secondario `--muted` = `#a8a8c0` (contrasto ~7,9:1 sulle card; prima `#5a5a78`, 2,8:1). Mai colori grigi scritti a mano: usare `var(--muted)` (in SVG `style={{fill:"var(--muted)"}}`).
 - Elementi con testo dentro: larghezze in `em`/`rem` o `min-width`, e righe che possono andare a capo (`flex-wrap`). Verifica: `LANG_APP` + `ptstudio_testo_atleta=a++` negli screenshot.
 
+## Scheda 2.0 + Lato PT 2.0 (2026-10-27)
+
+- **Builder 2.0** (`components/Builder.jsx` + `lib/builder.js`): modello `{giorni:[{key,nome,dbId,nascosto,righe}]}`; `salvaScheda` aggiorna **sul posto** (giorni per dbId/lettera, mai cancellati → nascosti; esercizi per dbId; i tolti si cancellano, le serie salvate restano collegate per nome). La scheda si carica appena si sceglie l'atleta e **Salva è spento finché non è caricata** (B24/B19); dopo il salvataggio si ricarica dal DB (B12). Riepilogo delle differenze prima di salvare (`differenze`). Test node: `t_builder` (andata/ritorno DB → modello → DB senza cambi sulle schede della beta).
+- PC: ricerca a sinistra, giorni affiancati, trascinamento (HTML5); telefono (<1100 px): linguette, ricerca a tutto schermo, ↑ ↓ / "Sposta in".
+- **Card atleta**: titolo = `nome_atleta` (tecnico piccolo sotto); precompilazione = sessione salvata → **"consiglia"** del PT se dopo l'ultima volta → ultima volta → carichi del piano (B4); avviso ripetizioni > 3× e > 20 (`ripetizioniStrane`, "Era il peso"); cardio (`modo:"cardio"`, salvataggio + `atleta_set_cardio`); contatore serie sotto il totale → "Ne salvo 3 o 4?" (`serieSalvate`). `rest_sec ?? 90` (0 = senza pausa).
+- **Lato PT**: menu Home · Atleti · Schede · Account (id vista `dashboard`, `atleti`, `builder`, `account`; `library` → Schede › Esercizi; `calendar` fuori dal menu). Home = `HomePT` (fermo = 7+ giorni, sotto = settimana scorsa sotto l'obiettivo, obiettivo = giorni visibili della scheda; "Da controllare" = ripetizioni ≥ 2× previste). Dettaglio atleta: andamento → scheda → misure → "Gestione" chiusa; PC ≥ 1200 px affiancato.
+- **Misure**: stessa data = aggiornamento con i valori già presenti (B8), errore visibile (B9), campi testo con virgola (B21).
+
 ## Convenzioni & pattern noti
 
 - **supabase-js ≥ 2.117** (senza lock di sessione): con la 2.106 un login dopo il logout restava appeso. In `onAuthStateChange` mai `await` di chiamate Supabase: rimandarle con `setTimeout`.
 
 - **Grafici progressi:** colori per *indice* via `LINE_COLORS`, indipendenti dalla categoria (più esercizi della stessa categoria devono restare leggibili).
-- **Builder:** "Modifica nel Builder" pre-compila con la scheda esistente e salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda, altrimenti le sessioni perdono il `giorno_id`.
+- **Builder:** salva **sul posto** (stessi `scheda_giorni`, esercizi aggiornati per `dbId`): mai cancellare e ricreare la scheda né i giorni (si nascondono), altrimenti le sessioni perdono il `giorno_id`.
 - **Note del PT:** `scheda_esercizi.note` arriva all'atleta (`atleta_get_scheda`, migration 022) e si vede nella card sotto serie/recupero (`.ex-nota-pt`). Testo libero: non si traduce, scriverlo nella lingua dell'atleta.
 - **Ripetizioni:** `reps` è testo (accetta intervalli "8-10" e secondi "30s" per gli esercizi a tempo).
 - **Sessioni:** una riga per serie (anche corpo libero, peso null), con `esercizio_id` = id `scheda_esercizi`. Si salvano **solo gli esercizi segnati "✓ Fatto"** (`stato.fatto` in `EsercizioCard`); se ce ne sono di non segnati, prima del salvataggio l'atleta sceglie "solo i fatti" o "li ho fatti tutti". Sessione già salvata → esercizi presenti = fatto.
@@ -222,5 +240,5 @@ Se una modifica sembra richiedere la reinstallazione: **fermarsi**, cercare un'a
 ## Stato attuale
 
 - Beta personale (Ramiro PT + atleta, Marta atleta). Stato e punti aperti → `STATUS.md` nel project knowledge.
-- Migration fino alla 022 in `supabase/migrations/` (021 da incollare a mano). Edge Function in `supabase/functions/`.
+- Migration fino alla 024 in `supabase/migrations/` (021 da incollare a mano; 023 e 024 applicate dal connettore il 2026-10-27). Edge Function in `supabase/functions/`.
 - Lint: 0 errori; `react-hooks/set-state-in-effect` è warning (da sistemare quando si tocca il componente).
