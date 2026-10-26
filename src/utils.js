@@ -1,6 +1,6 @@
 // ── Utility functions, storage helpers, PDF generation ────────────────────────
 import { CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
-import { t, locale, nomeEsercizio, valore } from "./i18n/index.js";
+import { t, locale, nomeEsercizio, valore, nomeGiorno } from "./i18n/index.js";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 export function fmtDate(d) {
@@ -75,7 +75,7 @@ function getImgDims(b64) {
   });
 }
 
-export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress}) {
+export async function buildPDF({nome,cognome,obiettivo,livello,giorni,dayNames={},onProgress}) {
   // jsPDF caricato solo quando serve (alleggerisce il primo caricamento dell'app)
   const { default: jsPDF } = await import("jspdf");
   const doc=new jsPDF({unit:"mm",format:"a4"});
@@ -104,10 +104,11 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
 
   for(const day of activeDays) {
     const scheda=giorni[day];
+    const titoloGiorno=nomeGiorno(dayNames[day], day);   // B18: il nome scelto dal PT ("Día 1", "Push"…)
     doc.addPage(); y=M;
     doc.setFillColor(255,255,255); doc.rect(0,0,PW,28,"F");
     doc.setFillColor(130,160,0); doc.rect(0,0,4,28,"F");
-    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(40,40,50); doc.text(t("comune.giornoN",{g:day}).toUpperCase(),M,19);
+    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(40,40,50); doc.text(titoloGiorno.toUpperCase(),M,19);
     doc.setFontSize(9); doc.setFont("helvetica","normal"); doc.setTextColor(150,150,160); doc.text(cn,PW-M,12,{align:"right"});
     doc.setFontSize(12); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text(t("libreria.nEsercizi",{count:scheda.length}),PW-M,22,{align:"right"});
     doc.setDrawColor(220,220,225); doc.setLineWidth(0.4); doc.line(0,28,PW,28);
@@ -121,7 +122,7 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
     for(let i=0;i<scheda.length;i++) {
       const row=scheda[i];
       const nomeEx=nomeEsercizio(row.name,row.id);
-      onProgress&&onProgress(exDone/totalEx,`${t("comune.giornoN",{g:day})} — ${nomeEx}…`);
+      onProgress&&onProgress(exDone/totalEx,`${titoloGiorno} — ${nomeEx}…`);
       np(82);
       const rgb=CAT_COLORS_PDF[row.cat]||[80,80,200];
       doc.setFillColor(248,248,252); doc.roundedRect(M,y,CW,11,2,2,"F");
@@ -134,7 +135,7 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,onProgress
       doc.setFontSize(7); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(catTxt,PW-M-bw/2-2,y+7,{align:"center"});
       y+=14;
       let cx2=M+2;
-      [{label:t("builder.serie"),val:String(row.sets)},{label:t("card.ripetizioni"),val:String(row.reps)},{label:t("builder.recupero"),val:`${row.rest}s`}].forEach(({label,val})=>{
+      [{label:t("builder.serie"),val:String(row.sets)},{label:t("card.ripetizioni"),val:String(row.reps)},{label:t("builder.recupero"),val:row.rest>0?`${row.rest}s`:t("card.senzaPausa")}].forEach(({label,val})=>{
         const cw2=doc.getTextWidth(`${label}: ${val}`)+10;
         doc.setFillColor(243,243,248); doc.roundedRect(cx2-2,y-4.5,cw2,7,1.5,1.5,"F");
         doc.setFontSize(8.5); doc.setFont("helvetica","normal"); doc.setTextColor(110,110,125); doc.text(`${label}: `,cx2,y);

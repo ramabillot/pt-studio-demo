@@ -557,7 +557,8 @@
     "ariaRiapri": "{{nome}}: fatto. Tocca per modificare",
     "notaScorsa": "Nota della volta scorsa",
     "serieFatte": "Serie {{n}}/{{tot}}",
-    "ariaSerieFatte": "Serie fatte: {{n}} di {{tot}}. Tocca per segnarne un’altra"
+    "ariaSerieFatte": "Serie fatte: {{n}} di {{tot}}. Tocca per segnarne un’altra",
+    "senzaPausa": "senza pausa"
   },
   "progressi": {
     "esercizi": "Esercizi",

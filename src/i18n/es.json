@@ -557,7 +557,8 @@
     "ariaRiapri": "{{nome}}: hecho. Tocá para editar",
     "notaScorsa": "Nota de la última vez",
     "serieFatte": "Serie {{n}}/{{tot}}",
-    "ariaSerieFatte": "Series hechas: {{n}} de {{tot}}. Tocá para sumar otra"
+    "ariaSerieFatte": "Series hechas: {{n}} de {{tot}}. Tocá para sumar otra",
+    "senzaPausa": "sin descanso"
   },
   "progressi": {
     "esercizi": "Ejercicios",

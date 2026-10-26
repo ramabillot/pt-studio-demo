@@ -557,7 +557,8 @@
     "ariaRiapri": "{{nome}}: done. Tap to edit",
     "notaScorsa": "Last time’s note",
     "serieFatte": "Set {{n}}/{{tot}}",
-    "ariaSerieFatte": "Sets done: {{n}} of {{tot}}. Tap to add one"
+    "ariaSerieFatte": "Sets done: {{n}} of {{tot}}. Tap to add one",
+    "senzaPausa": "no rest"
   },
   "progressi": {
     "esercizi": "Exercises",

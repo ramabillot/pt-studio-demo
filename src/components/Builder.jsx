@@ -235,7 +235,7 @@ export default function Builder({setView, preload=null, setPreload=null, user}) 
     const nome=selectedAtleta?.nome||"";
     const cognome=selectedAtleta?.cognome||"";
     setPdfState({progress:0,label:t("pdf.preparazione")});
-    try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
+    try{ await buildPDF({nome,cognome,obiettivo,livello,giorni:activeGiorni,dayNames,onProgress:(p,l)=>setPdfState({progress:p,label:l})}); }
     catch(e){console.error(e);}
     finally{setPdfState(null);}
   };

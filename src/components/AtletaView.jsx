@@ -81,7 +81,8 @@ export default function AtletaView({user, onLogout}) {
           return {
             id:ex.esercizio_id_int||0, exKey:ex.id, exDbId:ex.id,
             name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10",
-            rest:ex.rest_sec||90, cat:exFull?.cat||"",
+            rest:ex.rest_sec??90,   // 0 = senza pausa (B5)
+            cat:exFull?.cat||"",
             nota:(ex.note||"").trim(),   // nota del PT (testo libero, non si traduce)
           };
         });
@@ -226,7 +227,7 @@ export default function AtletaView({user, onLogout}) {
       await buildPDF({
         nome: scheda.nome||"", cognome: scheda.cognome||"",
         obiettivo: scheda.obiettivo||"", livello: scheda.livello||"",
-        giorni: scheda.giorni,
+        giorni: scheda.giorni, dayNames: scheda.dayNames,
         onProgress:(p,l)=>setPdfStateAtleta({progress:p,label:l})
       });
     } catch(e){console.error(e);}

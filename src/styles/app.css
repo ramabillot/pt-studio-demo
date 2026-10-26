@@ -655,6 +655,7 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 /* ── Cronometro recupero / esercizi a tempo (atleta) ── */
 .crono-chip { background:rgba(var(--accent2-rgb),.08); border:1px solid rgba(var(--accent2-rgb),.25); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:700; padding:2px 9px; border-radius:999px; cursor:pointer; margin-right:6px; font-variant-numeric:tabular-nums; vertical-align:baseline; }
 .crono-chip:active { transform:scale(.96); }
+.ex-senza-pausa { font-style:italic; }
 /* Contatore serie fatte nella card atleta: grigio a 0, giallo in corso, verde (accent2) completo */
 .serie-chip { background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:700; padding:2px 10px; border-radius:999px; cursor:pointer; font-variant-numeric:tabular-nums; vertical-align:baseline; min-height:1.75rem; }
 .serie-chip.iniziato { border-color:rgba(var(--accent-rgb),.5); color:var(--accent); background:rgba(var(--accent-rgb),.08); }

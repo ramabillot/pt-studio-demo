@@ -45,7 +45,7 @@ export function schedaToPreload(scheda, atleta) {
             muscles: exFull.muscles || "",
             sets: ex.serie || 3,
             reps: ex.reps || "10",               // testo: conserva intervalli tipo "8-10"
-            rest: ex.rest_sec || 90,
+            rest: ex.rest_sec ?? 90,              // 0 = senza pausa (B5): prima diventava 90 e si risalvava così
             uid: `${g.id}-${i}`,
           };
         });

@@ -93,10 +93,12 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                   {t("card.serieFatte",{n:serieFatte,tot:totSerie})}
                 </button>} × {secTempo?`${secTempo}s`:`${ex.reps} ${t("allenamento.rip")}`} ·{" "}
             {stato.salta
-              ? <>{t("card.recupero")} {ex.rest}s</>
+              ? (ex.rest>0 ? <>{t("card.recupero")} {ex.rest}s</> : t("card.senzaPausa"))
               : <>
                   {secTempo>0&&<button className="crono-chip" onClick={()=>avviaTempo(nome, secTempo, ex.rest)} aria-label={t("card.ariaTempo",{s:secTempo})}>▶ {secTempo}s</button>}
-                  {ex.rest>0&&<button className="crono-chip" onClick={()=>avviaRecupero(nome, ex.rest)} aria-label={t("card.ariaRecupero",{t:fmtMMSS(ex.rest)})}>⏱ {fmtMMSS(ex.rest)}</button>}
+                  {ex.rest>0
+                    ? <button className="crono-chip" onClick={()=>avviaRecupero(nome, ex.rest)} aria-label={t("card.ariaRecupero",{t:fmtMMSS(ex.rest)})}>⏱ {fmtMMSS(ex.rest)}</button>
+                    : <span className="ex-senza-pausa">{t("card.senzaPausa")}</span>}
                 </>}
           </div>
           {ex.nota&&<div className="ex-nota-pt">{ex.nota}</div>}
