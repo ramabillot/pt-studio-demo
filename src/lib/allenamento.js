@@ -91,6 +91,23 @@ export function riassuntoSerie(serie) {
   return valide.map(una).join(" · ");
 }
 
+// Carichi del piano del PT per serie (kg o null). Oggi: carico iniziale (peso_iniziale) uguale per tutte.
+export function caricoPiano(ex) {
+  return ex.pesoIniziale != null && ex.pesoIniziale !== "" ? [Number(ex.pesoIniziale)] : [];
+}
+
+// Ripetizioni "strane" (B4: Willy 54 invece di 15, probabilmente il peso nel campo sbagliato).
+// All'atleta si avvisa solo se sono più di 3 volte le previste e più di 20 (non disturba chi fa 12 invece di 10).
+export function ripetizioniStrane(reps, previste) {
+  const r = parseInt(reps, 10), p = repsPrevisti(previste);
+  return p != null && Number.isFinite(r) && r > 3 * p && r > 20;
+}
+// Per il PT (Home, "Da controllare") la soglia è più bassa: almeno il doppio delle previste.
+export function ripetizioniFuoriScala(reps, previste) {
+  const r = parseInt(reps, 10), p = repsPrevisti(previste);
+  return p != null && p > 0 && Number.isFinite(r) && r >= 2 * p;
+}
+
 // Stato iniziale della card di un esercizio.
 // salvate = righe già salvate per questa data (o []), ultima = ultimaVolta(...)
 export function statoIniziale(ex, salvate, ultima) {
@@ -101,9 +118,12 @@ export function statoIniziale(ex, salvate, ultima) {
     return { peso: r.peso != null ? String(r.peso).replace(".", sepDecimale()) : "", reps: r.reps != null ? String(r.reps) : (previsti != null ? String(previsti) : "") };
   });
   // Sessione già salvata → valori salvati. Altrimenti: pesi dell'ultima volta, ripetizioni previste dalla scheda.
+  // Primo allenamento (nessuna ultima volta): carico consigliato dal PT (B4), prima i pesi restavano vuoti.
   const sorgente = salvate.length
     ? salvate
-    : (ultima?.serie || []).map(r => ({ peso: r.peso, reps: previsti ?? r.reps }));
+    : ultima?.serie?.length
+      ? ultima.serie.map(r => ({ peso: r.peso, reps: previsti ?? r.reps }))
+      : caricoPiano(ex).map(kg => ({ peso: kg, reps: previsti }));
   const serie = sorgente.length ? daRighe(sorgente) : daRighe([{ peso: null, reps: previsti }]);
   const tutteUguali = serie.every(s => s.peso === serie[0].peso && s.reps === serie[0].reps);
   return {

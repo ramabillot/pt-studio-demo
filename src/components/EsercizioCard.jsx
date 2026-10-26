@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES } from "../data.js";
 import { VideoModal } from "./Library.jsx";
-import { riassuntoSerie, righeDaStato } from "../lib/allenamento.js";
+import { riassuntoSerie, righeDaStato, caricoPiano, ripetizioniStrane, repsPrevisti } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
-import { useTranslation } from "react-i18next";
-import { nomeEsercizio, valore, ytCerca } from "../i18n/index.js";
+import { useTranslation, Trans } from "react-i18next";
+import { nomeEsercizio, valore, ytCerca, fmtNum } from "../i18n/index.js";
 import { store } from "../utils.js";
 
 // Nota della volta scorsa: chiusa di default (una riga), si apre con un tocco.
@@ -65,6 +65,16 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
 
   const segnaFatto = () => { set({fatto:true}); setAperta(false); };
 
+  // Carico consigliato dal PT (solo se non c'è un'ultima volta) e avviso ripetizioni strane (B4)
+  const piano = caricoPiano(ex);
+  const previste = repsPrevisti(ex.reps);
+  const righeReps = stato.modo==="fisso" ? [{reps:stato.reps, i:-1}] : stato.serie.map((s,i)=>({reps:s.reps, i}));
+  const strana = secTempo ? null : righeReps.find(r => ripetizioniStrane(r.reps, ex.reps) && String(r.reps)!==String(stato.avvisoOk||""));
+  const eraIlPeso = () => {
+    if (strana.i < 0) set({peso:String(strana.reps), reps:String(previste)});
+    else set({serie: stato.serie.map((s,j)=>j===strana.i?{peso:String(strana.reps), reps:String(previste)}:s)});
+  };
+
   // Contatore delle serie fatte (idea di Marta: "sono alla 3ª o alla 4ª?"). Solo un aiuto durante
   // l'allenamento: resta nella bozza sul telefono, non cambia cosa si salva. Ogni tocco +1,
   // dopo l'ultima torna a 0 (così un tocco di troppo si corregge). Arrivati in fondo si illumina ✓ Fatto.
@@ -104,9 +114,13 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
           {ex.nota&&<div className="ex-nota-pt">{ex.nota}</div>}
 
           {!stato.salta&&<>
-            {ultima&&(
+            {ultima?(
               <div className="ex-ultima">
                 {t("card.ultimaVolta")} <strong>{riassuntoSerie(ultima.serie)}</strong>
+              </div>
+            ):piano.length>0&&(
+              <div className="ex-ultima ex-consigliato">
+                {t("card.caricoConsigliato")} <strong>{piano.map(fmtNum).join(" · ")}&nbsp;kg</strong>
               </div>
             )}
             {ultima?.nota&&(
@@ -135,6 +149,16 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                     <Campo label={t("card.ripSerie",{n:i+1})} value={s.reps} onChange={v=>setSerie(i,{reps:v})} unita={secTempo?"s":t("allenamento.rip")} decimale={false}/>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {strana&&(
+              <div className="ex-avviso" role="status">
+                <p><Trans i18nKey="card.avvisoRip" values={{r:strana.reps, p:previste}} components={{b:<strong/>}}/></p>
+                <div className="ex-avviso-btns">
+                  <button type="button" className="ex-avviso-si" onClick={eraIlPeso}>{t("card.avvisoEraPeso",{r:strana.reps, p:previste})}</button>
+                  <button type="button" className="ex-avviso-no" onClick={()=>set({avvisoOk:strana.reps})}>{t("card.avvisoGiusto")}</button>
+                </div>
               </div>
             )}
 

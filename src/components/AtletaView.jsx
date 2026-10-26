@@ -83,6 +83,7 @@ export default function AtletaView({user, onLogout}) {
             name:ex.nome||exFull?.name||"", sets:ex.serie||3, reps:ex.reps||"10",
             rest:ex.rest_sec??90,   // 0 = senza pausa (B5)
             cat:exFull?.cat||"",
+            pesoIniziale:ex.peso_iniziale??null,   // carico consigliato dal PT (B4)
             nota:(ex.note||"").trim(),   // nota del PT (testo libero, non si traduce)
           };
         });

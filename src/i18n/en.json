@@ -558,7 +558,11 @@
     "notaScorsa": "Last time’s note",
     "serieFatte": "Set {{n}}/{{tot}}",
     "ariaSerieFatte": "Sets done: {{n}} of {{tot}}. Tap to add one",
-    "senzaPausa": "no rest"
+    "senzaPausa": "no rest",
+    "caricoConsigliato": "Suggested by your PT:",
+    "avvisoRip": "<b>{{r}} reps?</b> {{p}} were planned.",
+    "avvisoEraPeso": "It was the weight: {{r}} kg × {{p}}",
+    "avvisoGiusto": "Yes, that's right"
   },
   "progressi": {
     "esercizi": "Exercises",

@@ -558,7 +558,11 @@
     "notaScorsa": "Nota della volta scorsa",
     "serieFatte": "Serie {{n}}/{{tot}}",
     "ariaSerieFatte": "Serie fatte: {{n}} di {{tot}}. Tocca per segnarne un’altra",
-    "senzaPausa": "senza pausa"
+    "senzaPausa": "senza pausa",
+    "caricoConsigliato": "Carico consigliato dal PT:",
+    "avvisoRip": "<b>{{r}} ripetizioni?</b> Ne erano previste {{p}}.",
+    "avvisoEraPeso": "Era il peso: {{r}} kg × {{p}}",
+    "avvisoGiusto": "Sì, giusto"
   },
   "progressi": {
     "esercizi": "Esercizi",
