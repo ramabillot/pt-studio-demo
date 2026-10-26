@@ -434,7 +434,32 @@
     "claim1": "Rutinas, entrenamientos y progresos.",
     "claim2": "El personal trainer y sus atletas, en una sola app.",
     "atleta": "Ingresar como Atleta",
-    "pt": "Ingresar como Personal Trainer"
+    "pt": "Ingresar como Personal Trainer",
+    "titolo": "Esta semana",
+    "errore": "No puedo cargar los entrenamientos de los atletas. Probá en un rato.",
+    "riepilogo": "{{ok}} de {{tot}} al día",
+    "nFermi_one": "1 parado",
+    "nFermi_other": "{{count}} parados",
+    "settimanaScorsa": "Semana pasada: {{ok}} de {{tot}} cumplieron el objetivo",
+    "nessunAtleta": "Todavía no hay atletas: agregalos desde Atletas.",
+    "daSentire": "Para escribirles",
+    "sottoObiettivo": "Debajo del objetivo la semana pasada",
+    "inRegola": "Al día",
+    "senzaScheda": "Sin rutina",
+    "creaScheda": "crear rutina",
+    "fermoDa_one": "parado hace 1 día",
+    "fermoDa_other": "parado hace {{count}} días",
+    "whatsapp": "WhatsApp",
+    "copiato": "Copiado",
+    "settScorsa": "sem. pasada",
+    "questaSett": "esta sem.",
+    "noteAtleti": "Notas de los atletas · 7 días",
+    "nessunaNota": "Ninguna nota en los últimos 7 días.",
+    "saltati": "Ejercicios salteados · 14 días",
+    "nessunSaltato": "Ningún ejercicio salteado en los últimos 14 días",
+    "daControllare": "Para revisar · 14 días",
+    "ripFuoriScala": "{{nome}}: {{r}} repeticiones (previstas {{p}})",
+    "msgWhatsapp": "¡Hola {{nome}}! ¿Cómo va? Hace {{n}} días que no veo entrenamientos en PT Studio. ¿Todo bien? 💪"
   },
   "pdf": {
     "preparazione": "Preparando…",
@@ -608,7 +633,10 @@
     "vuota": "Todavía no hay mediciones registradas.",
     "eliminareConferma": "¿Eliminar esta medición?",
     "almeno2": "Agregá al menos 2 mediciones para ver el gráfico",
-    "selezionaMetrica": "Elegí una métrica para ver el gráfico"
+    "selezionaMetrica": "Elegí una métrica para ver el gráfico",
+    "giaPresenti": "En esta fecha ya hay una medida: el formulario muestra sus valores, cambiá solo lo que haga falta.",
+    "errSalvataggio": "Medida no guardada: revisá la conexión y probá de nuevo. Los valores siguen acá.",
+    "aggiorna": "Actualizar medida"
   },
   "segnala": {
     "fotoNonLeggibile": "No se puede leer la foto",
@@ -684,7 +712,11 @@
   "allenamentiPT": {
     "caricamento": "Cargando entrenamientos…",
     "errore": "No puedo cargar los entrenamientos.",
-    "ultimi": "Últimos entrenamientos"
+    "ultimi": "Últimos entrenamientos",
+    "esercizi": "{{n}}/{{tot}} ejercicios",
+    "serie": "{{n}}/{{tot}} series",
+    "saltato": "Salteado: {{nome}}",
+    "strano": "{{nome}}: {{r}} rep. (previstas {{p}})"
   },
   "cal": {
     "mese": "Mes",
@@ -940,5 +972,21 @@
     "modelliAiuto": "Los modelos se usan desde el Builder con «Copiar de…». Se crean con «Guardar como modelo».",
     "nessunModello": "Todavía no hay modelos.",
     "modelloInfo": "{{g}} días · {{e}} ejercicios"
+  },
+  "pt": {
+    "stato": {
+      "fermo": "parado",
+      "sotto": "bajo objetivo",
+      "ok": "al día",
+      "senzaScheda": "sin rutina"
+    },
+    "mai": "Nunca entrenó",
+    "ultimo": "Último: {{quando}}",
+    "nessunaScheda": "Sin rutina",
+    "questaSett": "Esta sem.",
+    "settScorsa": "Sem. pasada",
+    "gestione": "Gestión",
+    "gestioneSub": "acceso, perfil, archivar",
+    "andamento": "Evolución (semanas)"
   }
 }

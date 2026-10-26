@@ -29,6 +29,7 @@ export default function App() {
   const [user,setUser]=useState(null);
   const [view,setView]=useState("dashboard");
   const [builderPreload,setBuilderPreload]=useState(null);
+  const [atletaDaAprire,setAtletaDaAprire]=useState(null);   // tocco su un atleta nella Home → suo dettaglio
 
   // Ripristino sessione all'apertura (ogni app guarda SOLO la propria sessione):
   //  · app /atleta/ → token salvato sul telefono (atleta_me); così non deve rifare il login
@@ -101,10 +102,10 @@ export default function App() {
         <div className="app-wrap">
           <Sidebar user={user} view={view} setView={setView} onLogout={handleLogout}/>
           <div className="content"><Suspense fallback={null}>
-            {view==="dashboard"&&<Dashboard user={user} setView={setView}/>}
+            {view==="dashboard"&&<Dashboard user={user} setView={setView} apriAtleta={id=>{ setAtletaDaAprire(id); setView("atleti"); }}/>}
             {/* "Schede" = Builder + Modelli + Esercizi (la Libreria non è più una voce di menu) */}
             {(view==="builder"||view==="library")&&!isAdmin&&<Schede key={view} setView={setView} preload={builderPreload} setPreload={setBuilderPreload} user={user} tabIniziale={view==="library"?"esercizi":"atleti"}/>}
-            {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user}/>}
+            {view==="atleti"&&!isAdmin&&<Atleti setView={setView} setBuilderPreload={setBuilderPreload} user={user} apriId={atletaDaAprire} setApriId={setAtletaDaAprire}/>}
             {view==="calendar"&&!isAdmin&&<CalendarView setView={setView} user={user}/>}
             {view==="admin-stats"&&isAdmin&&<AdminStats setView={setView} user={user}/>}
             {view==="admin-pt"&&isAdmin&&<AdminPanel setView={setView}/>}

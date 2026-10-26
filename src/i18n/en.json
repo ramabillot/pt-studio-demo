@@ -434,7 +434,32 @@
     "claim1": "Plans, workouts and progress.",
     "claim2": "Personal trainers and their athletes, in one app.",
     "atleta": "Log in as Athlete",
-    "pt": "Log in as Personal Trainer"
+    "pt": "Log in as Personal Trainer",
+    "titolo": "This week",
+    "errore": "Can't load the athletes' workouts. Try again shortly.",
+    "riepilogo": "{{ok}} of {{tot}} on track",
+    "nFermi_one": "1 inactive",
+    "nFermi_other": "{{count}} inactive",
+    "settimanaScorsa": "Last week: {{ok}} of {{tot}} reached their goal",
+    "nessunAtleta": "No athletes yet: add them from Athletes.",
+    "daSentire": "Reach out",
+    "sottoObiettivo": "Below goal last week",
+    "inRegola": "On track",
+    "senzaScheda": "No plan",
+    "creaScheda": "create a plan",
+    "fermoDa_one": "inactive for 1 day",
+    "fermoDa_other": "inactive for {{count}} days",
+    "whatsapp": "WhatsApp",
+    "copiato": "Copied",
+    "settScorsa": "last week",
+    "questaSett": "this week",
+    "noteAtleti": "Athletes' notes · 7 days",
+    "nessunaNota": "No notes in the last 7 days.",
+    "saltati": "Skipped exercises · 14 days",
+    "nessunSaltato": "No skipped exercises in the last 14 days",
+    "daControllare": "To check · 14 days",
+    "ripFuoriScala": "{{nome}}: {{r}} reps ({{p}} planned)",
+    "msgWhatsapp": "Hi {{nome}}! How's it going? I haven't seen a workout on PT Studio for {{n}} days. All good? 💪"
   },
   "pdf": {
     "preparazione": "Preparing…",
@@ -608,7 +633,10 @@
     "vuota": "No measurements recorded yet.",
     "eliminareConferma": "Delete this measurement?",
     "almeno2": "Add at least 2 measurements to see the chart",
-    "selezionaMetrica": "Select a metric to see the chart"
+    "selezionaMetrica": "Select a metric to see the chart",
+    "giaPresenti": "There's already a measurement on this date: the form shows its values, change only what you need.",
+    "errSalvataggio": "Measurement not saved: check your connection and try again. Your values are still here.",
+    "aggiorna": "Update measurement"
   },
   "segnala": {
     "fotoNonLeggibile": "Can't read the photo",
@@ -684,7 +712,11 @@
   "allenamentiPT": {
     "caricamento": "Loading workouts…",
     "errore": "Can't load workouts.",
-    "ultimi": "Recent workouts"
+    "ultimi": "Recent workouts",
+    "esercizi": "{{n}}/{{tot}} exercises",
+    "serie": "{{n}}/{{tot}} sets",
+    "saltato": "Skipped: {{nome}}",
+    "strano": "{{nome}}: {{r}} reps ({{p}} planned)"
   },
   "cal": {
     "mese": "Month",
@@ -940,5 +972,21 @@
     "modelliAiuto": "Use templates from the Builder with “Copy from…”. Create them with “Save as template”.",
     "nessunModello": "No templates yet.",
     "modelloInfo": "{{g}} days · {{e}} exercises"
+  },
+  "pt": {
+    "stato": {
+      "fermo": "inactive",
+      "sotto": "below goal",
+      "ok": "on track",
+      "senzaScheda": "no plan"
+    },
+    "mai": "Never trained",
+    "ultimo": "Last: {{quando}}",
+    "nessunaScheda": "No plan",
+    "questaSett": "This week",
+    "settScorsa": "Last week",
+    "gestione": "Manage",
+    "gestioneSub": "access, profile, archive",
+    "andamento": "Trend (weeks)"
   }
 }

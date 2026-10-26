@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { OBIETTIVI, LIVELLI } from "../data.js";
-import { getInitials, calcEta } from "../utils.js";
+import { getInitials, calcEta, fmtDate } from "../utils.js";
+import { caricaPanoramica } from "../lib/panoramica.js";
+import { ORDINE_STATO } from "../lib/settimana.js";
+import { Avatar, PillolaStato, UltimoAllenamento } from "./pt/Pezzi.jsx";
 import { supabase } from "../supabase.js";
 import { linkAtleta } from "../lib/app.js";
 import { BackBtn } from "./Sidebar.jsx";
@@ -37,7 +40,11 @@ function rowToAtleta(row) {
 
 const FORM_EMPTY = {nome:"",cognome:"",username:"",pin:"",obiettivo:"",livello:"",altezza:"",dataNascita:"",sesso:"",note:"",telefono:"",email:""};
 
-export default function Atleti({setView, setBuilderPreload, user}) {
+// PC largo: dettaglio dell'atleta affiancato alla lista (da 1200 px)
+const mq = typeof window!=="undefined" ? window.matchMedia("(min-width: 1200px)") : null;
+const useLargo = () => useSyncExternalStore(cb=>{ mq?.addEventListener("change",cb); return ()=>mq?.removeEventListener("change",cb); }, ()=>!!mq?.matches, ()=>false);
+
+export default function Atleti({setView, setBuilderPreload, user, apriId=null, setApriId=null}) {
   const { t } = useTranslation();
   const [atleti,setAtleti]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -55,6 +62,10 @@ export default function Atleti({setView, setBuilderPreload, user}) {
   const [loadingScheda,setLoadingScheda]=useState(false);
   const [changePIN,setChangePIN]=useState({show:false,pin:"",err:""});
   const [copied,setCopied]=useState(null);
+  const [pano,setPano]=useState({});          // come va ogni atleta (ultimo allenamento, settimana, stato)
+  const [gestione,setGestione]=useState(false);
+  const largo=useLargo();
+  const oggi=fmtDate(new Date());
 
   useEffect(()=>{
     setLoading(true);
@@ -65,6 +76,9 @@ export default function Atleti({setView, setBuilderPreload, user}) {
         if(error){ console.error("[atleti load]",error); return; }
         setAtleti((data||[]).map(rowToAtleta));
       });
+    caricaPanoramica(supabase, user.supabaseId, fmtDate(new Date()), {conArchiviati:true})
+      .then(d=>setPano(Object.fromEntries(d.atleti.map(a=>[a.id,a]))))
+      .catch(e=>console.error("[atleti panoramica]",e));
   },[user?.supabaseId]);
 
   const activeAtleti=atleti.filter(a=>!a.archivedAt);
@@ -206,7 +220,16 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     setEditingProfilo(false);
     setProfiloErr("");
     setChangePIN({show:false,pin:"",err:""});
+    setGestione(false);
   };
+  // Aperto dalla Home (tocco su un atleta del feed)
+  useEffect(()=>{
+    if(!apriId||!atleti.length) return;
+    const a=atleti.find(x=>x.id===apriId);
+    if(a) openSelected(a);
+    if(setApriId) setApriId(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[apriId, atleti]);
   const closeSelected=()=>{
     setSelected(null);
     setArchiveConfirm(false);
@@ -218,75 +241,8 @@ export default function Atleti({setView, setBuilderPreload, user}) {
     ? t("comune.caricamento")
     : `${t("atleti.nAttivi",{count:activeAtleti.length})}${archivedAtleti.length>0?` · ${t("atleti.nArchiviati",{count:archivedAtleti.length})}`:""}`;
 
-  return (
-    <div>
-      <BackBtn setView={setView}/>
-      <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-        <div>
-          <div className="page-title">{t("nav.atleti")}</div>
-          <div className="page-sub">{subtitleText}</div>
-        </div>
-        <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ {t("atleti.nuovo")}</button>
-      </div>
-
-      {loading&&(
-        <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"32px 0"}}>{t("atleti.caricamento")}</div>
-      )}
-
-      <div className="clients-grid">
-        {activeAtleti.map(a=>(
-          <div className="client-item" key={a.id} onClick={()=>openSelected(a)}>
-            <div className="avatar" style={{background:a.color}}>{getInitials(a.nome,a.cognome)}</div>
-            <div className="client-info">
-              <div className="client-name">{a.nome} {a.cognome}</div>
-              <div className="client-tags">
-                {a.obiettivo&&<span className="tag">{valore("obiettivo",a.obiettivo)}</span>}
-                {a.livello&&<span className="tag">{valore("livello",a.livello)}</span>}
-              </div>
-              <div className="client-meta">
-                                <span>📋 {t("atleti.nSchede",{count:a.schede})}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Sezione archiviati ── */}
-      {archivedAtleti.length>0&&(
-        <div style={{marginTop:20}}>
-          <button
-            onClick={()=>setShowArchived(p=>!p)}
-            style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.8125rem",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:"4px 0",marginBottom:showArchived?10:0}}
-          >
-            <span style={{fontSize:"0.625rem"}}>{showArchived?"▼":"▶"}</span>
-            {t("atleti.archiviati",{n:archivedAtleti.length})}
-          </button>
-          {showArchived&&archivedAtleti.map(a=>(
-            <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:8,opacity:.65}}>
-              <div className="avatar" style={{background:a.color,width:36,height:36,fontSize:"0.8125rem"}}>{getInitials(a.nome,a.cognome)}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:"0.875rem",fontWeight:600,color:"var(--muted)"}}>{a.nome} {a.cognome}</div>
-                {a.obiettivo&&<div style={{fontSize:"0.75rem",color:"var(--muted)",opacity:.7}}>{valore("obiettivo",a.obiettivo)}</div>}
-              </div>
-              <button
-                className="btn-ghost"
-                style={{fontSize:"0.6875rem",padding:"4px 10px",flexShrink:0}}
-                onClick={()=>openSelected(a)}
-              >{t("atleti.dettagli")}</button>
-              <button
-                className="btn-ghost"
-                style={{fontSize:"0.6875rem",padding:"4px 10px",color:"var(--accent2)",borderColor:"rgba(71,255,232,.25)",flexShrink:0}}
-                onClick={()=>restoreAtleta(a.id)}
-              >{t("atleti.ripristina")}</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Modal atleta ── */}
-      {selected&&(
-        <div className="overlay" onClick={closeSelected}>
-          <div className="client-modal" onClick={e=>e.stopPropagation()}>
+  const dettaglio = selected && (
+          <div className={`client-modal${largo?" in-pannello":""}`} onClick={e=>e.stopPropagation()}>
             <div className="client-modal-header">
               <div className="avatar" style={{background:selected.color,width:52,height:52,fontSize:"1.125rem"}}>{getInitials(selected.nome,selected.cognome)}</div>
               <div style={{flex:1}}>
@@ -297,11 +253,76 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                   )}
                 </div>
                 <div style={{fontSize:"0.8125rem",color:"var(--muted)",marginTop:2}}>{valore("obiettivo",selected.obiettivo)} · {valore("livello",selected.livello)}</div>
+                {pano[selected.id]&&!selected.archivedAt&&(
+                  <div className="dett-stato"><PillolaStato stato={pano[selected.id].stato}/><span><UltimoAllenamento atleta={pano[selected.id]} oggi={oggi}/></span></div>
+                )}
               </div>
               <button className="modal-close" aria-label={t("comune.chiudi")} onClick={closeSelected}>✕</button>
             </div>
             <div className="client-modal-body">
 
+              {/* Ordine Lato PT 2.0: andamento → scheda → misure; accesso, profilo ed eliminazione in "Gestione" (chiusa) */}
+              {!selected.archivedAt&&(
+                <div className="dett-sez">
+                  <AllenamentiAtletaPT atletaId={selected.id} settimane={pano[selected.id]?.settimane}/>
+                </div>
+              )}
+              {!selected.archivedAt&&(
+                <>
+                  <div className="dett-titolo">{t("atleti.schedaAssegnata")}</div>
+                  {loadingScheda?(
+                      <div style={{color:"var(--muted)",fontSize:"0.875rem"}}>{t("atleti.caricamentoScheda")}</div>
+                    ):atletaScheda?(
+                      <div>
+                        {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
+                          const key=g.giorno_key||String.fromCharCode(65+g.ordine);
+                          const label=g.nome&&nomeGiorno(g.nome,key)===g.nome?`${key} — ${g.nome}`:nomeGiorno(g.nome,key);
+                          return <span key={g.id} className="scheda-chip">📋 {label} · {t("libreria.nEsercizi",{count:(g.scheda_esercizi||[]).length})}</span>;
+                        })}
+                        <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
+                          <button className="btn-primary" style={{fontSize:"0.75rem",padding:"6px 14px"}} onClick={()=>{
+                            setBuilderPreload(schedaToPreload(atletaScheda,selected));
+                            closeSelected();
+                            setView("builder");
+                          }}>✏️ {t("atleti.modificaBuilder")}</button>
+                        </div>
+                      </div>
+                    ):(
+                      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                        <div style={{color:"var(--muted)",fontSize:"0.875rem",flex:1}}>{t("atleti.nessunaScheda")}</div>
+                        <button className="btn-ghost" style={{fontSize:"0.75rem",padding:"6px 14px"}} onClick={()=>{
+                          setBuilderPreload({
+                            atleta:selected,atletaId:selected.id,
+                            nome:selected.nome,cognome:selected.cognome,
+                            obiettivo:selected.obiettivo||"",livello:selected.livello||"",
+                            giorni:{A:[],B:[],C:[],D:[],E:[],F:[],G:[]},
+                            dayNames:{A:"",B:"",C:"",D:"",E:"",F:"",G:""},
+                          });
+                          closeSelected();
+                          setView("builder");
+                        }}>+ {t("atleti.creaScheda")}</button>
+                      </div>
+                    )}
+                </>
+              )}
+
+              {!selected.archivedAt&&(
+                <>
+                  <div style={{marginTop:24}}>
+                    <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 {t("atleti.misurazioni")}</div>
+                    <MisureSection
+                      ptId={user?.supabaseId}
+                      supabaseAtletaId={selected.id}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="dett-gestione">
+                <button type="button" className="dett-gestione-btn" aria-expanded={gestione} onClick={()=>setGestione(v=>!v)}>
+                  <span>⚙ {t("pt.gestione")}</span><small>{t("pt.gestioneSub")}</small><span aria-hidden="true">{gestione?"▴":"▾"}</span>
+                </button>
+                {gestione&&<div className="dett-gestione-corpo">
               {/* ── Credenziali accesso ── */}
               <div style={{marginBottom:20,padding:"12px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10}}>
                 <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:10}}>{t("atleti.credenziali")}</div>
@@ -355,45 +376,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                   </div>
                 )}
               </div>
-
-              {!selected.archivedAt&&(
-                <>
-                  <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>{t("atleti.schedaAssegnata")}</div>
-                  {loadingScheda?(
-                      <div style={{color:"var(--muted)",fontSize:"0.875rem"}}>{t("atleti.caricamentoScheda")}</div>
-                    ):atletaScheda?(
-                      <div>
-                        {(atletaScheda.scheda_giorni||[]).sort((a,b)=>a.ordine-b.ordine).map(g=>{
-                          const key=g.giorno_key||String.fromCharCode(65+g.ordine);
-                          const label=g.nome&&nomeGiorno(g.nome,key)===g.nome?`${key} — ${g.nome}`:nomeGiorno(g.nome,key);
-                          return <span key={g.id} className="scheda-chip">📋 {label} · {t("libreria.nEsercizi",{count:(g.scheda_esercizi||[]).length})}</span>;
-                        })}
-                        <div style={{display:"flex",gap:8,marginTop:10,flexWrap:"wrap"}}>
-                          <button className="btn-primary" style={{fontSize:"0.75rem",padding:"6px 14px"}} onClick={()=>{
-                            setBuilderPreload(schedaToPreload(atletaScheda,selected));
-                            closeSelected();
-                            setView("builder");
-                          }}>✏️ {t("atleti.modificaBuilder")}</button>
-                        </div>
-                      </div>
-                    ):(
-                      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                        <div style={{color:"var(--muted)",fontSize:"0.875rem",flex:1}}>{t("atleti.nessunaScheda")}</div>
-                        <button className="btn-ghost" style={{fontSize:"0.75rem",padding:"6px 14px"}} onClick={()=>{
-                          setBuilderPreload({
-                            atleta:selected,atletaId:selected.id,
-                            nome:selected.nome,cognome:selected.cognome,
-                            obiettivo:selected.obiettivo||"",livello:selected.livello||"",
-                            giorni:{A:[],B:[],C:[],D:[],E:[],F:[],G:[]},
-                            dayNames:{A:"",B:"",C:"",D:"",E:"",F:"",G:""},
-                          });
-                          closeSelected();
-                          setView("builder");
-                        }}>+ {t("atleti.creaScheda")}</button>
-                      </div>
-                    )}
-                </>
-              )}
 
               <div style={{marginTop:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -455,28 +437,6 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 )}
               </div>
 
-              <div style={{marginTop:16,padding:"14px 16px",background:"var(--card2)",borderRadius:10,border:"1px solid var(--border)"}}>
-                <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:8}}>{t("nav.statistiche")}</div>
-                <div style={{display:"flex",gap:24,fontSize:"0.875rem"}}>
-                  <div><span style={{color:"var(--muted)"}}>{t("atleti.schede")} </span><strong style={{color:"var(--accent)"}}>{selected.schede||0}</strong></div>
-                </div>
-              </div>
-
-              {!selected.archivedAt&&(
-                <>
-                  <div style={{marginTop:24}}>
-                    <div style={{fontSize:"0.75rem",fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:"var(--muted)",marginBottom:12}}>📏 {t("atleti.misurazioni")}</div>
-                    <MisureSection
-                      ptId={user?.supabaseId}
-                      supabaseAtletaId={selected.id}
-                    />
-                  </div>
-                  <div style={{marginTop:24}}>
-                    <AllenamentiAtletaPT atletaId={selected.id}/>
-                  </div>
-                </>
-              )}
-
               {/* ── Azioni distruttive ── */}
               <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid var(--border)",display:"flex",flexDirection:"column",gap:10}}>
                 {selected.archivedAt?(
@@ -531,8 +491,86 @@ export default function Atleti({setView, setBuilderPreload, user}) {
                 )}
               </div>
 
+                </div>}
+              </div>
             </div>
           </div>
+  );
+
+  return (
+    <div>
+      <BackBtn setView={setView}/>
+      <div className="page-head" style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+        <div>
+          <div className="page-title">{t("nav.atleti")}</div>
+          <div className="page-sub">{subtitleText}</div>
+        </div>
+        <button className="btn-primary" onClick={()=>{setShowForm(true);setLimitErr("");}}>+ {t("atleti.nuovo")}</button>
+      </div>
+
+      {loading&&(
+        <div style={{color:"var(--muted)",fontSize:"0.875rem",textAlign:"center",padding:"32px 0"}}>{t("atleti.caricamento")}</div>
+      )}
+
+      <div className={`atleti-layout${selected&&largo?" con-dettaglio":""}`}>
+      <div className="atleti-lista">
+        {[...activeAtleti].sort((x,y)=>(ORDINE_STATO[pano[x.id]?.stato]??9)-(ORDINE_STATO[pano[y.id]?.stato]??9)).map(a=>{
+          const p=pano[a.id];
+          return (
+            <button type="button" className={`atleta-riga${selected?.id===a.id?" sel":""}`} key={a.id} onClick={()=>openSelected(a)}>
+              <Avatar atleta={a}/>
+              <span className="atleta-riga-nome"><b>{a.nome} {a.cognome}</b><small>{p?.scheda?.nome||t("pt.nessunaScheda")}</small></span>
+              {p&&<PillolaStato stato={p.stato}/>}
+              {p&&<span className="atleta-riga-meta">
+                <span><UltimoAllenamento atleta={p} oggi={oggi}/></span>
+                {p.sett.ob>0&&<span>{t("pt.questaSett")} <b>{p.sett.fatti}/{p.sett.ob}</b></span>}
+                {p.sett.ob>0&&<span className="solo-largo">{t("pt.settScorsa")} <b>{p.scorsa.fatti}/{p.scorsa.ob}</b></span>}
+                {p.diFila>0&&<span>🔥 <b>{p.diFila}</b></span>}
+              </span>}
+            </button>
+          );
+        })}
+      </div>
+      {selected&&largo&&<aside className="atleti-pannello">{dettaglio}</aside>}
+      </div>
+
+      {/* ── Sezione archiviati ── */}
+      {archivedAtleti.length>0&&(
+        <div style={{marginTop:20}}>
+          <button
+            onClick={()=>setShowArchived(p=>!p)}
+            style={{background:"none",border:"none",color:"var(--muted)",fontFamily:"'DM Sans',sans-serif",fontSize:"0.8125rem",fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,padding:"4px 0",marginBottom:showArchived?10:0}}
+          >
+            <span style={{fontSize:"0.625rem"}}>{showArchived?"▼":"▶"}</span>
+            {t("atleti.archiviati",{n:archivedAtleti.length})}
+          </button>
+          {showArchived&&archivedAtleti.map(a=>(
+            <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--card)",border:"1px solid var(--border)",borderRadius:10,marginBottom:8,opacity:.65}}>
+              <div className="avatar" style={{background:a.color,width:36,height:36,fontSize:"0.8125rem"}}>{getInitials(a.nome,a.cognome)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:"0.875rem",fontWeight:600,color:"var(--muted)"}}>{a.nome} {a.cognome}</div>
+                {a.obiettivo&&<div style={{fontSize:"0.75rem",color:"var(--muted)",opacity:.7}}>{valore("obiettivo",a.obiettivo)}</div>}
+              </div>
+              <button
+                className="btn-ghost"
+                style={{fontSize:"0.6875rem",padding:"4px 10px",flexShrink:0}}
+                onClick={()=>openSelected(a)}
+              >{t("atleti.dettagli")}</button>
+              <button
+                className="btn-ghost"
+                style={{fontSize:"0.6875rem",padding:"4px 10px",color:"var(--accent2)",borderColor:"rgba(71,255,232,.25)",flexShrink:0}}
+                onClick={()=>restoreAtleta(a.id)}
+              >{t("atleti.ripristina")}</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Modal atleta ── */}
+      {/* Dettaglio: su PC largo affiancato alla lista, su telefono a tutto schermo */}
+      {selected&&!largo&&(
+        <div className="overlay" onClick={closeSelected}>
+          {dettaglio}
         </div>
       )}
 
