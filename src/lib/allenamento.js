@@ -20,7 +20,7 @@ export function serieDiSessione(sessione) {
       const k = r.nome_esercizio;
       if (!k) return;
       const e = out[k] || (out[k] = { nome: k, esercizioId: r.esercizio_id || null, serie: [], nota: "" });
-      e.serie.push({ peso: r.peso != null ? +r.peso : null, reps: r.reps != null ? +r.reps : null });
+      e.serie.push({ peso: r.peso != null ? +r.peso : null, reps: r.reps != null ? +r.reps : null, durata_sec: r.durata_sec ?? null, velocita: r.velocita ?? null, inclinazione: r.inclinazione ?? null, livello: r.livello ?? null });
       if (r.nota) e.nota = r.nota;
     });
   return out;
@@ -63,7 +63,8 @@ export function ultimaVolta(sessioni, ex, primaDi) {
     if (rows.length) {
       return {
         data: s.data,
-        serie: rows.map(r => ({ peso: r.peso != null ? +r.peso : null, reps: r.reps != null ? +r.reps : null })),
+        serie: rows.map(r => ({ peso: r.peso != null ? +r.peso : null, reps: r.reps != null ? +r.reps : null,
+          durata_sec: r.durata_sec ?? null, velocita: r.velocita ?? null, inclinazione: r.inclinazione ?? null, livello: r.livello ?? null })),
         nota: rows.find(r => r.nota)?.nota || "",
       };
     }
@@ -114,9 +115,36 @@ export function ripetizioniFuoriScala(reps, previste) {
   return p != null && p > 0 && Number.isFinite(r) && r >= 2 * p;
 }
 
+// ── Cardio (tapis roulant, bici…) ─────────────────────────────────────────────
+// Valori di una riga salvata. Righe vecchie (prima della migration 023): la durata stava nelle
+// ripetizioni in secondi ("Cinta 1 × 900") → 15 min.
+export function valoriCardio(r) {
+  if (!r) return null;
+  const sec = r.durata_sec ?? (r.reps != null && r.reps >= 60 ? r.reps : null);
+  return { durata: sec != null ? Math.round(sec / 6) / 10 : null, velocita: r.velocita ?? null, inclinazione: r.inclinazione ?? null, livello: r.livello ?? null };
+}
+// "15 min · 4,5 km/h · 10 % · liv. 6"
+export function riassuntoCardio(v) {
+  if (!v) return "—";
+  return [v.durata != null && v.durata !== "" ? `${fmtNum(v.durata)} min` : null,
+    v.velocita != null && v.velocita !== "" ? `${fmtNum(parseNum(String(v.velocita)))} km/h` : null,
+    v.inclinazione != null && v.inclinazione !== "" ? `${fmtNum(parseNum(String(v.inclinazione)))} %` : null,
+    v.livello != null && v.livello !== "" ? `${t("card.liv")} ${v.livello}` : null].filter(Boolean).join(" · ") || "—";
+}
+const testoNum = v => (v == null || v === "" ? "" : String(v).replace(".", sepDecimale()));
+
+function statoCardio(ex, salvate, ultima) {
+  const da = salvate.length ? valoriCardio(salvate[0]) : ultima?.serie?.length ? valoriCardio(ultima.serie[0]) : null;
+  const piano = { durata: ex.durataMin, velocita: ex.velocita, inclinazione: ex.inclinazione, livello: ex.livello };
+  const v = k => testoNum(da?.[k] ?? piano[k]);
+  return { modo: "cardio", durata: v("durata"), velocita: v("velocita"), inclinazione: v("inclinazione"), livello: v("livello"),
+    nota: salvate.length ? (salvate.find(r => r.nota)?.nota || "") : "", salta: false, fatto: salvate.length > 0 };
+}
+
 // Stato iniziale della card di un esercizio.
 // salvate = righe già salvate per questa data (o []), ultima = ultimaVolta(...)
 export function statoIniziale(ex, salvate, ultima) {
+  if (ex.tipo === "cardio") return statoCardio(ex, salvate, ultima);
   const nSerie = ex.sets || 3;
   const previsti = repsPrevisti(ex.reps);
   const daRighe = rows => Array.from({ length: nSerie }, (_, i) => {
@@ -143,16 +171,27 @@ export function statoIniziale(ex, salvate, ultima) {
     nota: salvate.length ? (salvate.find(r => r.nota)?.nota || "") : "",
     salta: false,
     fatto: salvate.length > 0,   // già nella sessione salvata = fatto
+    // sessione salvata con meno serie di quelle in scheda (es. 3 su 4): si risalva con 3, non 4
+    ...(salvate.length > 0 && salvate.length < nSerie ? { serieSalvate: salvate.length, serieFatte: salvate.length } : {}),
   };
 }
 
 // Righe da inviare al salvataggio per una card
 export function righeDaStato(ex, st) {
   if (st.salta) return [];
+  if (st.modo === "cardio") {
+    const durata = parseNum(st.durata);
+    return [{ scheda_esercizio_id: ex.exDbId, nome_esercizio: ex.name, serie_numero: 1, reps: null, peso: null,
+      durata_sec: durata != null && durata > 0 ? Math.round(durata * 60) : null,
+      velocita: parseNum(st.velocita), inclinazione: parseNum(st.inclinazione),
+      livello: parseNum(st.livello) != null ? Math.round(parseNum(st.livello)) : null }];
+  }
   const nSerie = ex.sets || 3;
-  const serie = st.modo === "fisso"
+  const tutte = st.modo === "fisso"
     ? Array.from({ length: nSerie }, () => ({ peso: st.peso, reps: st.reps }))
     : st.serie;
+  // serie davvero fatte (scelto dall'atleta quando il contatore era sotto il totale)
+  const serie = st.serieSalvate > 0 && st.serieSalvate < tutte.length ? tutte.slice(0, st.serieSalvate) : tutte;
   return serie.map((s, i) => {
     const peso = parseNum(s.peso);
     const reps = parseInt(s.reps, 10);
@@ -174,7 +213,8 @@ export const METRICHE = {
 
 // Riepilogo testuale di una sessione (storico del PT): [{nome, testo, nota}]
 export function righeRiepilogo(sessione) {
-  return Object.values(serieDiSessione(sessione)).map(e => ({ nome: e.nome, testo: riassuntoSerie(e.serie), nota: e.nota }));
+  return Object.values(serieDiSessione(sessione)).map(e => ({ nome: e.nome, nota: e.nota,
+    testo: e.serie[0]?.durata_sec != null ? riassuntoCardio(valoriCardio(e.serie[0])) : riassuntoSerie(e.serie) }));
 }
 
 // ── Costanza a settimane (barra in alto dell'atleta) ─────────────────────────

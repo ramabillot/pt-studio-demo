@@ -567,7 +567,18 @@
     "avvisoEraPeso": "It was the weight: {{r}} kg × {{p}}",
     "avvisoGiusto": "Yes, that's right",
     "previsto": "Planned:",
-    "ptConsiglia": "Your PT suggests:"
+    "ptConsiglia": "Your PT suggests:",
+    "liv": "lvl",
+    "durata": "Duration",
+    "velocita": "Speed",
+    "inclinazione": "Incline",
+    "livello": "Level",
+    "min": "min",
+    "kmh": "km/h",
+    "ariaDurata": "Start {{t}}",
+    "quanteSerie": "You marked {{n}} of {{tot}} sets. Save {{n}} or {{tot}}?",
+    "salvaN": "Save {{n}}",
+    "neHoFatte": "I did {{tot}}"
   },
   "progressi": {
     "esercizi": "Exercises",

@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES } from "../data.js";
 import { VideoModal } from "./Library.jsx";
-import { riassuntoSerie, righeDaStato, caricoPiano, ripetizioniStrane, repsPrevisti, consiglioAttivo } from "../lib/allenamento.js";
+import { riassuntoSerie, righeDaStato, caricoPiano, ripetizioniStrane, repsPrevisti, consiglioAttivo, riassuntoCardio, valoriCardio } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
 import { useTranslation, Trans } from "react-i18next";
 import { nomeEsercizio, valore, ytCerca, fmtNum } from "../i18n/index.js";
-import { store } from "../utils.js";
+import { store, parseNum } from "../utils.js";
 
 // Nota della volta scorsa: chiusa di default (una riga), si apre con un tocco.
 // La scelta aperta/chiusa resta su questo telefono e vale per tutte le card.
@@ -35,6 +35,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const [showVideo, setShowVideo] = useState(false);
   const [notaAperta, setNotaAperta] = useState(!!stato.nota);
   const [aperta, setAperta] = useState(false);   // card "fatto" riaperta per correggere
+  const [chiediSerie, setChiediSerie] = useState(false);   // contatore sotto il totale: "salvo 3 o 4?"
   const [notaScorsaAperta, setNotaScorsaAperta] = useState(()=>store.get(KEY_NOTE_SCORSE)==="aperte");
   const toggleNotaScorsa = () => setNotaScorsaAperta(v => { store.set(KEY_NOTE_SCORSE, v ? "chiuse" : "aperte"); return !v; });
   const cc = CAT_COLORS[ex.cat] || "#e8ff47";
@@ -57,22 +58,31 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
         <span className="ex-fatto-check" aria-hidden="true">✓</span>
         <span className="ex-fatto-testo">
           <span className="ex-fatto-nome">{nome}</span>
-          <span className="ex-fatto-riassunto">{riassuntoSerie(righeDaStato(ex, stato))}</span>
+          <span className="ex-fatto-riassunto">{stato.modo==="cardio"
+            ? riassuntoCardio({durata:parseNum(stato.durata), velocita:stato.velocita, inclinazione:stato.inclinazione, livello:stato.livello})
+            : riassuntoSerie(righeDaStato(ex, stato))}</span>
         </span>
         <span className="ex-fatto-modifica">{t("card.modifica")}</span>
       </button>
     );
   }
 
-  const segnaFatto = () => { set({fatto:true}); setAperta(false); };
+  const cardio = stato.modo === "cardio";
+  // ✓ Fatto. Se l'atleta ha usato il contatore e si è fermato prima (es. 3/4) si chiede quante salvarne:
+  // così una serie dimenticata nel contatore non sparisce senza saperlo (e non si salvano serie mai fatte).
+  const segnaFatto = () => {
+    if (!cardio && !stato.fatto && serieFatte > 0 && serieFatte < totSerie) { setChiediSerie(true); return; }
+    set({fatto:true}); setAperta(false); setChiediSerie(false);
+  };
+  const salvaSerie = n => { set({fatto:true, serieFatte:n, serieSalvate:n<totSerie?n:undefined}); setAperta(false); setChiediSerie(false); };
 
   // Carico consigliato dal PT (solo se non c'è un'ultima volta) e avviso ripetizioni strane (B4)
   const piano = caricoPiano(ex);
   const pianoDiverso = piano.length > 1 && new Set(piano).size > 1;   // carichi diversi per serie → riga "Previsto"
   const consiglio = consiglioAttivo(ex, ultima);
   const previste = repsPrevisti(ex.reps);
-  const righeReps = stato.modo==="fisso" ? [{reps:stato.reps, i:-1}] : stato.serie.map((s,i)=>({reps:s.reps, i}));
-  const strana = secTempo ? null : righeReps.find(r => ripetizioniStrane(r.reps, ex.reps) && String(r.reps)!==String(stato.avvisoOk||""));
+  const righeReps = cardio ? [] : stato.modo==="fisso" ? [{reps:stato.reps, i:-1}] : stato.serie.map((s,i)=>({reps:s.reps, i}));
+  const strana = secTempo || cardio ? null : righeReps.find(r => ripetizioniStrane(r.reps, ex.reps) && String(r.reps)!==String(stato.avvisoOk||""));
   const eraIlPeso = () => {
     if (strana.i < 0) set({peso:String(strana.reps), reps:String(previste)});
     else set({serie: stato.serie.map((s,j)=>j===strana.i?{peso:String(strana.reps), reps:String(previste)}:s)});
@@ -84,7 +94,8 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const totSerie = ex.sets || 3;
   const serieFatte = Math.min(stato.serieFatte ?? (stato.fatto ? totSerie : 0), totSerie);
   const tuttiFatti = serieFatte >= totSerie;
-  const contaSerie = () => set({serieFatte: tuttiFatti ? 0 : serieFatte + 1});
+  const contaSerie = () => { setChiediSerie(false); set({serieFatte: tuttiFatti ? 0 : serieFatte + 1, serieSalvate:undefined}); };
+  const durataSec = Math.round((parseNum(stato.durata) || 0) * 60);
 
   return (
     <>
@@ -99,6 +110,12 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
           </div>
           <div className="ex-cliente-name">{nome}</div>
           {ex.alias&&<div className="ex-nome-tecnico">{nomeTec}</div>}
+          {cardio?(
+            <div className="ex-cliente-meta">
+              {!stato.salta&&durataSec>0&&<button className="crono-chip" onClick={()=>avviaTempo(nome, durataSec, ex.rest)} aria-label={t("card.ariaDurata",{t:fmtMMSS(durataSec)})}>▶ {fmtMMSS(durataSec)}</button>}
+              {ex.rest>0&&!stato.salta&&<button className="crono-chip" onClick={()=>avviaRecupero(nome, ex.rest)} aria-label={t("card.ariaRecupero",{t:fmtMMSS(ex.rest)})}>⏱ {fmtMMSS(ex.rest)}</button>}
+            </div>
+          ):(
           <div className="ex-cliente-meta">
             {stato.salta
               ? t("card.serie",{count:ex.sets})
@@ -115,9 +132,44 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                     : <span className="ex-senza-pausa">{t("card.senzaPausa")}</span>}
                 </>}
           </div>
+          )}
           {ex.nota&&<div className="ex-nota-pt">{ex.nota}</div>}
 
-          {!stato.salta&&<>
+          {!stato.salta&&cardio&&<>
+            {ultima&&<div className="ex-ultima">{t("card.ultimaVolta")} <strong>{riassuntoCardio(valoriCardio(ultima.serie[0]))}</strong></div>}
+            {ultima?.nota&&(
+              <div className="ex-nota-scorsa">
+                <button type="button" className="ex-link ex-nota-scorsa-btn" onClick={toggleNotaScorsa} aria-expanded={notaScorsaAperta}>
+                  📝 {t("card.notaScorsa")} {notaScorsaAperta?"▴":"▾"}
+                </button>
+                {notaScorsaAperta&&<div className="ex-nota-scorsa-testo">{ultima.nota}</div>}
+              </div>
+            )}
+            <div className="ex-cardio">
+              {[["durata","card.durata","card.min"],["velocita","card.velocita","card.kmh"],["inclinazione","card.inclinazione",null],["livello","card.livello",null]]
+                .filter(([k])=>k==="durata" || (k==="livello" ? ex.livello!=null||stato.livello!=="" : (ex.livello==null||ex[k]!=null||stato[k]!=="")))
+                .map(([k,l,u])=>(
+                  <label key={k} className="ex-cardio-campo">{t(l)}
+                    <input className="ex-peso-input" type="text" inputMode={k==="livello"?"numeric":"decimal"} placeholder="—" value={stato[k]}
+                      onChange={e=>set({[k]:k==="livello"?e.target.value.replace(/\D/g,"").slice(0,2):e.target.value.replace(/[^0-9.,]/g,"")})}/>
+                    <span>{u?t(u):k==="inclinazione"?"%":""}</span>
+                  </label>
+                ))}
+            </div>
+            <div className="ex-azioni">
+              {!notaAperta&&<button className="ex-link" onClick={()=>setNotaAperta(true)}>＋ {t("card.nota")}</button>}
+              {stato.fatto&&<button className="ex-link" onClick={()=>set({fatto:false})}>↩ {t("card.nonFatto")}</button>}
+            </div>
+            {notaAperta&&(
+              <textarea className="field-input ex-nota" rows={2} placeholder={t("card.phNota")}
+                value={stato.nota} onChange={e=>set({nota:e.target.value})}/>
+            )}
+            <button className={`ex-fatto-btn${stato.fatto?" attivo":""}`} onClick={segnaFatto}>
+              ✓ {t(stato.fatto?"card.fattoChiudi":"card.segnaFatto")}
+            </button>
+          </>}
+
+          {!stato.salta&&!cardio&&<>
             {pianoDiverso&&(
               <div className="ex-previsto"><span>{t("card.previsto")}</span> <strong>{piano.map(fmtNum).join(" · ")}&nbsp;kg</strong></div>
             )}
@@ -190,9 +242,19 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
                 value={stato.nota} onChange={e=>set({nota:e.target.value})}/>
             )}
 
-            <button className={`ex-fatto-btn${stato.fatto?" attivo":""}${tuttiFatti&&!stato.fatto?" pronto":""}`} onClick={segnaFatto}>
-              ✓ {t(stato.fatto?"card.fattoChiudi":"card.segnaFatto")}
-            </button>
+            {chiediSerie?(
+              <div className="ex-avviso ex-quante" role="status">
+                <p>{t("card.quanteSerie",{n:serieFatte,tot:totSerie})}</p>
+                <div className="ex-avviso-btns">
+                  <button type="button" className="ex-avviso-si" onClick={()=>salvaSerie(serieFatte)}>{t("card.salvaN",{n:serieFatte})}</button>
+                  <button type="button" className="ex-avviso-no" onClick={()=>salvaSerie(totSerie)}>{t("card.neHoFatte",{tot:totSerie})}</button>
+                </div>
+              </div>
+            ):(
+              <button className={`ex-fatto-btn${stato.fatto?" attivo":""}${tuttiFatti&&!stato.fatto?" pronto":""}`} onClick={segnaFatto}>
+                ✓ {t(stato.fatto?"card.fattoChiudi":"card.segnaFatto")}
+              </button>
+            )}
           </>}
         </div>
       </div>

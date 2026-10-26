@@ -484,6 +484,12 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .ex-nome-tecnico { font-size:0.75rem; color:var(--muted); margin:-1px 0 3px; }
 .ex-previsto { font-size:0.8125rem; color:var(--muted); margin-top:8px; font-variant-numeric:tabular-nums; }
 .ex-previsto strong { color:var(--text); }
+/* Card cardio: campi durata / velocità / inclinazione / livello */
+.ex-cardio { display:grid; grid-template-columns:repeat(auto-fit, minmax(6.5rem, 1fr)); gap:8px; margin-top:10px; }
+.ex-cardio-campo { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:0.6875rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.ex-cardio-campo .ex-peso-input { width:100%; max-width:6rem; }
+.ex-cardio-campo span { font-size:0.6875rem; text-transform:none; letter-spacing:0; font-weight:600; }
+.ex-quante { margin-top:14px; }
 /* Avviso ripetizioni strane (B4): giallo caldo, non blocca niente */
 .ex-avviso { margin-top:10px; border:1px solid rgba(var(--warn-rgb),.45); background:rgba(var(--warn-rgb),.08); border-radius:10px; padding:9px 12px; font-size:0.8125rem; text-align:left; }
 .ex-avviso p { margin:0 0 8px; color:var(--text); }

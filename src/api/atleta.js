@@ -96,3 +96,7 @@ export const saveSessione = (giornoId, data, serie, note = null) =>
 // note: [{ scheda_esercizio_id, nome_esercizio, nota }]
 export const setNote = (sessioneId, note) =>
   rpc("atleta_set_note", { ...tok(), p_sessione_id: sessioneId, p_note: note });
+
+// Valori cardio (durata, velocità, inclinazione, livello) dopo il salvataggio, come le note (migration 023)
+export const setCardio = (sessioneId, valori) =>
+  rpc("atleta_set_cardio", { ...tok(), p_sessione_id: sessioneId, p_valori: valori });

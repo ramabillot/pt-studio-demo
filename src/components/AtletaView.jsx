@@ -87,6 +87,8 @@ export default function AtletaView({user, onLogout}) {
             alias:(ex.nome_atleta||"").trim(),      // nome per l'atleta (es. nome sul cartello della macchina)
             carichi:Array.isArray(ex.carichi_serie)&&ex.carichi_serie.length?ex.carichi_serie.map(c=>c?.kg??null):null,
             propostiIl:ex.carichi_proposti_il||null,   // "consiglia questi pesi" fino al prossimo allenamento
+            tipo:ex.tipo==="cardio"?"cardio":"forza",  // cardio: durata/velocità/inclinazione/livello al posto di kg × rip
+            durataMin:ex.durata_min??null, velocita:ex.velocita??null, inclinazione:ex.inclinazione??null, livello:ex.livello??null,
             nota:(ex.note||"").trim(),   // nota del PT (testo libero, non si traduce)
           };
         });
@@ -159,7 +161,8 @@ export default function AtletaView({user, onLogout}) {
     });
     // Allenamento in corso non ancora salvato → si riprende da lì
     const bozza=leggiBozze(user.id)[`${selectedDate}|${activeDay}`];
-    if(bozza) Object.keys(nuovi).forEach(k=>{ if(bozza.stati?.[k]) nuovi[k]={...nuovi[k], ...bozza.stati[k]}; });
+    // (una bozza di prima che l'esercizio diventasse cardio non si usa: avrebbe kg × rip)
+    if(bozza) Object.keys(nuovi).forEach(k=>{ const b=bozza.stati?.[k]; if(b && (b.modo==='cardio')===(nuovi[k].modo==='cardio')) nuovi[k]={...nuovi[k], ...b}; });
     bozzaDaScrivere.current=false;
     setStati(nuovi); setSaved(!!sess);
   },[activeDay, selectedDate, supaSessions, schedaMeta, scheda]);
@@ -199,8 +202,12 @@ export default function AtletaView({user, onLogout}) {
     const orfane=giaSalvata?righeOrfane(giaSalvata, esercizi):[];
     const serie=[
       ...esercizi.filter(daSalvare).flatMap(ex=>righeDaStato(ex,stati[ex.exKey])),
-      ...orfane.map(r=>({scheda_esercizio_id:r.esercizio_id, nome_esercizio:r.nome_esercizio, serie_numero:r.serie_numero, reps:r.reps, peso:r.peso})),
+      ...orfane.map(r=>({scheda_esercizio_id:r.esercizio_id, nome_esercizio:r.nome_esercizio, serie_numero:r.serie_numero, reps:r.reps, peso:r.peso,
+        durata_sec:r.durata_sec??null, velocita:r.velocita??null, inclinazione:r.inclinazione??null, livello:r.livello??null})),
     ];
+    // Valori cardio: atleta_save_sessione salva solo peso/ripetizioni, il resto va con atleta_set_cardio
+    const cardio=serie.filter(r=>r.durata_sec!=null||r.velocita!=null||r.inclinazione!=null||r.livello!=null)
+      .map(r=>({scheda_esercizio_id:r.scheda_esercizio_id||null, nome_esercizio:r.nome_esercizio, durata_sec:r.durata_sec, velocita:r.velocita, inclinazione:r.inclinazione, livello:r.livello}));
     if(serie.length===orfane.length){ setSaveErr("errTuttiSaltati"); return; }
     const note=esercizi
       .filter(ex=>daSalvare(ex)&&stati[ex.exKey].nota?.trim())
@@ -210,6 +217,7 @@ export default function AtletaView({user, onLogout}) {
     try {
       const idSessione=await api.saveSessione(gid, selectedDate, serie);
       if(note.length) await api.setNote(idSessione, note);
+      if(cardio.length) await api.setCardio(idSessione, cardio);
       scriviBozza(user.id, `${selectedDate}|${activeDay}`, null);   // salvata: la bozza non serve più
       bozzaDaScrivere.current=false;
       const nuove=await api.getSessioni();

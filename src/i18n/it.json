@@ -567,7 +567,18 @@
     "avvisoEraPeso": "Era il peso: {{r}} kg × {{p}}",
     "avvisoGiusto": "Sì, giusto",
     "previsto": "Previsto:",
-    "ptConsiglia": "Il tuo PT consiglia:"
+    "ptConsiglia": "Il tuo PT consiglia:",
+    "liv": "liv.",
+    "durata": "Durata",
+    "velocita": "Velocità",
+    "inclinazione": "Inclinazione",
+    "livello": "Livello",
+    "min": "min",
+    "kmh": "km/h",
+    "ariaDurata": "Avvia {{t}}",
+    "quanteSerie": "Hai segnato {{n}} serie su {{tot}}. Ne salvo {{n}} o {{tot}}?",
+    "salvaN": "Salva {{n}}",
+    "neHoFatte": "Ne ho fatte {{tot}}"
   },
   "progressi": {
     "esercizi": "Esercizi",
