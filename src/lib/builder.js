@@ -244,7 +244,7 @@ export function perPDF(modello) {
       const ex = EXERCISES.find(e => e.id === r.id) || {};
       return { ...ex, id: r.id, name: r.nome, alias: r.alias, sets: r.tipo === "cardio" ? 1 : r.sets, reps: r.tipo === "cardio" ? `${r.durata || "?"} min` : r.reps,
         rest: Math.max(0, parseInt(r.rest, 10) || 0), cat: ex.cat || "", carichi: r.carichi, pesoIniziale: r.pesoIniziale, nota: r.nota, tipo: r.tipo,
-        velocita: r.velocita, inclinazione: r.inclinazione, livello: r.livello };
+        velocita: r.velocita, inclinazione: r.inclinazione, livello: r.livello, durataMin: r.durata || null };
     });
   });
   return { giorni, dayNames };

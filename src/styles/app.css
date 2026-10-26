@@ -481,6 +481,9 @@ input[type="number"], .builder-top input[type="text"] { width:90px; text-align:c
 .ex-ultima { font-size:0.8125rem; color:var(--muted); margin:10px 0 8px; }
 .ex-ultima strong { color:var(--text); }
 .ex-consigliato strong { color:var(--accent); }
+.ex-nome-tecnico { font-size:0.75rem; color:var(--muted); margin:-1px 0 3px; }
+.ex-previsto { font-size:0.8125rem; color:var(--muted); margin-top:8px; font-variant-numeric:tabular-nums; }
+.ex-previsto strong { color:var(--text); }
 /* Avviso ripetizioni strane (B4): giallo caldo, non blocca niente */
 .ex-avviso { margin-top:10px; border:1px solid rgba(var(--warn-rgb),.45); background:rgba(var(--warn-rgb),.08); border-radius:10px; padding:9px 12px; font-size:0.8125rem; text-align:left; }
 .ex-avviso p { margin:0 0 8px; color:var(--text); }

@@ -443,7 +443,8 @@
     "schedaPer": "RUTINA PARA",
     "generato": "Generado con PT Studio",
     "note": "NOTAS",
-    "nomeFile": "rutina"
+    "nomeFile": "rutina",
+    "carico": "Carga"
   },
   "atleta": {
     "errCaricamento": "No puedo cargar los datos. Revisá la conexión y volvé a abrir la app.",
@@ -564,7 +565,9 @@
     "caricoConsigliato": "Carga sugerida por tu PT:",
     "avvisoRip": "<b>¿{{r}} repeticiones?</b> Estaban previstas {{p}}.",
     "avvisoEraPeso": "Era el peso: {{r}} kg × {{p}}",
-    "avvisoGiusto": "Sí, está bien"
+    "avvisoGiusto": "Sí, está bien",
+    "previsto": "Previsto:",
+    "ptConsiglia": "Tu PT te sugiere:"
   },
   "progressi": {
     "esercizi": "Ejercicios",

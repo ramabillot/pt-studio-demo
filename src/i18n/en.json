@@ -443,7 +443,8 @@
     "schedaPer": "PLAN FOR",
     "generato": "Made with PT Studio",
     "note": "NOTES",
-    "nomeFile": "plan"
+    "nomeFile": "plan",
+    "carico": "Load"
   },
   "atleta": {
     "errCaricamento": "Can't load your data. Check your connection and reopen the app.",
@@ -564,7 +565,9 @@
     "caricoConsigliato": "Suggested by your PT:",
     "avvisoRip": "<b>{{r}} reps?</b> {{p}} were planned.",
     "avvisoEraPeso": "It was the weight: {{r}} kg × {{p}}",
-    "avvisoGiusto": "Yes, that's right"
+    "avvisoGiusto": "Yes, that's right",
+    "previsto": "Planned:",
+    "ptConsiglia": "Your PT suggests:"
   },
   "progressi": {
     "esercizi": "Exercises",

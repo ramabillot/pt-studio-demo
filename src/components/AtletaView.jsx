@@ -84,6 +84,9 @@ export default function AtletaView({user, onLogout}) {
             rest:ex.rest_sec??90,   // 0 = senza pausa (B5)
             cat:exFull?.cat||"",
             pesoIniziale:ex.peso_iniziale??null,   // carico consigliato dal PT (B4)
+            alias:(ex.nome_atleta||"").trim(),      // nome per l'atleta (es. nome sul cartello della macchina)
+            carichi:Array.isArray(ex.carichi_serie)&&ex.carichi_serie.length?ex.carichi_serie.map(c=>c?.kg??null):null,
+            propostiIl:ex.carichi_proposti_il||null,   // "consiglia questi pesi" fino al prossimo allenamento
             nota:(ex.note||"").trim(),   // nota del PT (testo libero, non si traduce)
           };
         });

@@ -1,6 +1,6 @@
 // ── Utility functions, storage helpers, PDF generation ────────────────────────
 import { CAT_COLORS_PDF, EX_IMAGES, ALL_DAYS } from "./data.js";
-import { t, locale, nomeEsercizio, valore, nomeGiorno } from "./i18n/index.js";
+import { t, locale, nomeEsercizio, valore, nomeGiorno, sepDecimale } from "./i18n/index.js";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 export function fmtDate(d) {
@@ -121,7 +121,8 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,dayNames={
     const IMG_W=55,IMG_H=42;
     for(let i=0;i<scheda.length;i++) {
       const row=scheda[i];
-      const nomeEx=nomeEsercizio(row.name,row.id);
+      const tecnico=nomeEsercizio(row.name,row.id);
+      const nomeEx=row.alias?`${row.alias} (${tecnico})`:tecnico;   // nome per l'atleta + nome tecnico
       onProgress&&onProgress(exDone/totalEx,`${titoloGiorno} — ${nomeEx}…`);
       np(82);
       const rgb=CAT_COLORS_PDF[row.cat]||[80,80,200];
@@ -135,7 +136,17 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,dayNames={
       doc.setFontSize(7); doc.setTextColor(...rgb.map(c=>Math.max(0,c-20))); doc.text(catTxt,PW-M-bw/2-2,y+7,{align:"center"});
       y+=14;
       let cx2=M+2;
-      [{label:t("builder.serie"),val:String(row.sets)},{label:t("card.ripetizioni"),val:String(row.reps)},{label:t("builder.recupero"),val:row.rest>0?`${row.rest}s`:t("card.senzaPausa")}].forEach(({label,val})=>{
+      const kgTxt=v=>{ const n=parseNum(String(v??"")); return n==null?"—":String(n).replace(".",sepDecimale()); };
+      const carichi=Array.isArray(row.carichi)&&row.carichi.some(k=>k!=null&&k!=="")?`${row.carichi.map(kgTxt).join(" · ")} kg`
+        :(row.pesoIniziale!=null&&row.pesoIniziale!==""?`${kgTxt(row.pesoIniziale)} kg`:null);
+      const chips=row.tipo==="cardio"
+        ? [{label:t("builder2.durata"),val:row.durataMin!=null?kgTxt(row.durataMin):String(row.reps)},
+           row.velocita?{label:t("builder2.velocita"),val:kgTxt(row.velocita)}:null,
+           row.inclinazione?{label:t("builder2.inclinazione"),val:kgTxt(row.inclinazione)}:null,
+           row.livello?{label:t("builder2.livello"),val:String(row.livello)}:null]
+        : [{label:t("builder.serie"),val:String(row.sets)},{label:t("card.ripetizioni"),val:String(row.reps)},{label:t("builder.recupero"),val:row.rest>0?`${row.rest}s`:t("card.senzaPausa")},
+           carichi?{label:t("pdf.carico"),val:carichi}:null];
+      chips.filter(Boolean).forEach(({label,val})=>{
         const cw2=doc.getTextWidth(`${label}: ${val}`)+10;
         doc.setFillColor(243,243,248); doc.roundedRect(cx2-2,y-4.5,cw2,7,1.5,1.5,"F");
         doc.setFontSize(8.5); doc.setFont("helvetica","normal"); doc.setTextColor(110,110,125); doc.text(`${label}: `,cx2,y);
@@ -156,7 +167,13 @@ export async function buildPDF({nome,cognome,obiettivo,livello,giorni,dayNames={
       } else { drawPH(doc,M,y,IMG_W,IMG_H); }
       const nx=M+IMG_W+8,nw=CW-IMG_W-8; let ny2=y+6;
       doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(130,160,0); doc.text(t("pdf.note"),nx,ny2); ny2+=6;
-      for(let l=0;l<4;l++){ doc.setDrawColor(220,220,228); doc.setLineWidth(0.3); doc.line(nx,ny2,nx+nw,ny2); ny2+=8; }
+      let righeLibere=4;
+      if(row.nota){   // nota del PT: scritta, poi righe per gli appunti
+        doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(60,60,75);
+        const testo=doc.splitTextToSize(String(row.nota),nw).slice(0,3);
+        testo.forEach(l=>{ doc.text(l,nx,ny2); ny2+=4.5; }); ny2+=3; righeLibere=Math.max(1,4-testo.length);
+      }
+      for(let l=0;l<righeLibere;l++){ doc.setDrawColor(220,220,228); doc.setLineWidth(0.3); doc.line(nx,ny2,nx+nw,ny2); ny2+=8; }
       y+=IMG_H+10;
       doc.setDrawColor(230,230,235); doc.setLineWidth(0.3); doc.line(M,y,PW-M,y); y+=7;
       exDone++;

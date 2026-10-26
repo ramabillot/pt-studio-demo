@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { EXERCISES, CAT_COLORS, EX_IMAGES } from "../data.js";
 import { VideoModal } from "./Library.jsx";
-import { riassuntoSerie, righeDaStato, caricoPiano, ripetizioniStrane, repsPrevisti } from "../lib/allenamento.js";
+import { riassuntoSerie, righeDaStato, caricoPiano, ripetizioniStrane, repsPrevisti, consiglioAttivo } from "../lib/allenamento.js";
 import { secondiATempo, fmtMMSS, avviaRecupero, avviaTempo } from "../lib/cronometro.js";
 import { useTranslation, Trans } from "react-i18next";
 import { nomeEsercizio, valore, ytCerca, fmtNum } from "../i18n/index.js";
@@ -29,7 +29,8 @@ function Campo({value, onChange, unita, decimale=true, label}) {
 
 export default function EsercizioCard({ex, stato, onChange, ultima}) {
   const { t } = useTranslation();
-  const nome = nomeEsercizio(ex.name, ex.id);   // nel DB resta il nome italiano
+  const nomeTec = nomeEsercizio(ex.name, ex.id);   // nel DB resta il nome italiano
+  const nome = ex.alias || nomeTec;                  // nome per l'atleta scelto dal PT (se c'è)
   const [imgOk, setImgOk] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
   const [notaAperta, setNotaAperta] = useState(!!stato.nota);
@@ -67,6 +68,8 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
 
   // Carico consigliato dal PT (solo se non c'è un'ultima volta) e avviso ripetizioni strane (B4)
   const piano = caricoPiano(ex);
+  const pianoDiverso = piano.length > 1 && new Set(piano).size > 1;   // carichi diversi per serie → riga "Previsto"
+  const consiglio = consiglioAttivo(ex, ultima);
   const previste = repsPrevisti(ex.reps);
   const righeReps = stato.modo==="fisso" ? [{reps:stato.reps, i:-1}] : stato.serie.map((s,i)=>({reps:s.reps, i}));
   const strana = secTempo ? null : righeReps.find(r => ripetizioniStrane(r.reps, ex.reps) && String(r.reps)!==String(stato.avvisoOk||""));
@@ -95,6 +98,7 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
             <button className="ex-link" onClick={()=>set({salta:!stato.salta, fatto:false})}>{stato.salta?`↩ ${t("card.loFaccio")}`:t("card.salta")}</button>
           </div>
           <div className="ex-cliente-name">{nome}</div>
+          {ex.alias&&<div className="ex-nome-tecnico">{nomeTec}</div>}
           <div className="ex-cliente-meta">
             {stato.salta
               ? t("card.serie",{count:ex.sets})
@@ -114,11 +118,19 @@ export default function EsercizioCard({ex, stato, onChange, ultima}) {
           {ex.nota&&<div className="ex-nota-pt">{ex.nota}</div>}
 
           {!stato.salta&&<>
-            {ultima?(
+            {pianoDiverso&&(
+              <div className="ex-previsto"><span>{t("card.previsto")}</span> <strong>{piano.map(fmtNum).join(" · ")}&nbsp;kg</strong></div>
+            )}
+            {ultima&&(
               <div className="ex-ultima">
                 {t("card.ultimaVolta")} <strong>{riassuntoSerie(ultima.serie)}</strong>
               </div>
-            ):piano.length>0&&(
+            )}
+            {consiglio?(
+              <div className="ex-ultima ex-consigliato">
+                {t("card.ptConsiglia")} <strong>{piano.map(fmtNum).join(" · ")}&nbsp;kg</strong>
+              </div>
+            ):!ultima&&piano.length>0&&!pianoDiverso&&(
               <div className="ex-ultima ex-consigliato">
                 {t("card.caricoConsigliato")} <strong>{piano.map(fmtNum).join(" · ")}&nbsp;kg</strong>
               </div>

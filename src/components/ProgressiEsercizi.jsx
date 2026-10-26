@@ -63,7 +63,7 @@ export function ProgressiMultiChart({lines, onPointClick, selected}) {
 }
 
 // sessioni: [{ data, sessione_serie:[...] }]  ·  ordine: nomi esercizi da mostrare per primi (es. quelli della scheda)
-export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
+export default function ProgressiEsercizi({sessioni, ordine=[], vuoto, etichette={}}) {
   const { t } = useTranslation();
   const [metrica,setMetrica]=useState("max");
   const [sel,setSel]=useState(null);       // nomi selezionati (null = default)
@@ -106,7 +106,7 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
           return (
             <button key={n} className={`prog-chip unlocked${on?" selected":""}`}
               style={on?{background:`${cc}1a`,borderColor:cc,color:cc}:{}} onClick={()=>toggle(n)}>
-              {(n=>n.length>22?n.slice(0,22)+"…":n)(nomeEsercizio(n))}
+              {(n=>n.length>22?n.slice(0,22)+"…":n)(etichette[n]||nomeEsercizio(n))}
             </button>
           );
         })}
@@ -122,7 +122,7 @@ export default function ProgressiEsercizi({sessioni, ordine=[], vuoto}) {
           {lines.some(l=>l.points.length<2)&&<div style={{fontSize:"0.6875rem",color:"var(--muted)",marginTop:6}}>{t("progressi.lineaDalSecondo")}</div>}
           {dettaglio?(
             <div style={{marginTop:10,padding:"10px 14px",background:"var(--card2)",border:"1px solid var(--border)",borderRadius:10,fontSize:"0.8125rem"}}>
-              <div style={{fontWeight:700,color:"var(--text)",marginBottom:4}}>{nomeEsercizio(punto.id)} · <span style={{textTransform:"capitalize"}}>{fmtDateShort(punto.date)}</span></div>
+              <div style={{fontWeight:700,color:"var(--text)",marginBottom:4}}>{etichette[punto.id]||nomeEsercizio(punto.id)} · <span style={{textTransform:"capitalize"}}>{fmtDateShort(punto.date)}</span></div>
               <div style={{color:"var(--muted)"}}>{dettaglio.serie.map((s,i)=><span key={i} style={{marginRight:10,whiteSpace:"nowrap"}}>S{i+1}: <strong style={{color:"var(--text)"}}>{s.peso!=null?`${fmtNum(s.peso)} kg`:"—"}{s.reps!=null?` × ${s.reps}`:""}</strong></span>)}</div>
               {dettaglio.nota&&<div style={{marginTop:6,color:"var(--text)"}}>📝 {dettaglio.nota}</div>}
             </div>

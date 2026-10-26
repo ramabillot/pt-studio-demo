@@ -91,9 +91,15 @@ export function riassuntoSerie(serie) {
   return valide.map(una).join(" · ");
 }
 
-// Carichi del piano del PT per serie (kg o null). Oggi: carico iniziale (peso_iniziale) uguale per tutte.
+// Carichi del piano del PT per serie (kg o null): carichi per serie se ci sono, altrimenti il carico iniziale.
 export function caricoPiano(ex) {
+  if (Array.isArray(ex.carichi) && ex.carichi.some(k => k != null)) return ex.carichi.map(k => (k == null ? null : Number(k)));
   return ex.pesoIniziale != null && ex.pesoIniziale !== "" ? [Number(ex.pesoIniziale)] : [];
+}
+
+// "Consiglia questi pesi": vale finché l'atleta non si allena di nuovo su quell'esercizio dopo il consiglio
+export function consiglioAttivo(ex, ultima) {
+  return !!ex.propostiIl && caricoPiano(ex).length > 0 && (!ultima || ultima.data < ex.propostiIl);
 }
 
 // Ripetizioni "strane" (B4: Willy 54 invece di 15, probabilmente il peso nel campo sbagliato).
@@ -119,8 +125,11 @@ export function statoIniziale(ex, salvate, ultima) {
   });
   // Sessione già salvata → valori salvati. Altrimenti: pesi dell'ultima volta, ripetizioni previste dalla scheda.
   // Primo allenamento (nessuna ultima volta): carico consigliato dal PT (B4), prima i pesi restavano vuoti.
+  // Il PT ha consigliato dei pesi dopo l'ultima volta → si parte dai suoi.
   const sorgente = salvate.length
     ? salvate
+    : consiglioAttivo(ex, ultima)
+      ? caricoPiano(ex).map(kg => ({ peso: kg, reps: previsti }))
     : ultima?.serie?.length
       ? ultima.serie.map(r => ({ peso: r.peso, reps: previsti ?? r.reps }))
       : caricoPiano(ex).map(kg => ({ peso: kg, reps: previsti }));

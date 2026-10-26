@@ -443,7 +443,8 @@
     "schedaPer": "SCHEDA PER",
     "generato": "Generato con PT Studio",
     "note": "NOTE",
-    "nomeFile": "scheda"
+    "nomeFile": "scheda",
+    "carico": "Carico"
   },
   "atleta": {
     "errCaricamento": "Non riesco a caricare i dati. Controlla la connessione e riapri l'app.",
@@ -564,7 +565,9 @@
     "caricoConsigliato": "Carico consigliato dal PT:",
     "avvisoRip": "<b>{{r}} ripetizioni?</b> Ne erano previste {{p}}.",
     "avvisoEraPeso": "Era il peso: {{r}} kg × {{p}}",
-    "avvisoGiusto": "Sì, giusto"
+    "avvisoGiusto": "Sì, giusto",
+    "previsto": "Previsto:",
+    "ptConsiglia": "Il tuo PT consiglia:"
   },
   "progressi": {
     "esercizi": "Esercizi",
